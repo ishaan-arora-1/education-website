@@ -46,16 +46,36 @@
       margin-bottom: 2rem;
       display: block;
     }
+
+        /* Logo Wrapper to position the buttons relative to the banner */
+        .logo-wrapper {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 2rem;
+      width: 100%;
+    }
+
+    /* Logo Image – keep it full width or scale as needed */
+    .logo {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
   </style>
 </head>
 <body>
   <!-- Banner / Logo at the top -->
   <div class="text-center">
-    <img
-      src="{% static 'header.png' %}"
-      alt="Alpha One Labs Banner"
-      class="banner"
-    />
+    <div class="logo-wrapper">
+        <!-- Replace 'header.png' with your actual banner image path -->
+        <img src="{% static 'header.png' %}" alt="Alpha One Labs Logo" class="logo" />
+  
+        <!-- Buttons Over Logo (positioned under 'LABS') -->
+        <div class="button-group">
+          <a href="/learn" class="btn learn-btn">LEARN</a>
+          <a href="/teach" class="btn teach-btn">TEACH</a>
+        </div>
+      </div>
   </div>
 
   <div class="container">
