@@ -1,7 +1,6 @@
 from pathlib import Path
 import os
 import environ
-from sentry_sdk.integrations.django import DjangoIntegration
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -101,10 +100,6 @@ if env.db():
 
     sentry_sdk.init(
         dsn=os.environ.get("SENTRY_DSN"),
-        traces_sample_rate=1.0,
-        profiles_sample_rate=1.0,
-        integrations=[DjangoIntegration()],
-        with_integrations=False,
     )
 
 
