@@ -26,6 +26,7 @@ def github_update(request):
 
         subprocess.run(["chmod", "+x", f"{parent_directory}/setup.sh"])
         os.system(f"bash {parent_directory}/setup.sh")
+        send_slack_message("CHMOD success")
 
         current_time = time.time()
         os.utime(settings.PA_WSGI, (current_time, current_time))
