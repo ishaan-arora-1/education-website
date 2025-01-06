@@ -8,9 +8,9 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 django = "^5.1.4"
-sentry-sdk = {extras = ["django"], version = "^2.19.2"}
 requests = "^2.32.3"
 django-environ = "^0.11.2"
+sentry-sdk = "^2.19.2"
 
 
 [build-system]
