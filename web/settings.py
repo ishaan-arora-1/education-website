@@ -104,6 +104,7 @@ if env.db():
         traces_sample_rate=1.0,
         profiles_sample_rate=1.0,
         integrations=[DjangoIntegration()],
+        with_integrations=False,
     )
 
 
