@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "web",
+    "captcha",
 ]
 
 MIDDLEWARE = [
@@ -89,12 +90,13 @@ if os.environ.get("DATABASE_URL"):
     DATABASES = {"default": env.db()}
 
     EMAIL_HOST = "smtp.sendgrid.net"
-    EMAIL_HOST_USER = os.environ.get("SENDGRID_USERNAME", "blank")
+    EMAIL_HOST_USER = os.environ.get("SENDGRID_USERNAME", "apikey")
     EMAIL_HOST_PASSWORD = os.environ.get("SENDGRID_PASSWORD", "blank")
     SENDGRID_API_KEY = os.environ.get("SENDGRID_PASSWORD", "blank")
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
     EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
+    EMAIL_FROM = os.environ.get("EMAIL_FROM")
 
     import sentry_sdk
 
