@@ -9,7 +9,7 @@ SECRET_KEY = "django-insecure-5kyff0s@l_##j3jawec5@b%!^^e(j7v)ouj4b7q6kru#o#a)o3
 
 # Initialize environment variables
 env = environ.Env()
-environ.Env.read_env()
+environ.Env.read_env(os.path.join(BASE_DIR.parent, ".env"))
 
 DEBUG = True
 PA_USER = "alphaonelabs99282llkb"
