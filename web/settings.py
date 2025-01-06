@@ -25,6 +25,7 @@ else:
 # print out the env file used
 print(f"Using env file: {env.path}")
 
+
 DEBUG = True
 PA_USER = "alphaonelabs99282llkb"
 PA_HOST = PA_USER + ".pythonanywhere.com"
@@ -32,7 +33,7 @@ PA_WSGI = "/var/www/" + PA_USER + "_pythonanywhere_com_wsgi.py"
 PA_SOURCE_DIR = "/home/" + PA_USER + "/web"
 
 ALLOWED_HOSTS = ["alphaonelabs99282llkb.pythonanywhere.com", "127.0.0.1"]
-CSRF_TRUSTED_ORIGINS = ["https://alphaonelabs.com"]
+CSRF_TRUSTED_ORIGINS = ["https://alphaonelabs.com", "https://www.alphaonelabs.com"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
