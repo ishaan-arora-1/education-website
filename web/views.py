@@ -20,7 +20,7 @@ def index(request):
 @csrf_exempt
 def github_update(request):
     send_slack_message("New commit pulled from GitHub")
-    root_directory = os.path.abspath(os.sep)
+    root_directory = os.path.dirname(os.path.abspath(__file__))
     try:
         subprocess.run(["chmod", "+x", f"{root_directory}/setup.sh"])
         result = subprocess.run(
