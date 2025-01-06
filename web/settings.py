@@ -9,7 +9,19 @@ SECRET_KEY = "django-insecure-5kyff0s@l_##j3jawec5@b%!^^e(j7v)ouj4b7q6kru#o#a)o3
 
 # Initialize environment variables
 env = environ.Env()
-environ.Env.read_env(os.path.join(BASE_DIR.parent, ".env"))
+
+# Define the path to the .env file
+env_file = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"
+)
+
+# Check if the .env file exists
+if os.path.exists(env_file):
+    print(f"Using env file: {env_file}")
+    environ.Env.read_env(env_file)
+else:
+    print("No .env file found.")
+
 
 # print out the env file used
 print(f"Using env file: {env.path}")
