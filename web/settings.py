@@ -11,6 +11,9 @@ SECRET_KEY = "django-insecure-5kyff0s@l_##j3jawec5@b%!^^e(j7v)ouj4b7q6kru#o#a)o3
 env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR.parent, ".env"))
 
+# print out the env file used
+print(f"Using env file: {env.path}")
+
 DEBUG = True
 PA_USER = "alphaonelabs99282llkb"
 PA_HOST = PA_USER + ".pythonanywhere.com"
