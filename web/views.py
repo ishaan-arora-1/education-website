@@ -23,7 +23,13 @@ def github_update(request):
     root_directory = os.path.abspath(os.sep)
     try:
         subprocess.run(["chmod", "+x", f"{root_directory}/setup.sh"])
-        os.system(f"bash {root_directory}/setup.sh")
+        result = subprocess.run(
+            ["bash", f"{root_directory}/setup.sh"], capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            raise Exception(
+                f"setup.sh failed with return code {result.returncode} and output: {result.stdout} {result.stderr}"
+            )
         send_slack_message("CHMOD success about to set time on: " + settings.PA_WSGI)
 
         current_time = time.time()
