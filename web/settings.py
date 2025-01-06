@@ -104,7 +104,6 @@ if env.db():
         traces_sample_rate=1.0,
         profiles_sample_rate=1.0,
         integrations=[DjangoIntegration()],
-        integrations_exclude=["redis"],
     )
 
 
