@@ -93,7 +93,7 @@ if os.environ.get("DATABASE_URL"):
     DATABASES = {"default": env.db()}
 
     EMAIL_HOST = "smtp.sendgrid.net"
-    EMAIL_HOST_PASSWORD = env("SENDGRID_PASSWORD", "blank")
+    EMAIL_HOST_PASSWORD = os.environ.get("SENDGRID_PASSWORD", "blank")
     SENDGRID_API_KEY = os.environ.get("SENDGRID_PASSWORD", "blank")
     EMAIL_HOST_USER = "apikey"
 
