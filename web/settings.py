@@ -84,6 +84,8 @@ DATABASES = {
     }
 }
 
+SECURE_SSL_REDIRECT = True
+
 
 if os.environ.get("DATABASE_URL"):
     DEBUG = False
