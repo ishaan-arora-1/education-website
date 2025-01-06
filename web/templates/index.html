@@ -1,4 +1,3 @@
-
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -18,129 +17,141 @@
 
 <style>
     /* Basic Reset */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-/* Body Styles */
-body {
-  font-family: "Arial", sans-serif;
-  background: linear-gradient(135deg, #1c1f26, #2a2f38);
-  color: #ffffff;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+    /* Body Styles: Solid black background to match the banner */
+    body {
+      font-family: "Arial", sans-serif;
+      background-color: #000;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center; /* center horizontally */
+      justify-content: center; /* center vertically */
+    }
 
-/* Container to center everything */
-.container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
+    /* Container to center everything */
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      max-width: 1024px;
+      width: 90%;
+      margin: 0 auto;
+    }
 
-/* Logo Wrapper to position the buttons relative to the logo */
-.logo-wrapper {
-  position: relative; /* So we can absolutely position the buttons inside */
-  display: inline-block;
-  margin-bottom: 2rem;
-}
+    /* Logo Wrapper to position the buttons relative to the banner */
+    .logo-wrapper {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 2rem;
+      width: 100%;
+    }
 
-/* Logo Image */
-.logo {
-  width: 90%;
-  max-width: 1024px;
-  height: auto;
-}
+    /* Logo Image – keep it full width or scale as needed */
+    .logo {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
 
-/* Button Group over the bottom-right corner of the logo */
-.button-group {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-}
+    /*
+      Button Group "under Labs":
+      Adjust `left` and `top` as needed.
+      Because the text "LABS" is more to the right, we place it accordingly.
+      You might tweak these depending on how your image is sized and text is positioned.
+    */
+    .button-group {
+      position: absolute;
+      top: 55%;  /* move down from top of the image; adjust as needed */
+      left: 60%; /* move from left of image; adjust as needed */
+      transform: translate(-50%, -50%);
+      display: flex;
+      gap: 1rem;
+    }
 
-/* Buttons Styles */
-.btn {
-  display: inline-block;
-  margin-left: 10px;
-  padding: 0.8rem 1.2rem;
-  text-decoration: none;
-  border-radius: 4px;
-  font-weight: bold;
-  transition: background-color 0.2s ease-in-out;
-}
+    /* Buttons Styles */
+    .btn {
+      display: inline-block;
+      padding: 0.8rem 1.2rem;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: bold;
+      transition: background-color 0.2s ease-in-out;
+      font-size: 1rem;
+    }
 
-.learn-btn {
-  background-color: #f0ad4e;
-  color: #ffffff;
-}
+    .learn-btn {
+      background-color: #f0ad4e; /* Orange-ish */
+      color: #ffffff;
+    }
 
-.teach-btn {
-  background-color: #5cb85c;
-  color: #ffffff;
-}
+    .teach-btn {
+      background-color: #5cb85c; /* Green */
+      color: #ffffff;
+    }
 
-.btn:hover {
-  filter: brightness(90%);
-}
+    .btn:hover {
+      filter: brightness(90%);
+    }
 
-/* Info Links (About, X, Follow) */
-.info-links {
-  display: flex;
-  gap: 1.5rem;
-}
+    /* Info Links (About, X, Follow) */
+    .info-links {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
 
-.info-link {
-  color: #ffffff;
-  text-decoration: none;
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  transition: color 0.2s ease-in-out;
-}
+    .info-link {
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      transition: color 0.2s ease-in-out;
+    }
 
-.info-link i {
-  margin-right: 0.5rem;
-  font-size: 1.1rem;
-}
+    .info-link i {
+      margin-right: 0.5rem;
+      font-size: 1.1rem;
+    }
 
-.info-link:hover {
-  color: #f0ad4e; /* or any accent color you prefer */
-}
+    .info-link:hover {
+      color: #f0ad4e; /* or any accent color you prefer */
+    }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .button-group {
-    bottom: 5px;
-    right: 5px;
-  }
-  
-  .info-links {
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .logo {
-    width: 100%;
-  }
-}
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      /* Logo scaled down automatically by width: 100% */
+      .button-group {
+        top: 70%;  /* push the buttons lower on smaller screens */
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      .info-links {
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }
 </style>
 </head>
 <body>
-
   <!-- Main Container -->
   <div class="container">
     
     <!-- Logo Wrapper -->
     <div class="logo-wrapper">
+      <!-- Replace 'header.png' with your actual banner image path -->
       <img src="{% static 'header.png' %}" alt="Alpha One Labs Logo" class="logo" />
 
-      <!-- Buttons Over Logo (Bottom Right) -->
+      <!-- Buttons Over Logo (positioned under 'LABS') -->
       <div class="button-group">
         <a href="#" class="btn learn-btn">LEARN</a>
         <a href="#" class="btn teach-btn">TEACH</a>
@@ -163,6 +174,5 @@ body {
       </a>
     </div>
   </div>
-  
 </body>
 </html>
