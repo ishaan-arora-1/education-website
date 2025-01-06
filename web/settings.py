@@ -1,17 +1,21 @@
 from pathlib import Path
 import os
-import dj_database_url
+import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = "django-insecure-5kyff0s@l_##j3jawec5@b%!^^e(j7v)ouj4b7q6kru#o#a)o3"
 
 
+# Initialize environment variables
+env = environ.Env()
+environ.Env.read_env()
+
 DEBUG = True
-PA_USER="alphaonelabs99282llkb"
-PA_HOST=PA_USER+".pythonanywhere.com"
-PA_WSGI=PA_USER+"_pythonanywhere_com_wsgi.py"
-PA_SOURCE_DIR="/home/"+PA_USER+"/web"
+PA_USER = "alphaonelabs99282llkb"
+PA_HOST = PA_USER + ".pythonanywhere.com"
+PA_WSGI = PA_USER + "_pythonanywhere_com_wsgi.py"
+PA_SOURCE_DIR = "/home/" + PA_USER + "/web"
 
 ALLOWED_HOSTS = ["alphaonelabs99282llkb.pythonanywhere.com", "127.0.0.1"]
 
@@ -67,8 +71,7 @@ DATABASES = {
 
 if "DATABASE_URL" in os.environ:
     DEBUG = False
-    DATABASES["default"] = dj_database_url.config()
-    DATABASES["default"]["ENGINE"] = "django.db.backends.mysql"
+    DATABASES = {"default": env.db()}
 
     EMAIL_HOST = "smtp.sendgrid.net"
     EMAIL_HOST_USER = os.environ.get("SENDGRID_USERNAME", "blank")
