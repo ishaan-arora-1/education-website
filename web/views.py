@@ -23,6 +23,7 @@ def github_update(request):
     current_directory = os.path.dirname(os.path.abspath(__file__))
     parent_directory = os.path.dirname(current_directory)
     try:
+
         subprocess.run(["chmod", "+x", f"{parent_directory}/setup.sh"])
         os.system(f"bash {parent_directory}/setup.sh")
 
@@ -32,6 +33,7 @@ def github_update(request):
         return HttpResponse("Repository updated successfully")
     except Exception as e:
         print(f"Deploy error: {e}")
+        send_slack_message(f"Deploy error: {e}")
         return HttpResponse("Deploy error see logs.")
 
 
