@@ -19,13 +19,11 @@ def index(request):
 
 @csrf_exempt
 def github_update(request):
-    send_slack_message("New commit pulled:")
-    current_directory = os.path.dirname(os.path.abspath(__file__))
-    parent_directory = os.path.dirname(current_directory)
+    send_slack_message("New commit pulled from GitHub")
+    root_directory = os.path.abspath(os.sep)
     try:
-
-        subprocess.run(["chmod", "+x", f"{parent_directory}/setup.sh"])
-        os.system(f"bash {parent_directory}/setup.sh")
+        subprocess.run(["chmod", "+x", f"{root_directory}/setup.sh"])
+        os.system(f"bash {root_directory}/setup.sh")
         send_slack_message("CHMOD success")
 
         current_time = time.time()
