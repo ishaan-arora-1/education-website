@@ -6,6 +6,6 @@ if find /home/alphaonelabs99282llkb/web/requirements.txt -mmin -60 | grep -q .; 
     pip install -r requirements.txt
 fi
 # only run these if the migration folder changed
-#python manage.py migrate
+python manage.py migrate
 # only run this if there are new static files
-#python manage.py collectstatic --noinput
+python manage.py collectstatic --noinput
