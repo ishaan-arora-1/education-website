@@ -190,6 +190,22 @@ files = [
 django = "*"
 
 [[package]]
+name = "django-sendgrid-v5"
+version = "1.2.4"
+description = "An implementation of Django's EmailBackend compatible with sendgrid-python v5+"
+optional = false
+python-versions = "*"
+files = [
+    {file = "django_sendgrid_v5-1.2.4-py3-none-any.whl", hash = "sha256:8a2f6391b47d501bfd06209bdf474a8eb426ec569b3a90fd5191b1e4db625ec5"},
+    {file = "django_sendgrid_v5-1.2.4.tar.gz", hash = "sha256:6d59242618c477333246a033478bba6e20eff116051f4b5997dde2352d5004ea"},
+]
+
+[package.dependencies]
+django = ">=1.8"
+python-http-client = ">=3.0.0"
+sendgrid = ">=5.0.0"
+
+[[package]]
 name = "django-simple-captcha"
 version = "0.6.0"
 description = "A very simple, yet powerful, Django captcha application"
@@ -362,30 +378,18 @@ use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
 name = "sendgrid"
-version = "3.6.5"
-description = "SendGrid library for Python"
+version = "6.11.0"
+description = "Twilio SendGrid library for Python"
 optional = false
-python-versions = "*"
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 files = [
-    {file = "sendgrid-3.6.5-py2.py3-none-any.whl", hash = "sha256:9fba62068dd13922004b6a1676e21c6435709aaf7c2b978cdf1206e3d2196c60"},
-    {file = "sendgrid-3.6.5.tar.gz", hash = "sha256:d1af52f8cbb900bf79e28aa08102a503f5e26489c7b9f1d9750758a4b27c84d1"},
+    {file = "sendgrid-6.11.0-py3-none-any.whl", hash = "sha256:43ecf5bb742ea5850c7cfe68f5e7d9948772352306d4e83e119899959538b884"},
+    {file = "sendgrid-6.11.0.tar.gz", hash = "sha256:71424b2a97f5a034121ea3b2666c653ba0ed315982f0d57b7851c0c9503dc5ab"},
 ]
 
 [package.dependencies]
-python-http-client = ">=2.1.1"
-
-[[package]]
-name = "sendgrid-django"
-version = "4.2.0"
-description = "SendGrid Backend for Django"
-optional = false
-python-versions = "*"
-files = [
-    {file = "sendgrid-django-4.2.0.tar.gz", hash = "sha256:fef60ba37d588e5e1c4dcbb3b8b7f8c16920e3e89432de357f6abd6157c4f5f4"},
-]
-
-[package.dependencies]
-sendgrid = ">=3.5,<4"
+python-http-client = ">=3.2.1"
+starkbank-ecdsa = ">=2.0.1"
 
 [[package]]
 name = "sentry-sdk"
@@ -457,6 +461,16 @@ dev = ["build", "hatch"]
 doc = ["sphinx"]
 
 [[package]]
+name = "starkbank-ecdsa"
+version = "2.2.0"
+description = "A lightweight and fast pure python ECDSA library"
+optional = false
+python-versions = "*"
+files = [
+    {file = "starkbank-ecdsa-2.2.0.tar.gz", hash = "sha256:9399c3371b899d4a235b68a1ed7919d202fbf024bd2c863ae8ebdad343c2a63a"},
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.12.2"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -498,4 +512,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "9fb6fea98cc4530eb9fbe7297467762b1770a23be9f161aac4b11a95b27b6645"
+content-hash = "f6e03ce2ca533d950727f51c55dd64241182f31d37268e8a6806c8834cb5c830"
