@@ -84,7 +84,7 @@ DATABASES = {
 }
 
 
-if env.db():
+if os.environ.get("DATABASE_URL"):
     DEBUG = False
     DATABASES = {"default": env.db()}
 
