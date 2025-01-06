@@ -32,7 +32,7 @@ PA_WSGI = "/var/www/" + PA_USER + "_pythonanywhere_com_wsgi.py"
 PA_SOURCE_DIR = "/home/" + PA_USER + "/web"
 
 ALLOWED_HOSTS = ["alphaonelabs99282llkb.pythonanywhere.com", "127.0.0.1"]
-
+CSRF_TRUSTED_ORIGINS = ["https://alphaonelabs.com"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
