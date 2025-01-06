@@ -28,7 +28,7 @@ def github_update(request):
 
         current_time = time.time()
         os.utime(settings.PA_WSGI, (current_time, current_time))
-
+        send_slack_message("Repository updated successfully")
         return HttpResponse("Repository updated successfully")
     except Exception as e:
         print(f"Deploy error: {e}")
