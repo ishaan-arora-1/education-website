@@ -98,11 +98,11 @@ if os.environ.get("DATABASE_URL"):
     EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
     EMAIL_FROM = os.environ.get("EMAIL_FROM")
 
-    import sentry_sdk
+    # import sentry_sdk
 
-    sentry_sdk.init(
-        dsn=os.environ.get("SENTRY_DSN"),
-    )
+    # sentry_sdk.init(
+    #     dsn=os.environ.get("SENTRY_DSN"),
+    # )
 
 
 AUTH_PASSWORD_VALIDATORS = [
