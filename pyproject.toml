@@ -10,6 +10,7 @@ python = "^3.10"
 django = "^5.1.4"
 sentry-sdk = {extras = ["django"], version = "^2.19.2"}
 requests = "^2.32.3"
+dj-database-url = "^2.3.0"
 
 
 [build-system]
