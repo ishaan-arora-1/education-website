@@ -42,9 +42,7 @@ def send_slack_message(message):
         print("Warning: SLACK_WEBHOOK_URL not configured")
         return
 
-    payload = {
-        "text": f"```{message}```"  # Format as code block for better readability
-    }
+    payload = {"text": f"```{message}```"}
     try:
         response = requests.post(webhook_url, json=payload)
         response.raise_for_status()  # Raise exception for bad status codes
