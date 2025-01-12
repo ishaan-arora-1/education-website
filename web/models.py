@@ -462,8 +462,8 @@ class StudyGroup(models.Model):
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     """Create a Profile instance when a new User is created."""
-    if created:
-        Profile.objects.get_or_create(user=instance)
+    if created and not hasattr(instance, "profile"):
+        Profile.objects.create(user=instance)
 
 
 @receiver(post_save, sender=User)
@@ -472,7 +472,7 @@ def save_user_profile(sender, instance, **kwargs):
     if hasattr(instance, "profile"):
         instance.profile.save()
     else:
-        Profile.objects.get_or_create(user=instance)
+        Profile.objects.create(user=instance)
 
 
 class BlogPost(models.Model):

@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     "allauth.account",
     "web",
     "captcha",
-    "storages",
 ]
 
 MIDDLEWARE = [
@@ -204,7 +203,7 @@ if os.environ.get("DATABASE_URL"):
     # Google Cloud Storage settings for media files in production
     if os.environ.get("GS_BUCKET_NAME"):
         GS_BUCKET_NAME = os.environ.get("GS_BUCKET_NAME")
-        GS_DEFAULT_ACL = "publicRead"
+        GS_DEFAULT_ACL = None
         GS_QUERYSTRING_AUTH = False
         GS_LOCATION = "media"  # Store files in a media directory in the bucket
 
