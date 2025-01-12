@@ -85,9 +85,7 @@ def index(request):
             user.backend = "django.contrib.auth.backends.ModelBackend"
             login(request, user)
 
-            # Send welcome email with password reset link
-            # send_teacher_welcome_email(user)
-            # return redirect("index")
+            # TODO: Send welcome email
             # redirect to create a course
             return redirect("create_course")
     else:
