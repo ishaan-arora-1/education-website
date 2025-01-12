@@ -550,9 +550,9 @@ def course_search(request):
 
 
 @login_required
-def create_payment_intent(request, course_slug):
+def create_payment_intent(request, slug):
     """Create a payment intent for Stripe."""
-    course = get_object_or_404(Course, slug=course_slug)
+    course = get_object_or_404(Course, slug=slug)
 
     # Ensure user has a pending enrollment
     get_object_or_404(Enrollment, student=request.user, course=course, status="pending")
