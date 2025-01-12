@@ -135,12 +135,35 @@ SITE_DOMAIN = "alphaonelabs.com"
 
 # Allauth settings
 ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_USERNAME_REQUIRED = False  # Since we're using email authentication
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_AUTHENTICATION_METHOD = "email"
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_USERNAME_MIN_LENGTH = None
+ACCOUNT_USERNAME_MIN_LENGTH = 3
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
+ACCOUNT_SESSION_REMEMBER = None  # Let user decide via checkbox
+ACCOUNT_REMEMBER_ME_FIELD = "remember"  # Match test field name
+ACCOUNT_LOGIN_ON_PASSWORD_RESET = True
+ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
+ACCOUNT_LOGOUT_ON_GET = True
+ACCOUNT_SIGNUP_EMAIL_ENTER_TWICE = False
+ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = False
+ACCOUNT_OLD_PASSWORD_FIELD_ENABLED = True
+ACCOUNT_EMAIL_AUTHENTICATION = True  # Enable email authentication
+ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = "index"
+ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = "account_login"
+
+# Authentication backends
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
+# Authentication URLs
+LOGIN_URL = "account_login"
+LOGIN_REDIRECT_URL = "index"
+LOGOUT_REDIRECT_URL = "index"
+
 ACCOUNT_RATE_LIMITS = {
     "login_attempt": "5/5m",  # 5 attempts per 5 minutes
     "login_failed": "3/5m",  # 3 failed attempts per 5 minutes
@@ -148,18 +171,12 @@ ACCOUNT_RATE_LIMITS = {
     "send_email": "5/5m",  # 5 emails per 5 minutes
     "change_email": "3/h",  # 3 email changes per hour
 }
-ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
-ACCOUNT_LOGOUT_ON_GET = False
-ACCOUNT_SESSION_REMEMBER = True
 
 # Override allauth forms
 ACCOUNT_FORMS = {
     "signup": "web.forms.UserRegistrationForm",
+    "login": "web.forms.CustomLoginForm",
 }
-
-LOGIN_REDIRECT_URL = "index"
-LOGOUT_REDIRECT_URL = "index"
-
 
 LANGUAGE_CODE = "en"
 

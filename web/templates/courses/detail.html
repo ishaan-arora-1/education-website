@@ -77,7 +77,49 @@
           <!-- Middle and Right Columns - Course Info -->
           <div class="md:col-span-2 space-y-6">
             <div>
-              <h1 class="text-3xl font-bold mb-2">{{ course.title }}</h1>
+              <div class="flex justify-between items-start mb-4">
+                <h1 class="text-3xl font-bold">{{ course.title }}</h1>
+                <div class="relative" x-data="{ open: false }">
+                  <button @click="open = !open"
+                          class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 p-2 rounded-full">
+                    <i class="fas fa-share-alt text-gray-600 dark:text-gray-300"></i>
+                  </button>
+                  <!-- Share Dropdown -->
+                  <div x-show="open"
+                       @click.away="open = false"
+                       class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                    <div class="p-2 space-y-1">
+                      <!-- Twitter -->
+                      <a href="https://twitter.com/intent/tweet?text=Check%20out%20this%20course:%20{{ course.title|urlencode }}&url={{ request.build_absolute_uri|urlencode }}"
+                         target="_blank"
+                         class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                        <i class="fab fa-twitter text-blue-400 mr-2"></i>
+                        <span class="text-sm">Share on Twitter</span>
+                      </a>
+                      <!-- Facebook -->
+                      <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri|urlencode }}"
+                         target="_blank"
+                         class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                        <i class="fab fa-facebook text-blue-600 mr-2"></i>
+                        <span class="text-sm">Share on Facebook</span>
+                      </a>
+                      <!-- LinkedIn -->
+                      <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri|urlencode }}"
+                         target="_blank"
+                         class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                        <i class="fab fa-linkedin text-blue-700 mr-2"></i>
+                        <span class="text-sm">Share on LinkedIn</span>
+                      </a>
+                      <!-- Copy Link -->
+                      <button onclick="copyLink()"
+                              class="w-full flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                        <i class="fas fa-link text-gray-600 dark:text-gray-400 mr-2"></i>
+                        <span class="text-sm">Copy Link</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div class="flex items-center space-x-4 mb-4">
                 <span class="badge bg-{{ course.status }}">{{ course.get_status_display }}</span>
                 <span class="text-sm text-gray-600 dark:text-gray-400">{{ course.subject.name }}</span>
@@ -319,3 +361,16 @@
     </div>
   </div>
 {% endblock content %}
+<!-- Add this script at the bottom of the file -->
+<script>
+    function copyLink() {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            const button = event.currentTarget;
+            const originalText = button.innerHTML;
+            button.innerHTML = `<i class="fas fa-check text-green-500 mr-2"></i><span class="text-sm">Link Copied!</span>`;
+            setTimeout(() => {
+                button.innerHTML = originalText;
+            }, 2000);
+        });
+    }
+</script>

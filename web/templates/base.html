@@ -118,7 +118,7 @@
     {% endif %}
     <!-- HEADER -->
     <header class="w-full bg-teal-600 dark:bg-teal-800 text-white">
-      <div class="max-w-[90rem] mx-auto px-4 flex items-center justify-between h-[50px]">
+      <div class="max-w-[90rem] mx-auto px-4 flex items-center justify-between h-[60px] relative">
         <!-- Logo and Title -->
         <a href="{% url 'index' %}" class="flex items-center space-x-2">
           <img src="{% static 'logo.png' %}"
@@ -126,10 +126,15 @@
                height="40"
                width="40"
                class="h-10 w-10" />
-          <span class="font-bold text-xl tracking-wide">Alpha One Labs</span>
+          <span class="font-bold text-xl tracking-wide hidden sm:inline">Alpha One Labs</span>
         </a>
+        <!-- Mobile Menu Button -->
+        <button class="md:hidden p-2 hover:bg-teal-700 rounded-lg"
+                onclick="toggleMobileMenu()">
+          <i class="fas fa-bars text-xl"></i>
+        </button>
         <!-- Nav and additional actions -->
-        <nav class="flex items-center space-x-4">
+        <nav class="hidden md:flex items-center space-x-4">
           <!-- Search bar (visible on larger screens) -->
           <div class="relative hidden lg:inline-block w-[250px]">
             <input type="text"
@@ -137,8 +142,8 @@
                    class="rounded-full w-[250px] bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700" />
             <i class="fas fa-search absolute right-3 top-2 text-gray-500 dark:text-gray-300"></i>
           </div>
-          <!-- Main navigation links (home, about, etc.) -->
-          <div class="hidden md:flex space-x-4">
+          <!-- Main navigation links -->
+          <div class="flex space-x-4">
             <a href="{% url 'index' %}" class="hover:underline flex items-center">
               <i class="fa-solid fa-house mr-1"></i> Home
             </a>
@@ -153,33 +158,35 @@
               <i class="fa-solid fa-list-check mr-1"></i> Subjects
             </a>
           </div>
-          <!-- Language dropdown -->
-          <div class="relative">
-            <button class="focus:outline-none hover:underline flex items-center"
-                    onclick="toggleLanguageDropdown()">
-              <i class="fa-solid fa-globe mr-1"></i>
-            </button>
-            <!-- The dropdown (hidden by default) -->
-            <div id="language-dropdown"
-                 class="hidden absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 shadow-lg rounded-md py-2 z-50">
-              <a href="#"
-                 class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">English</a>
-              <a href="#"
-                 class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Spanish</a>
-              <a href="#"
-                 class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">French</a>
-              <a href="#"
-                 class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">German</a>
-              <a href="#"
-                 class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Chinese</a>
+          <!-- Language and Dark Mode -->
+          <div class="flex items-center space-x-2">
+            <div class="relative">
+              <button class="focus:outline-none hover:underline flex items-center p-2 hover:bg-teal-700 rounded-lg"
+                      onclick="toggleLanguageDropdown()">
+                <i class="fa-solid fa-globe"></i>
+              </button>
+              <!-- Language dropdown content -->
+              <div id="language-dropdown"
+                   class="hidden absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 shadow-lg rounded-md py-2 z-50">
+                <a href="#"
+                   class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">English</a>
+                <a href="#"
+                   class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Spanish</a>
+                <a href="#"
+                   class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">French</a>
+                <a href="#"
+                   class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">German</a>
+                <a href="#"
+                   class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Chinese</a>
+              </div>
             </div>
+            <button class="focus:outline-none flex items-center hover:underline p-2 rounded-lg hover:bg-teal-700 transition-colors"
+                    title="Switch to Dark Mode"
+                    onclick="toggleDarkMode()">
+              <i id="darkModeIcon" class="fas fa-moon"></i>
+            </button>
           </div>
-          <!-- Dark / Light Mode Toggle -->
-          <button class="focus:outline-none flex items-center hover:underline p-2 rounded-full hover:bg-teal-700 transition-colors"
-                  title="Toggle Dark / Light Mode"
-                  onclick="toggleDarkMode()">
-            <i id="darkModeIcon" class="fas fa-moon"></i>
-          </button>
+          <!-- Auth Buttons -->
           {% if user.is_authenticated %}
             <!-- User Avatar and Dropdown -->
             <div class="relative">
@@ -237,87 +244,186 @@
               </div>
             </div>
           {% else %}
-            <!-- Login Link -->
-            <a href="{% url 'account_login' %}"
-               class="hover:underline flex items-center">
-              <i class="fa-solid fa-right-to-bracket mr-1"></i> Login
-            </a>
-            <!-- Signup Button -->
-            <a href="{% url 'account_signup' %}"
-               class="px-3 py-1 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-semibold flex items-center">
-              <i class="fa-solid fa-user-plus mr-2"></i> Signup
-            </a>
+            <div class="flex items-center space-x-2">
+              <a href="{% url 'account_login' %}"
+                 class="hover:underline flex items-center p-2 hover:bg-teal-700 rounded-lg">
+                <i class="fa-solid fa-right-to-bracket mr-1"></i>
+                <span class="hidden sm:inline">Login</span>
+              </a>
+              <a href="{% url 'account_signup' %}"
+                 class="px-3 py-1 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-semibold flex items-center">
+                <i class="fa-solid fa-user-plus mr-2"></i>
+                <span class="hidden sm:inline">Signup</span>
+              </a>
+            </div>
           {% endif %}
         </nav>
+        <!-- Mobile Menu (hidden by default) -->
+        <div id="mobile-menu" class="hidden fixed inset-0 z-50">
+          <div class="absolute inset-0 bg-black bg-opacity-50"
+               onclick="toggleMobileMenu()"></div>
+          <div class="absolute right-0 top-0 h-full w-64 bg-white dark:bg-gray-800 shadow-lg p-4">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-lg font-bold">Menu</h2>
+              <button onclick="toggleMobileMenu()"
+                      class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="flex flex-col space-y-4">
+              <a href="{% url 'index' %}"
+                 class="flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                <i class="fa-solid fa-house"></i>
+                <span>Home</span>
+              </a>
+              <a href="{% url 'about' %}"
+                 class="flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>About</span>
+              </a>
+              <a href="{% url 'course_search' %}"
+                 class="flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                <i class="fa-solid fa-book-open"></i>
+                <span>Courses</span>
+              </a>
+              <a href="{% url 'subjects' %}"
+                 class="flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                <i class="fa-solid fa-list-check"></i>
+                <span>Subjects</span>
+              </a>
+              {% if user.is_authenticated %}
+                <a href="{% url 'profile' %}"
+                   class="flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                  <i class="fas fa-user-circle"></i>
+                  <span>Profile</span>
+                </a>
+                <form method="post" action="{% url 'account_logout' %}">
+                  {% csrf_token %}
+                  <button type="submit"
+                          class="w-full flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                  </button>
+                </form>
+              {% else %}
+                <div class="flex flex-col space-y-2">
+                  <a href="{% url 'account_login' %}"
+                     class="flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>Login</span>
+                  </a>
+                  <a href="{% url 'account_signup' %}"
+                     class="flex items-center space-x-2 p-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Signup</span>
+                  </a>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
       </div>
     </header>
-    {% block extra_body %}
-      {% block content %}
-      {% endblock content %}
-    {% endblock extra_body %}
-    <div class="h-16"></div>
-    <footer class="w-full py-4 flex flex-col items-center justify-center text-sm border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-      <div class="flex items-center space-x-8 mb-4">
-        <a href="{% url 'forum_categories' %}"
-           class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors duration-200">
-          <i class="fa-solid fa-comments mr-2"></i>
-          <span>Forum</span>
-        </a>
-        <a href="https://x.com"
-           target="_blank"
-           rel="noopener noreferrer"
-           class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors duration-200">
-          <i class="fa-brands fa-twitter mr-2"></i>
-          <span>Twitter</span>
-        </a>
-        <a href="https://facebook.com"
-           target="_blank"
-           rel="noopener noreferrer"
-           class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors duration-200">
-          <i class="fa-brands fa-facebook mr-2"></i>
-          <span>Facebook</span>
-        </a>
-        <a href="https://youtube.com"
-           target="_blank"
-           rel="noopener noreferrer"
-           class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors duration-200">
-          <i class="fa-brands fa-youtube mr-2"></i>
-          <span>YouTube</span>
-        </a>
-        <a href="https://slack.com"
-           target="_blank"
-           rel="noopener noreferrer"
-           class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors duration-200">
-          <i class="fa-brands fa-slack mr-2"></i>
-          <span>Slack</span>
-        </a>
-        <a href="{% url 'blog' %}"
-           class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors duration-200">
-          <i class="fa-solid fa-blog mr-2"></i>
-          <span>Blog</span>
-        </a>
-        <a href="{% url 'forum_categories' %}"
-           class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors duration-200">
-          <i class="fa-solid fa-comments mr-2"></i>
-          <span>Forum</span>
-        </a>
-        <a href="https://github.com/alphaonelabs"
-           target="_blank"
-           rel="noopener noreferrer"
-           class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors duration-200">
-          <i class="fa-brands fa-github mr-2"></i>
-          <span>GitHub</span>
-        </a>
-        <a href="{% url 'sitemap' %}"
-           class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors duration-200">
-          <i class="fa-solid fa-sitemap mr-2"></i>
-          <span>Sitemap</span>
-        </a>
-      </div>
-      <div class="text-gray-500 dark:text-gray-400">
-        <i class="fa-regular fa-clock mr-1"></i>
-        Last updated: {{ last_modified }}
+    {% block content %}
+    {% endblock content %}
+    <!-- FOOTER -->
+    <footer class="w-full py-4 mt-auto border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+      <div class="max-w-[90rem] mx-auto px-4">
+        <!-- Mobile Footer -->
+        <div class="md:hidden">
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <a href="{% url 'forum_categories' %}"
+               class="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+              <i class="fa-solid fa-comments"></i>
+              <span>Forum</span>
+            </a>
+            <a href="{% url 'blog' %}"
+               class="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+              <i class="fa-solid fa-blog"></i>
+              <span>Blog</span>
+            </a>
+            <a href="https://github.com/alphaonelabs"
+               class="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+              <i class="fa-brands fa-github"></i>
+              <span>GitHub</span>
+            </a>
+            <a href="{% url 'sitemap' %}"
+               class="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+              <i class="fa-solid fa-sitemap"></i>
+              <span>Sitemap</span>
+            </a>
+          </div>
+        </div>
+        <!-- Desktop Footer -->
+        <div class="hidden md:flex flex-wrap justify-center items-center space-x-8 mb-4">
+          <a href="{% url 'forum_categories' %}"
+             class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
+            <i class="fa-solid fa-comments mr-2"></i>
+            <span>Forum</span>
+          </a>
+          <a href="https://x.com"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
+            <i class="fa-brands fa-twitter mr-2"></i>
+            <span>Twitter</span>
+          </a>
+          <a href="https://facebook.com"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
+            <i class="fa-brands fa-facebook mr-2"></i>
+            <span>Facebook</span>
+          </a>
+          <a href="https://youtube.com"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
+            <i class="fa-brands fa-youtube mr-2"></i>
+            <span>YouTube</span>
+          </a>
+          <a href="{% url 'blog' %}"
+             class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
+            <i class="fa-solid fa-blog mr-2"></i>
+            <span>Blog</span>
+          </a>
+          <a href="https://github.com/alphaonelabs"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
+            <i class="fa-brands fa-github mr-2"></i>
+            <span>GitHub</span>
+          </a>
+          <a href="{% url 'sitemap' %}"
+             class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
+            <i class="fa-solid fa-sitemap mr-2"></i>
+            <span>Sitemap</span>
+          </a>
+        </div>
+        <!-- Last Updated -->
+        <div class="text-center text-gray-500 dark:text-gray-400 text-sm">
+          <i class="fa-regular fa-clock mr-1"></i>
+          Last updated: {{ last_modified }}
+        </div>
       </div>
     </footer>
+    <script>
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+            document.body.classList.toggle('overflow-hidden');
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('mobile-menu');
+            const menuButton = event.target.closest('[onclick="toggleMobileMenu()"]');
+            const menuContent = event.target.closest('.mobile-menu-content');
+
+            if (!menu.classList.contains('hidden') && !menuButton && !menuContent) {
+                toggleMobileMenu();
+            }
+        });
+    </script>
   </body>
 </html>

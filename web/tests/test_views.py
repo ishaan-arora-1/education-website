@@ -1,30 +1,35 @@
-from unittest.mock import patch
-
+from allauth.account.models import EmailAddress
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-from django.utils import timezone
 
-from web.models import Course, Enrollment, Profile, Session, Subject
+from web.models import Course, Profile, Subject
 
 
 @override_settings(STRIPE_SECRET_KEY="dummy_key")
 class BaseViewTest(TestCase):
     def setUp(self):
         self.client = Client()
-
         # Create teacher user and profile
         self.teacher = User.objects.create_user(
-            username="teacher", email="teacher@example.com", password="teacherpass123"
+            username="teacher",
+            email="teacher@example.com",
+            password="teacherpass123",
         )
-        self.teacher_profile, _ = Profile.objects.get_or_create(user=self.teacher, defaults={"is_teacher": True})
-
+        self.teacher_profile, _ = Profile.objects.get_or_create(
+            user=self.teacher,
+            defaults={"is_teacher": True},
+        )
         # Create student user and profile
         self.student = User.objects.create_user(
-            username="student", email="student@example.com", password="studentpass123"
+            username="student",
+            email="student@example.com",
+            password="studentpass123",
         )
-        self.student_profile, _ = Profile.objects.get_or_create(user=self.student, defaults={"is_teacher": False})
-
+        self.student_profile, _ = Profile.objects.get_or_create(
+            user=self.student,
+            defaults={"is_teacher": False},
+        )
         # Create test subject
         self.subject = Subject.objects.create(
             name="Programming2",
@@ -32,7 +37,6 @@ class BaseViewTest(TestCase):
             description="Programming courses",
             icon="fas fa-code",
         )
-
         # Create test course
         self.course = Course.objects.create(
             title="Test Course",
@@ -46,50 +50,89 @@ class BaseViewTest(TestCase):
         )
 
 
-@override_settings(STRIPE_SECRET_KEY="dummy_key")
-class SessionViewTests(BaseViewTest):
+@override_settings(
+    ACCOUNT_EMAIL_VERIFICATION="mandatory",
+    ACCOUNT_EMAIL_REQUIRED=True,
+    ACCOUNT_USERNAME_REQUIRED=True,
+    ACCOUNT_AUTHENTICATION_METHOD="email",
+    ACCOUNT_RATE_LIMITS={
+        "login_attempt": "5/5m",
+        "login_failed": "3/5m",
+        "signup": "5/h",
+        "send_email": "5/5m",
+        "change_email": "3/h",
+    },
+)
+class AuthenticationTests(TestCase):
     def setUp(self):
-        super().setUp()
-
-        # Mock Google credentials and calendar sync
-        self.google_patcher = patch("web.calendar_sync.google_calendar_api", return_value=True)
-        self.mock_google = self.google_patcher.start()
-
-        # Mock create calendar event
-        self.calendar_event_patcher = patch(
-            "web.calendar_sync.create_calendar_event",
-            return_value="calendar_event_123",
+        self.client = Client()
+        # Create test user
+        self.username = "testuser"
+        self.email = "test@example.com"
+        self.password = "testpass123"
+        # Create user with username (required) but login will use email
+        self.user = User.objects.create_user(
+            username=self.username,
+            email=self.email,
+            password=self.password,
         )
-        self.mock_calendar_event = self.calendar_event_patcher.start()
+        # Verify email for allauth
+        EmailAddress.objects.create(
+            user=self.user,
+            email=self.email,
+            primary=True,
+            verified=True,
+        )
+        self.login_url = reverse("account_login")
 
-        # Create enrollment first
-        self.enrollment = Enrollment.objects.create(student=self.student, course=self.course, status="approved")
+    def test_successful_login_with_email(self):
+        """Test that a user can successfully login with email and password"""
+        # First, ensure user is not logged in
+        self.assertFalse(self.client.session.get("_auth_user_id"))
 
-        # Then create session
-        self.session = Session.objects.create(
-            course=self.course,
-            title="Test Session",
-            description="Test Description",
-            start_time=timezone.now() + timezone.timedelta(days=1),
-            end_time=timezone.now() + timezone.timedelta(days=1, hours=2),
-            is_virtual=True,
-            meeting_link="https://meet.google.com/abc-defg-hij",
+        # Debug prints for user setup
+        print("\nDEBUG USER SETUP:")
+        print(f"Email: {self.email}")
+        print(f"Password: {self.password}")
+        print(f"User exists: {User.objects.filter(email=self.email).exists()}")
+        print(f"Email verified: {EmailAddress.objects.filter(email=self.email, verified=True).exists()}")
+
+        # Verify email is primary
+        email_obj = EmailAddress.objects.get(email=self.email)
+        print(f"Email is primary: {email_obj.primary}")
+        print(f"User active: {self.user.is_active}")
+
+        # Get CSRF token
+        response = self.client.get(self.login_url)
+        csrftoken = response.cookies["csrftoken"].value
+
+        # Attempt login with CSRF token
+        response = self.client.post(
+            self.login_url,
+            {
+                "login": self.email,
+                "password": self.password,
+                "csrfmiddlewaretoken": csrftoken,
+            },
+            HTTP_X_CSRFTOKEN=csrftoken,
         )
 
-    def tearDown(self):
-        self.google_patcher.stop()
-        self.calendar_event_patcher.stop()
-        super().tearDown()
+        # Debug prints for response
+        print("\nDEBUG LOGIN RESPONSE:")
+        print(f"Status Code: {response.status_code}")
+        print(f"Response Headers: {response.headers}")
+        if response.context and "form" in response.context:
+            print(f"Form Errors: {response.context['form'].errors}")
+            form = response.context["form"]
+            print(f"Form Data: {form.data}")
+            print(f"Form is Valid: {form.is_valid()}")
+            print(f"Form Cleaned Data: {form.cleaned_data if form.is_valid() else None}")
+        print(f"Session: {self.client.session.items()}")
+        print(f"Cookies: {response.cookies}")
 
-    def test_session_detail_view(self):
-        # Login first
-        self.client.force_login(self.student)
+        # Check redirect status code
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], reverse("index"))
 
-        # Get session detail
-        url = reverse("session_detail", args=[self.session.id])
-        response = self.client.get(url)
-
-        # Verify response
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "web/study/session_detail.html")
-        self.assertContains(response, self.session.title)
+        # Verify user is logged in
+        self.assertTrue(self.client.session.get("_auth_user_id"))

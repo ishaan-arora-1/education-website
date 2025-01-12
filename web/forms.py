@@ -1,4 +1,4 @@
-from allauth.account.forms import SignupForm
+from allauth.account.forms import LoginForm, SignupForm
 from captcha.fields import CaptchaField
 from django import forms
 from django.contrib.auth.models import User
@@ -28,6 +28,7 @@ __all__ = [
     "CourseMaterialForm",
     "TeacherSignupForm",
     "ProfileUpdateForm",
+    "CustomLoginForm",
 ]
 
 
@@ -307,3 +308,59 @@ class ProfileUpdateForm(forms.ModelForm):
             profile.expertise = self.cleaned_data["expertise"]
             profile.save()
         return user
+
+
+class CustomLoginForm(LoginForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["login"].widget.attrs.update(
+            {
+                "class": (
+                    "block w-full rounded-md border-0 py-2 px-4 "
+                    "text-gray-900 dark:text-white shadow-sm "
+                    "ring-1 ring-inset ring-gray-300 "
+                    "dark:ring-gray-600 "
+                    "placeholder:text-gray-400 "
+                    "focus:ring-2 focus:ring-inset "
+                    "focus:ring-orange-500 dark:bg-gray-700 "
+                    "sm:text-base sm:leading-6"
+                )
+            }
+        )
+        self.fields["password"].widget.attrs.update(
+            {
+                "class": (
+                    "block w-full rounded-md border-0 py-2 px-4 "
+                    "text-gray-900 dark:text-white shadow-sm "
+                    "ring-1 ring-inset ring-gray-300 "
+                    "dark:ring-gray-600 "
+                    "placeholder:text-gray-400 "
+                    "focus:ring-2 focus:ring-inset "
+                    "focus:ring-orange-500 dark:bg-gray-700 "
+                    "sm:text-base sm:leading-6 pr-10"
+                )
+            }
+        )
+        self.fields["remember"].widget.attrs.update(
+            {
+                "class": (
+                    "h-4 w-4 text-orange-500 "
+                    "focus:ring-orange-500 "
+                    "border-gray-300 dark:border-gray-600 "
+                    "rounded cursor-pointer"
+                )
+            }
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        # Check if user exists and can log in
+        if "login" in cleaned_data:
+            email = cleaned_data["login"]
+            try:
+                User.objects.get(email=email)
+            except User.DoesNotExist:
+                print("User not found")
+
+        return cleaned_data
