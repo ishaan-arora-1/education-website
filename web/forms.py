@@ -43,12 +43,144 @@ __all__ = [
 ]
 
 
+# Base Tailwind widget classes
+class TailwindInput(forms.TextInput):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.attrs.update(
+            {
+                "class": (
+                    "block w-full border rounded p-2 focus:outline-none focus:ring-2 "
+                    "focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800 "
+                    "border-gray-300 dark:border-gray-600"
+                )
+            }
+        )
+
+
+class TailwindTextarea(forms.Textarea):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.attrs.update(
+            {
+                "class": (
+                    "block w-full border rounded p-2 focus:outline-none focus:ring-2 "
+                    "focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800 "
+                    "border-gray-300 dark:border-gray-600"
+                ),
+                "rows": kwargs.pop("rows", 4),
+            }
+        )
+
+
+class TailwindEmailInput(forms.EmailInput):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.attrs.update(
+            {
+                "class": (
+                    "block w-full border rounded p-2 focus:outline-none focus:ring-2 "
+                    "focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800 "
+                    "border-gray-300 dark:border-gray-600"
+                )
+            }
+        )
+
+
+class TailwindNumberInput(forms.NumberInput):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.attrs.update(
+            {
+                "class": (
+                    "block w-full border rounded p-2 focus:outline-none focus:ring-2 "
+                    "focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800 "
+                    "border-gray-300 dark:border-gray-600"
+                )
+            }
+        )
+
+
+class TailwindSelect(forms.Select):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.attrs.update(
+            {
+                "class": (
+                    "block w-full border rounded p-2 focus:outline-none focus:ring-2 "
+                    "focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800 "
+                    "border-gray-300 dark:border-gray-600"
+                )
+            }
+        )
+
+
+class TailwindCheckboxInput(forms.CheckboxInput):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.attrs.update(
+            {
+                "class": (
+                    "h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500 "
+                    "dark:border-gray-600 dark:bg-gray-800 dark:ring-offset-gray-800"
+                )
+            }
+        )
+
+
+class TailwindFileInput(forms.FileInput):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.attrs.update(
+            {
+                "class": (
+                    "block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 "
+                    "file:rounded file:border-0 file:text-sm file:font-semibold file:bg-teal-50 "
+                    "file:text-teal-700 hover:file:bg-teal-100 dark:file:bg-teal-900 "
+                    "dark:file:text-teal-200 dark:text-gray-400"
+                )
+            }
+        )
+
+
+class TailwindDateTimeInput(forms.DateTimeInput):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.attrs.update(
+            {
+                "class": (
+                    "block w-full border rounded p-2 focus:outline-none focus:ring-2 "
+                    "focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800 "
+                    "border-gray-300 dark:border-gray-600"
+                ),
+                "type": "datetime-local",
+            }
+        )
+
+
+class TailwindCaptchaTextInput(CaptchaTextInput):
+    template_name = "captcha/widget.html"
+
+    def __init__(self, attrs=None):
+        default_attrs = {
+            "class": (
+                "block w-full border rounded p-2 focus:outline-none focus:ring-2 "
+                "focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800 "
+                "border-gray-300 dark:border-gray-600"
+            ),
+            "placeholder": "Enter CAPTCHA",
+        }
+        if attrs:
+            default_attrs.update(attrs)
+        super().__init__(default_attrs)
+
+
 class UserRegistrationForm(UserCreationForm):
-    email = forms.EmailField(required=True)
-    first_name = forms.CharField(required=True)
-    last_name = forms.CharField(required=True)
-    is_teacher = forms.BooleanField(required=False, label="Register as a teacher")
-    captcha = CaptchaField()
+    email = forms.EmailField(required=True, widget=TailwindEmailInput())
+    first_name = forms.CharField(required=True, widget=TailwindInput())
+    last_name = forms.CharField(required=True, widget=TailwindInput())
+    is_teacher = forms.BooleanField(required=False, label="Register as a teacher", widget=TailwindCheckboxInput())
+    captcha = CaptchaField(widget=TailwindCaptchaTextInput)
 
     class Meta:
         model = User
@@ -62,6 +194,11 @@ class UserRegistrationForm(UserCreationForm):
             "is_teacher",
             "captcha",
         )
+        widgets = {
+            "username": TailwindInput(),
+            "password1": TailwindInput(attrs={"type": "password"}),
+            "password2": TailwindInput(attrs={"type": "password"}),
+        }
 
 
 class ProfileForm(forms.ModelForm):
@@ -69,8 +206,8 @@ class ProfileForm(forms.ModelForm):
         model = Profile
         fields = ("bio", "expertise")
         widgets = {
-            "bio": forms.Textarea(attrs={"rows": 4}),
-            "expertise": forms.TextInput(attrs={"placeholder": "Your areas of expertise"}),
+            "bio": TailwindTextarea(attrs={"rows": 4}),
+            "expertise": TailwindInput(attrs={"placeholder": "Your areas of expertise"}),
         }
 
 
@@ -111,19 +248,34 @@ class CourseCreationForm(forms.ModelForm):
 class CourseForm(forms.ModelForm):
     class Meta:
         model = Course
-        fields = (
+        fields = [
             "title",
             "description",
             "learning_objectives",
             "prerequisites",
             "price",
             "max_students",
-        )
+            "subject",
+            "level",
+            "tags",
+        ]
         widgets = {
-            "description": forms.Textarea(attrs={"rows": 4}),
-            "learning_objectives": forms.Textarea(attrs={"rows": 4}),
-            "prerequisites": forms.Textarea(attrs={"rows": 4}),
+            "title": TailwindInput(),
+            "description": TailwindTextarea(attrs={"rows": 4}),
+            "learning_objectives": TailwindTextarea(attrs={"rows": 4}),
+            "prerequisites": TailwindTextarea(attrs={"rows": 4}),
+            "price": TailwindNumberInput(attrs={"min": "0", "step": "0.01"}),
+            "max_students": TailwindNumberInput(attrs={"min": "1"}),
+            "subject": TailwindSelect(),
+            "level": TailwindSelect(),
+            "tags": TailwindInput(attrs={"placeholder": "Enter comma-separated tags"}),
         }
+
+    def clean_max_students(self):
+        max_students = self.cleaned_data.get("max_students")
+        if max_students <= 0:
+            raise forms.ValidationError("Maximum number of students must be greater than zero")
+        return max_students
 
 
 class SessionForm(forms.ModelForm):
@@ -139,28 +291,14 @@ class SessionForm(forms.ModelForm):
             "location",
         ]
         widgets = {
-            "description": forms.Textarea(attrs={"rows": 4}),
-            "start_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "end_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "title": TailwindInput(),
+            "description": TailwindTextarea(attrs={"rows": 4}),
+            "start_time": TailwindDateTimeInput(),
+            "end_time": TailwindDateTimeInput(),
+            "is_virtual": TailwindCheckboxInput(),
+            "meeting_link": TailwindInput(attrs={"type": "url"}),
+            "location": TailwindInput(),
         }
-
-    def clean_start_time(self):
-        start_time = self.cleaned_data.get("start_time")
-        if not start_time:
-            raise forms.ValidationError("Start time is required.")
-        return start_time
-
-    def clean_end_time(self):
-        end_time = self.cleaned_data.get("end_time")
-        start_time = self.cleaned_data.get("start_time")
-
-        if not end_time:
-            raise forms.ValidationError("End time is required.")
-
-        if start_time and end_time and end_time <= start_time:
-            raise forms.ValidationError("End time must be after start time.")
-
-        return end_time
 
     def clean(self):
         cleaned_data = super().clean()
@@ -181,7 +319,8 @@ class ReviewForm(forms.ModelForm):
         model = Review
         fields = ("rating", "comment")
         widgets = {
-            "comment": forms.Textarea(attrs={"rows": 4}),
+            "rating": TailwindNumberInput(attrs={"min": "1", "max": "5"}),
+            "comment": TailwindTextarea(attrs={"rows": 4}),
         }
 
 
@@ -198,8 +337,13 @@ class CourseMaterialForm(forms.ModelForm):
             "order",
         )
         widgets = {
-            "description": forms.Textarea(attrs={"rows": 3}),
-            "order": forms.NumberInput(attrs={"min": 0}),
+            "title": TailwindInput(),
+            "description": TailwindTextarea(attrs={"rows": 3}),
+            "material_type": TailwindSelect(),
+            "file": TailwindFileInput(),
+            "session": TailwindSelect(),
+            "is_downloadable": TailwindCheckboxInput(),
+            "order": TailwindNumberInput(attrs={"min": 0}),
         }
 
     def __init__(self, *args, course=None, **kwargs):
@@ -208,23 +352,9 @@ class CourseMaterialForm(forms.ModelForm):
             self.fields["session"].queryset = course.sessions.all()
 
 
-class TailwindCaptchaTextInput(CaptchaTextInput):
-    template_name = "captcha/widget.html"
-
-    def __init__(self, attrs=None):
-        # Add Tailwind classes to the input field and align to the right of the image
-        default_attrs = {
-            "class": "border border-gray-300 rounded p-2",  # Added margin-left to align right of the image
-            "placeholder": "Enter CAPTCHA",
-        }
-        if attrs:
-            default_attrs.update(attrs)
-        super().__init__(default_attrs)
-
-
 class TeacherSignupForm(forms.Form):
-    email = forms.EmailField()
-    subject = forms.CharField(max_length=100)
+    email = forms.EmailField(widget=TailwindEmailInput())
+    subject = forms.CharField(max_length=100, widget=TailwindInput())
     captcha = CaptchaField(widget=TailwindCaptchaTextInput)
 
     def save(self):
@@ -254,17 +384,18 @@ class TeacherSignupForm(forms.Form):
 
 
 class ProfileUpdateForm(forms.ModelForm):
-    first_name = forms.CharField(max_length=30, required=False)
-    last_name = forms.CharField(max_length=30, required=False)
-    email = forms.EmailField(required=True)
+    first_name = forms.CharField(max_length=30, required=False, widget=TailwindInput())
+    last_name = forms.CharField(max_length=30, required=False, widget=TailwindInput())
+    email = forms.EmailField(required=True, widget=TailwindEmailInput())
     bio = forms.CharField(
-        widget=forms.Textarea(attrs={"rows": 4}),
         required=False,
+        widget=TailwindTextarea(attrs={"rows": 4}),
         help_text="Tell us about yourself",
     )
     expertise = forms.CharField(
         max_length=200,
         required=False,
+        widget=TailwindInput(),
         help_text="List your areas of expertise (e.g. Python, Machine Learning, Web Development)",
     )
 

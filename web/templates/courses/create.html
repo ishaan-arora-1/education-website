@@ -1,57 +1,40 @@
 {% extends "base.html" %}
 
+{% block title %}
+  Create New Course
+{% endblock title %}
 {% block content %}
-  <main class="flex-1 w-full max-w-[90rem] mx-auto mt-6 px-4 md:px-6">
+  <div class="container mx-auto px-4 py-8">
     <div class="max-w-3xl mx-auto">
-      <div class="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
-        <div class="p-6">
-          <h2 class="text-2xl font-bold mb-6 flex items-center">
-            <i class="fa-solid fa-graduation-cap text-teal-600 dark:text-teal-400 mr-2"></i>
-            Create a New Course
-          </h2>
-          {% if form.errors %}
-            <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/50 text-red-700 dark:text-red-300 rounded-lg">
-              Please correct the errors below.
-            </div>
-          {% endif %}
-          <form method="post" novalidate class="space-y-6">
-            {% csrf_token %}
-            {% for field in form %}
-              <div>
-                <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
-                {% if field.widget_type == 'checkbox' or field.widget_type == 'radio' %}
-                  {{ field|attr:"class:rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-800 h-4 w-4" }}
-                {% elif field.widget_type == 'select' %}
-                  {{ field|attr:"class:block w-full border
-                  {% if field.errors %}
-                    border-red-500 dark:border-red-500
-                  {% else %}
-                    border-gray-300 dark:border-gray-600
-                  {% endif %}
-                  rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800" }}
-                {% else %}
-                  {{ field|attr:"class:block w-full border
-                  {% if field.errors %}
-                    border-red-500 dark:border-red-500
-                  {% else %}
-                    border-gray-300 dark:border-gray-600
-                  {% endif %}
-                  rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800" }}
-                {% endif %}
-                {% if field.help_text %}<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</p>{% endif %}
-                {% if field.errors %}<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors }}</p>{% endif %}
-              </div>
-            {% endfor %}
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold mb-4">Create New Course</h1>
+        <p class="text-gray-600 dark:text-gray-300">Fill out the form below to create your new course.</p>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <form method="post" class="space-y-6">
+          {% csrf_token %}
+          {% for field in form %}
             <div>
-              <button type="submit"
-                      class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
-                <i class="fa-solid fa-plus mr-2"></i>
-                Create Course
-              </button>
+              <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}
+                <small class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</small>
+              {% endif %}
+              {% if field.errors %}<div class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors }}</div>{% endif %}
             </div>
-          </form>
-        </div>
+          {% endfor %}
+          <div class="flex justify-end space-x-4">
+            <a href="{% url 'profile' %}"
+               class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+              Cancel
+            </a>
+            <button type="submit"
+                    class="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+              Create Course
+            </button>
+          </div>
+        </form>
       </div>
     </div>
-  </main>
+  </div>
 {% endblock content %}

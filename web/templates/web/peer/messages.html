@@ -1,87 +1,67 @@
 {% extends "base.html" %}
 
-{% load static %}
-
 {% block title %}
-  Messages with {{ peer.get_full_name|default:peer.username }}
+  Messages with {{ other_user.get_full_name|default:other_user.username }}
 {% endblock title %}
 {% block content %}
-  <main class="flex-1 w-full max-w-[90rem] mx-auto mt-6 px-4 md:px-6">
-    <div class="flex justify-between items-center mb-6">
-      <div class="flex items-center space-x-4">
-        <a href="{% url 'peer_connections' %}"
-           class="border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-semibold px-4 py-2 rounded-lg flex items-center">
-          <i class="fas fa-arrow-left mr-2"></i>
-          Back to Connections
-        </a>
-        <div>
-          <h1 class="text-2xl font-bold">{{ peer.get_full_name|default:peer.username }}</h1>
-          <p class="text-gray-600 dark:text-gray-400">Messages</p>
-        </div>
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-3xl mx-auto">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold mb-4">Messages</h1>
+        <p class="text-gray-600 dark:text-gray-300">
+          Conversation with {{ other_user.get_full_name|default:other_user.username }}
+        </p>
       </div>
-    </div>
-    <div class="border border-gray-200 dark:border-gray-700 rounded-lg">
-      <div class="p-6">
-        <!-- Messages Container -->
-        <div class="messages-container mb-6 h-[500px] overflow-y-auto">
+      <!-- Messages List -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div class="h-[500px] overflow-y-auto p-6 space-y-4"
+             id="messages-container">
           {% for message in messages %}
-            <div class="message mb-4 {% if message.sender == request.user %}text-right{% endif %}">
-              <div class="inline-block max-w-[75%] {% if message.sender == request.user %}bg-orange-500 text-white{% else %}bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100{% endif %} rounded-lg p-4">
-                <div class="message-content prose dark:prose-invert max-w-none">{{ message.content|linebreaks }}</div>
-                <div class="text-sm mt-2 {% if message.sender == request.user %}text-orange-100{% else %}text-gray-500 dark:text-gray-400{% endif %}">
-                  {{ message.created_at|timesince }} ago
+            <div class="flex {% if message.sender == request.user %}justify-end{% endif %}">
+              <div class="max-w-[70%] {% if message.sender == request.user %}bg-teal-600 text-white{% else %}bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100{% endif %} rounded-lg px-4 py-2">
+                <div class="text-sm mb-1 {% if message.sender == request.user %}text-teal-100{% else %}text-gray-500 dark:text-gray-400{% endif %}">
+                  {{ message.sender.get_full_name|default:message.sender.username }}
+                </div>
+                <p>{{ message.content }}</p>
+                <div class="text-xs mt-1 {% if message.sender == request.user %}text-teal-100{% else %}text-gray-500 dark:text-gray-400{% endif %}">
+                  {{ message.created_at|date:"g:i A" }}
                 </div>
               </div>
             </div>
           {% empty %}
-            <div class="text-center text-gray-500 dark:text-gray-400 py-8">
-              <i class="fa-solid fa-comments text-4xl mb-4"></i>
-              <p class="mb-2">No messages yet.</p>
-              <p class="text-sm">Start the conversation by sending a message!</p>
-            </div>
+            <p class="text-center text-gray-500 dark:text-gray-400">No messages yet. Start the conversation!</p>
           {% endfor %}
         </div>
         <!-- Message Form -->
-        <form method="post" class="message-form">
-          {% csrf_token %}
-          <div class="flex space-x-4">
-            <textarea name="content"
-                      class="block w-full border {% if field.errors %}border-red-500 dark:border-red-500{% else %}border-gray-300 dark:border-gray-600{% endif %} rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800"
-                      rows="2"
-                      placeholder="Type your message..."
-                      required></textarea>
+        <div class="border-t dark:border-gray-700 p-4">
+          <form method="post" class="flex space-x-4">
+            {% csrf_token %}
+            {% for field in form %}
+              <div class="flex-1">
+                {{ field }}
+                {% if field.errors %}<div class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors }}</div>{% endif %}
+              </div>
+            {% endfor %}
             <button type="submit"
-                    class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-2 rounded-lg flex items-center self-end">
-              <i class="fas fa-paper-plane mr-2"></i>
+                    class="bg-teal-600 hover:bg-teal-700 text-white font-medium px-6 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
               Send
             </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
-  </main>
-  {% block extra_js %}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Scroll to bottom of messages container
-            const messagesContainer = document.querySelector('.messages-container');
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  </div>
+  <script>
+      // Scroll to bottom of messages container
+      const messagesContainer = document.getElementById('messages-container');
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-            // Auto-resize textarea
-            const textarea = document.querySelector('textarea');
-            textarea.addEventListener('input', function() {
-                this.style.height = 'auto';
-                this.style.height = (this.scrollHeight) + 'px';
-            });
-
-            // Auto-scroll on new messages
-            const messageForm = document.querySelector('.message-form');
-            messageForm.addEventListener('submit', function() {
-                setTimeout(() => {
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                }, 100);
-            });
-        });
-    </script>
-  {% endblock extra_js %}
+      // Auto-scroll on new messages
+      const messageForm = document.querySelector('form');
+      messageForm.addEventListener('submit', () => {
+          setTimeout(() => {
+              messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          }, 100);
+      });
+  </script>
 {% endblock content %}

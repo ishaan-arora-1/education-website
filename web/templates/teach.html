@@ -1,49 +1,33 @@
 {% extends "base.html" %}
 
-{% load static %}
-
+{% block title %}
+  Teach - Share Your Knowledge
+{% endblock title %}
 {% block content %}
-  <div class="container">
-    <h1 class="text-center mb-4">
-      <i class="fas fa-chalkboard-teacher me-2"></i>Teach with Alpha One Labs
-    </h1>
-    <p class="lead text-center mb-5">
-      Share your expertise with our community! Fill out the form below and join our teaching network.
-    </p>
-    {% if form.errors %}
-      <div class="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">Please correct the errors below.</div>
-    {% endif %}
-    <div class="row justify-content-center">
-      <div class="col-md-8">
-        <div class="card shadow">
-          <div class="card-body">
-            <h3 class="card-title mb-4">Teaching Inquiry Form</h3>
-            <form method="post" novalidate>
-              {% csrf_token %}
-              {% for field in form %}
-                <div class="mb-4">
-                  <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
-                  {% if field.field.widget.input_type == 'checkbox' %}
-                    {{ field|add_class:"rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-800 h-4 w-4" }}
-                  {% else %}
-                    {{ field|add_class:"block w-full border
-                    {% if field.errors %}
-                      border-red-500 dark:border-red-500
-                    {% else %}
-                      border-gray-300 dark:border-gray-600
-                    {% endif %}
-                    rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800" }}
-                  {% endif %}
-                  {% if field.help_text %}<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</p>{% endif %}
-                  {% if field.errors %}
-                    {% for error in field.errors %}<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ error }}</p>{% endfor %}
-                  {% endif %}
-                </div>
-              {% endfor %}
-              <button type="submit" class="btn btn-success mt-3">Submit</button>
-            </form>
-          </div>
-        </div>
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold mb-4">Share Your Knowledge</h1>
+        <p class="text-gray-600 dark:text-gray-300">Join our community of educators and help others learn and grow.</p>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <form method="post" class="space-y-6">
+          {% csrf_token %}
+          {% for field in form %}
+            <div>
+              <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}
+                <small class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</small>
+              {% endif %}
+              {% if field.errors %}<div class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors }}</div>{% endif %}
+            </div>
+          {% endfor %}
+          <button type="submit"
+                  class="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+            Submit Application
+          </button>
+        </form>
       </div>
     </div>
   </div>

@@ -1,21 +1,29 @@
 {% extends "base.html" %}
 
+{% block title %}
+  Delete Material - {{ material.title }}
+{% endblock title %}
 {% block content %}
   <div class="container mx-auto px-4 py-8">
     <div class="max-w-2xl mx-auto">
-      <div class="bg-white shadow-md rounded-lg p-6">
-        <h1 class="text-2xl font-bold mb-4">Delete Course Material</h1>
-        <p class="text-gray-600 mb-6">
-          Are you sure you want to delete the material "{{ material.title }}"?
-          This action cannot be undone.
-        </p>
-        <form method="post" class="space-y-4">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div class="text-center mb-6">
+          <h1 class="text-2xl font-bold mb-4">Delete Course Material</h1>
+          <p class="text-gray-600 dark:text-gray-300">
+            Are you sure you want to delete "{{ material.title }}"? This action cannot be undone.
+          </p>
+        </div>
+        <form method="post" class="space-y-6">
           {% csrf_token %}
-          <div class="flex justify-between">
+          <div class="flex justify-center space-x-4">
+            <a href="{% url 'course_detail' course.slug %}"
+               class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+              Cancel
+            </a>
             <button type="submit"
-                    class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Delete Material</button>
-            <a href="{% url 'course_detail' slug=material.course.slug %}"
-               class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">Cancel</a>
+                    class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+              Delete Material
+            </button>
           </div>
         </form>
       </div>

@@ -1,57 +1,39 @@
 {% extends "base.html" %}
 
-{% load static %}
-
+{% block title %}
+  Update Course - {{ course.title }}
+{% endblock title %}
 {% block content %}
-  <div class="container mt-5">
-    <div class="row justify-content-center">
-      <div class="col-md-8">
-        <div class="card shadow">
-          <div class="card-body">
-            <h2 class="card-title text-center mb-4">Update {{ course.title }}</h2>
-            {% if form.errors %}
-              <div class="mt-1 text-sm text-red-600 dark:text-red-400">Please correct the errors below.</div>
-            {% endif %}
-            <form method="post" novalidate>
-              {% csrf_token %}
-              {% for field in form %}
-                <div class="mb-3">
-                  <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
-                  {{ field|add_class:"block w-full border
-                  {% if field.errors %}
-                    border-red-500 dark:border-red-500
-                  {% else %}
-                    border-gray-300 dark:border-gray-600
-                  {% endif %}
-                  rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800" }}
-                  {% if field.help_text %}
-                    <small class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</small>
-                  {% endif %}
-                  {% if field.errors %}<div class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors }}</div>{% endif %}
-                </div>
-              {% endfor %}
-              <div class="mb-3">
-                <label for="update_message" class="block text-sm font-medium mb-2">
-                  Update Message for Students
-                  <small class="text-gray-500 dark:text-gray-400">(optional)</small>
-                </label>
-                <textarea name="update_message"
-                          id="update_message"
-                          class="block w-full border border-gray-300 dark:border-gray-600 rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800"
-                          rows="4"
-                          placeholder="Enter a message to notify enrolled students about the changes..."></textarea>
-                <small class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  If you provide a message, all enrolled students will be notified by email about the update.
-                </small>
-              </div>
-              <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-primary">Update Course</button>
-                <a href="{% url 'course_detail' course.slug %}"
-                   class="btn btn-secondary">Cancel</a>
-              </div>
-            </form>
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-3xl mx-auto">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold mb-4">Update Course</h1>
+        <p class="text-gray-600 dark:text-gray-300">Update your course information below.</p>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <form method="post" class="space-y-6">
+          {% csrf_token %}
+          {% for field in form %}
+            <div>
+              <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}
+                <small class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</small>
+              {% endif %}
+              {% if field.errors %}<div class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors }}</div>{% endif %}
+            </div>
+          {% endfor %}
+          <div class="flex justify-end space-x-4">
+            <a href="{% url 'course_detail' course.slug %}"
+               class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+              Cancel
+            </a>
+            <button type="submit"
+                    class="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+              Update Course
+            </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   </div>

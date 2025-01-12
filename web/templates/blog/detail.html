@@ -1,71 +1,82 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
+{% block title %}
+  {{ post.title }}
+{% endblock title %}
 {% block content %}
-  <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <article class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-      {% if post.featured_image %}
-        <img src="{{ post.featured_image.url }}"
-             alt="{{ post.title }}"
-             class="w-full h-64 object-cover" />
-      {% endif %}
-      <div class="p-8">
-        <h1 class="text-3xl font-bold mb-4">{{ post.title }}</h1>
-        <div class="flex items-center text-sm text-gray-500 mb-8">
-          <i class="fa-regular fa-user mr-2"></i>
-          <span>{{ post.author.get_full_name }}</span>
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-3xl mx-auto">
+      <!-- Blog Post Content -->
+      <article class="prose dark:prose-invert lg:prose-lg max-w-none mb-12">
+        <h1>{{ post.title }}</h1>
+        <div class="flex items-center text-gray-500 dark:text-gray-400 text-sm mb-8">
+          <span>By {{ post.author.get_full_name|default:post.author.username }}</span>
           <span class="mx-2">•</span>
-          <i class="fa-regular fa-calendar mr-2"></i>
-          <span>{{ post.published_at|date:"M d, Y" }}</span>
+          <time datetime="{{ post.created_at|date:'Y-m-d' }}">{{ post.created_at|date:"F j, Y" }}</time>
         </div>
-        <div class="prose dark:prose-invert max-w-none">{{ post.content|safe }}</div>
-      </div>
-    </article>
-    <!-- Comments Section -->
-    <div class="mt-12">
-      <h2 class="text-2xl font-bold mb-8">Comments</h2>
-      {% if user.is_authenticated %}
-        <form method="post" class="mb-8">
-          {% csrf_token %}
-          <div class="mb-4">
-            <label for="comment" class="block text-sm font-medium mb-2">Your Comment</label>
-            <textarea id="comment"
-                      name="content"
-                      rows="4"
-                      class="block w-full border {% if field.errors %}border-red-500 dark:border-red-500{% else %}border-gray-300 dark:border-gray-600{% endif %} rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800"
-                      required></textarea>
+        {{ post.content|safe }}
+      </article>
+      <!-- Comments Section -->
+      <div class="border-t dark:border-gray-700 pt-8">
+        <h2 class="text-2xl font-bold mb-6">Comments</h2>
+        {% if user.is_authenticated %}
+          <!-- Comment Form -->
+          <div class="mb-8">
+            <form method="post" class="space-y-4">
+              {% csrf_token %}
+              {% for field in form %}
+                <div>
+                  <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
+                  {{ field }}
+                  {% if field.help_text %}
+                    <small class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</small>
+                  {% endif %}
+                  {% if field.errors %}<div class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors }}</div>{% endif %}
+                </div>
+              {% endfor %}
+              <button type="submit"
+                      class="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+                Post Comment
+              </button>
+            </form>
           </div>
-          <button type="submit"
-                  class="bg-orange-500 text-white px-4 py-2 rounded-full hover:bg-orange-600">Post Comment</button>
-        </form>
-      {% else %}
-        <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-8">
-          <p class="text-center">
+        {% else %}
+          <p class="mb-8 text-gray-600 dark:text-gray-400">
             Please <a href="{% url 'login' %}"
-    class="text-orange-500 hover:text-orange-600">login</a>
-            to post comments.
+    class="text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300">log in</a> to post a comment.
           </p>
-        </div>
-      {% endif %}
-      {% if comments %}
+        {% endif %}
+        <!-- Comments List -->
         <div class="space-y-6">
           {% for comment in comments %}
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-              <div class="flex items-center mb-4">
-                <img src="https://ui-avatars.com/api/?name={{ comment.author.get_full_name|urlencode }}&background=random"
-                     alt="{{ comment.author.get_full_name }}"
-                     class="w-10 h-10 rounded-full mr-4" />
+            <div class="border-b dark:border-gray-700 pb-6 last:border-b-0">
+              <div class="flex items-start justify-between mb-2">
                 <div>
-                  <div class="font-medium">{{ comment.author.get_full_name }}</div>
-                  <div class="text-sm text-gray-500">{{ comment.created_at|timesince }} ago</div>
+                  <span class="font-medium">{{ comment.author.get_full_name|default:comment.author.username }}</span>
+                  <time datetime="{{ comment.created_at|date:'Y-m-d H:i' }}"
+                        class="text-sm text-gray-500 dark:text-gray-400 ml-2">
+                    {{ comment.created_at|timesince }} ago
+                  </time>
                 </div>
+                {% if user == comment.author %}
+                  <form method="post" class="inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete_comment" />
+                    <input type="hidden" name="comment_id" value="{{ comment.id }}" />
+                    <button type="submit"
+                            class="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm">
+                      Delete
+                    </button>
+                  </form>
+                {% endif %}
               </div>
-              <p class="text-gray-600 dark:text-gray-300">{{ comment.content }}</p>
+              <p class="text-gray-700 dark:text-gray-300">{{ comment.content }}</p>
             </div>
+          {% empty %}
+            <p class="text-gray-500 dark:text-gray-400">No comments yet.</p>
           {% endfor %}
         </div>
-      {% else %}
-        <p class="text-gray-600 dark:text-gray-300">No comments yet. Be the first to comment!</p>
-      {% endif %}
+      </div>
     </div>
-  </main>
-{% endblock %}
+  </div>
+{% endblock content %}

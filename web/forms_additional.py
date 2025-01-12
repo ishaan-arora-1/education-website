@@ -1,79 +1,96 @@
 from django import forms
 from django.contrib.auth.models import User
 
-from .models import Course
+from .forms import (
+    TailwindCheckboxInput,
+    TailwindEmailInput,
+    TailwindFileInput,
+    TailwindInput,
+    TailwindNumberInput,
+    TailwindSelect,
+    TailwindTextarea,
+)
+from .models import BlogComment, Course, CourseMaterial, Review, StudyGroup
 
 
-class BlogCommentForm(forms.Form):
-    content = forms.CharField(
-        widget=forms.Textarea(
-            attrs={
-                "rows": 4,
-                "class": "block w-full border border-gray-300 dark:border-gray-600 rounded p-2",
-            }
-        ),
-        required=True,
-    )
+class BlogCommentForm(forms.ModelForm):
+    class Meta:
+        model = BlogComment
+        fields = ["content"]
+        widgets = {
+            "content": TailwindTextarea(attrs={"rows": 3, "placeholder": "Write your comment here..."}),
+        }
 
 
 class MessageForm(forms.Form):
-    content = forms.CharField(
-        widget=forms.Textarea(
-            attrs={
-                "rows": 2,
-                "class": "block w-full border border-gray-300 dark:border-gray-600 rounded p-2",
-            }
-        ),
-        required=True,
-    )
+    content = forms.CharField(widget=TailwindTextarea(attrs={"rows": 3, "placeholder": "Type your message here..."}))
 
 
 class LearningInquiryForm(forms.Form):
-    name = forms.CharField(max_length=100)
-    email = forms.EmailField()
+    name = forms.CharField(max_length=100, widget=TailwindInput())
+    email = forms.EmailField(widget=TailwindEmailInput())
     interests = forms.CharField(
-        widget=forms.Textarea(attrs={"rows": 3}),
-        help_text="What topics are you interested in learning?",
+        widget=TailwindTextarea(
+            attrs={
+                "rows": 4,
+                "placeholder": "What subjects are you interested in learning?",
+            }
+        )
     )
-    experience_level = forms.ChoiceField(
-        choices=[
-            ("beginner", "Beginner"),
-            ("intermediate", "Intermediate"),
-            ("advanced", "Advanced"),
-        ]
+    experience = forms.CharField(
+        widget=TailwindTextarea(
+            attrs={
+                "rows": 4,
+                "placeholder": "Tell us about your learning experience and goals",
+            }
+        )
     )
 
 
 class TeachingInquiryForm(forms.Form):
-    name = forms.CharField(max_length=100)
-    email = forms.EmailField()
+    name = forms.CharField(max_length=100, widget=TailwindInput())
+    email = forms.EmailField(widget=TailwindEmailInput())
     expertise = forms.CharField(
-        widget=forms.Textarea(attrs={"rows": 3}),
-        help_text="What subjects do you specialize in?",
+        widget=TailwindTextarea(attrs={"rows": 4, "placeholder": "What subjects would you like to teach?"})
     )
     experience = forms.CharField(
-        widget=forms.Textarea(attrs={"rows": 3}),
-        help_text="Describe your teaching experience",
+        widget=TailwindTextarea(attrs={"rows": 4, "placeholder": "Tell us about your teaching experience"})
     )
 
 
-class StudyGroupForm(forms.Form):
-    name = forms.CharField(max_length=200)
-    description = forms.CharField(widget=forms.Textarea(attrs={"rows": 4}))
-    max_members = forms.IntegerField(
-        min_value=2,
-        max_value=50,
-        initial=10,
-        help_text="Choose a number between 2 and 50",
-    )
-    is_private = forms.BooleanField(required=False)
+class StudyGroupForm(forms.ModelForm):
+    class Meta:
+        model = StudyGroup
+        fields = ["name", "description", "max_members", "is_private"]
+        widgets = {
+            "name": TailwindInput(),
+            "description": TailwindTextarea(attrs={"rows": 3}),
+            "max_members": TailwindNumberInput(attrs={"min": "2"}),
+            "is_private": TailwindCheckboxInput(),
+        }
 
 
 class CourseSearchForm(forms.Form):
-    query = forms.CharField(required=False)
-    min_price = forms.DecimalField(required=False, min_value=0)
-    max_price = forms.DecimalField(required=False, min_value=0)
-    subject = forms.CharField(required=False)
+    query = forms.CharField(required=False, widget=TailwindInput(attrs={"placeholder": "Search courses..."}))
+    subject = forms.ChoiceField(required=False, widget=TailwindSelect(), choices=[("", "All Subjects")])
+    level = forms.ChoiceField(
+        required=False,
+        widget=TailwindSelect(),
+        choices=[
+            ("", "All Levels"),
+            ("beginner", "Beginner"),
+            ("intermediate", "Intermediate"),
+            ("advanced", "Advanced"),
+        ],
+    )
+    price_min = forms.DecimalField(
+        required=False,
+        widget=TailwindNumberInput(attrs={"min": "0", "step": "0.01", "placeholder": "Min price"}),
+    )
+    price_max = forms.DecimalField(
+        required=False,
+        widget=TailwindNumberInput(attrs={"min": "0", "step": "0.01", "placeholder": "Max price"}),
+    )
 
 
 class CourseUpdateForm(forms.ModelForm):
@@ -89,12 +106,19 @@ class CourseUpdateForm(forms.ModelForm):
             "subject",
             "level",
             "tags",
+            "status",
         ]
         widgets = {
-            "description": forms.Textarea(attrs={"rows": 4}),
-            "learning_objectives": forms.Textarea(attrs={"rows": 4}),
-            "prerequisites": forms.Textarea(attrs={"rows": 4}),
-            "tags": forms.TextInput(attrs={"placeholder": "Enter comma-separated tags"}),
+            "title": TailwindInput(),
+            "description": TailwindTextarea(attrs={"rows": 4}),
+            "learning_objectives": TailwindTextarea(attrs={"rows": 4}),
+            "prerequisites": TailwindTextarea(attrs={"rows": 4}),
+            "price": TailwindNumberInput(attrs={"min": "0", "step": "0.01"}),
+            "max_students": TailwindNumberInput(attrs={"min": "1"}),
+            "subject": TailwindSelect(),
+            "level": TailwindSelect(),
+            "tags": TailwindInput(attrs={"placeholder": "Enter comma-separated tags"}),
+            "status": TailwindSelect(),
         }
 
     def clean_price(self):
@@ -110,20 +134,49 @@ class CourseUpdateForm(forms.ModelForm):
         return max_students
 
 
-class CourseReviewForm(forms.Form):
-    rating = forms.IntegerField(min_value=1, max_value=5)
-    comment = forms.CharField(widget=forms.Textarea)
+class CourseReviewForm(forms.ModelForm):
+    class Meta:
+        model = Review
+        fields = ["rating", "comment"]
+        widgets = {
+            "rating": TailwindNumberInput(attrs={"min": "1", "max": "5"}),
+            "comment": TailwindTextarea(
+                attrs={
+                    "rows": 4,
+                    "placeholder": "Share your experience with this course...",
+                }
+            ),
+        }
 
 
-class MaterialUploadForm(forms.Form):
-    title = forms.CharField(max_length=200)
-    description = forms.CharField(widget=forms.Textarea, required=False)
-    file = forms.FileField()
+class MaterialUploadForm(forms.ModelForm):
+    class Meta:
+        model = CourseMaterial
+        fields = [
+            "title",
+            "description",
+            "material_type",
+            "file",
+            "session",
+            "is_downloadable",
+            "order",
+        ]
+        widgets = {
+            "title": TailwindInput(),
+            "description": TailwindTextarea(attrs={"rows": 3}),
+            "material_type": TailwindSelect(),
+            "file": TailwindFileInput(),
+            "session": TailwindSelect(),
+            "is_downloadable": TailwindCheckboxInput(),
+            "order": TailwindNumberInput(attrs={"min": "0"}),
+        }
 
 
 class TopicCreationForm(forms.Form):
-    title = forms.CharField(max_length=200)
-    content = forms.CharField(widget=forms.Textarea)
+    title = forms.CharField(max_length=200, widget=TailwindInput(attrs={"placeholder": "Topic title"}))
+    content = forms.CharField(
+        widget=TailwindTextarea(attrs={"rows": 6, "placeholder": "Write your topic content here..."})
+    )
 
 
 class ProfileUpdateForm(forms.ModelForm):

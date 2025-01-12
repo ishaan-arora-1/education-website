@@ -1,113 +1,99 @@
 {% extends "base.html" %}
 
-{% load static %}
-
 {% block title %}
-  {{ topic.title }} - Forum
+  {{ topic.title }}
 {% endblock title %}
 {% block content %}
-  <main class="flex-1 w-full max-w-[90rem] mx-auto mt-6 px-4 md:px-6">
-    <!-- Breadcrumb -->
-    <nav class="mb-6 flex items-center space-x-2 text-sm">
-      <a href="{% url 'forum_categories' %}"
-         class="text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400">Forum</a>
-      <span class="text-gray-400">/</span>
-      <a href="{% url 'forum_category' category.slug %}"
-         class="text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400">{{ category.name }}</a>
-      <span class="text-gray-400">/</span>
-      <span class="text-gray-900 dark:text-gray-100">{{ topic.title }}</span>
-    </nav>
-    <!-- Topic -->
-    <div class="border border-gray-200 dark:border-gray-700 rounded-lg mb-6">
-      <div class="p-6">
-        <div class="flex justify-between items-center mb-4">
-          <h1 class="text-2xl font-bold">{{ topic.title }}</h1>
-          {% if topic.is_pinned %}
-            <span class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 px-3 py-1 rounded-full text-sm font-medium">
-              <i class="fas fa-thumbtack mr-1"></i>
-              Pinned
-            </span>
-          {% endif %}
-        </div>
-        <div class="flex items-center mb-4">
-          <img src="{% static 'web/images/default-avatar.png' %}"
-               alt="Avatar"
-               width="40"
-               height="40"
-               class="w-10 h-10 rounded-full mr-3" />
-          <div class="text-sm text-gray-600 dark:text-gray-400">
-            <div class="font-medium">{{ topic.author.get_full_name|default:topic.author.username }}</div>
-            <div>Posted {{ topic.created_at|timesince }} ago</div>
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+      <!-- Topic Content -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+        <div class="mb-6">
+          <h1 class="text-3xl font-bold mb-4">{{ topic.title }}</h1>
+          <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
+            <span>Posted by {{ topic.author.get_full_name|default:topic.author.username }}</span>
+            <span class="mx-2">•</span>
+            <time datetime="{{ topic.created_at|date:'Y-m-d H:i' }}">{{ topic.created_at|timesince }} ago</time>
           </div>
         </div>
-        <div class="prose dark:prose-invert max-w-none mb-4">{{ topic.content|linebreaks }}</div>
-        <div class="text-sm text-gray-500 dark:text-gray-400">
-          <i class="fas fa-eye mr-1"></i> {{ topic.views }} views
-        </div>
+        <div class="prose dark:prose-invert max-w-none">{{ topic.content|linebreaks }}</div>
+        {% if user == topic.author %}
+          <div class="mt-6 flex justify-end space-x-4">
+            <a href="{% url 'edit_topic' topic.id %}"
+               class="text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300">Edit</a>
+            <form method="post" class="inline">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="delete_topic" />
+              <button type="submit"
+                      class="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">Delete</button>
+            </form>
+          </div>
+        {% endif %}
+      </div>
+      <!-- Replies Section -->
+      <div class="space-y-6">
+        <h2 class="text-2xl font-bold">Replies</h2>
+        {% if user.is_authenticated %}
+          <!-- Reply Form -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+            <form method="post" class="space-y-4">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="add_reply" />
+              {% for field in form %}
+                <div>
+                  <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
+                  {{ field }}
+                  {% if field.help_text %}
+                    <small class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</small>
+                  {% endif %}
+                  {% if field.errors %}<div class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors }}</div>{% endif %}
+                </div>
+              {% endfor %}
+              <button type="submit"
+                      class="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+                Post Reply
+              </button>
+            </form>
+          </div>
+        {% else %}
+          <p class="text-gray-600 dark:text-gray-400 mb-8">
+            Please <a href="{% url 'login' %}"
+    class="text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300">log in</a> to reply.
+          </p>
+        {% endif %}
+        <!-- Replies List -->
+        {% for reply in replies %}
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div class="flex items-start justify-between mb-4">
+              <div>
+                <span class="font-medium">{{ reply.author.get_full_name|default:reply.author.username }}</span>
+                <time datetime="{{ reply.created_at|date:'Y-m-d H:i' }}"
+                      class="text-sm text-gray-500 dark:text-gray-400 ml-2">
+                  {{ reply.created_at|timesince }} ago
+                </time>
+              </div>
+              {% if user == reply.author %}
+                <div class="flex space-x-4">
+                  <a href="{% url 'edit_reply' reply.id %}"
+                     class="text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300">Edit</a>
+                  <form method="post" class="inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete_reply" />
+                    <input type="hidden" name="reply_id" value="{{ reply.id }}" />
+                    <button type="submit"
+                            class="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
+                      Delete
+                    </button>
+                  </form>
+                </div>
+              {% endif %}
+            </div>
+            <div class="prose dark:prose-invert max-w-none">{{ reply.content|linebreaks }}</div>
+          </div>
+        {% empty %}
+          <p class="text-gray-500 dark:text-gray-400">No replies yet.</p>
+        {% endfor %}
       </div>
     </div>
-    <!-- Replies -->
-    <h2 class="text-xl font-bold mb-4">Replies</h2>
-    {% for reply in replies %}
-      <div class="border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
-        <div class="p-6">
-          <div class="flex items-start">
-            <img src="{% static 'web/images/default-avatar.png' %}"
-                 alt="Avatar"
-                 width="40"
-                 height="40"
-                 class="w-10 h-10 rounded-full mr-4" />
-            <div class="flex-1">
-              <div class="flex justify-between items-center mb-2">
-                <div class="flex items-center space-x-2">
-                  <span class="font-medium">{{ reply.author.get_full_name|default:reply.author.username }}</span>
-                  <span class="text-sm text-gray-500 dark:text-gray-400">{{ reply.created_at|timesince }} ago</span>
-                </div>
-                {% if reply.is_solution %}
-                  <span class="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 px-3 py-1 rounded-full text-sm font-medium">
-                    <i class="fas fa-check mr-1"></i>
-                    Solution
-                  </span>
-                {% endif %}
-              </div>
-              <div class="prose dark:prose-invert max-w-none">{{ reply.content|linebreaks }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    {% empty %}
-      <div class="bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 p-4 rounded-lg">
-        No replies yet. Be the first to reply!
-      </div>
-    {% endfor %}
-    <!-- Reply Form -->
-    {% if not topic.is_locked %}
-      <div class="border border-gray-200 dark:border-gray-700 rounded-lg">
-        <div class="p-6">
-          <h3 class="text-lg font-bold mb-4">Post a Reply</h3>
-          <form method="post">
-            {% csrf_token %}
-            <div class="mb-4">
-              <label for="content" class="block text-sm font-medium mb-2">Your Reply</label>
-              <textarea name="content"
-                        id="content"
-                        rows="4"
-                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 p-3 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700 bg-white dark:bg-gray-800"
-                        required></textarea>
-            </div>
-            <button type="submit"
-                    class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg flex items-center">
-              <i class="fa-solid fa-paper-plane mr-2"></i>
-              Post Reply
-            </button>
-          </form>
-        </div>
-      </div>
-    {% else %}
-      <div class="bg-yellow-50 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-200 p-4 rounded-lg">
-        <i class="fas fa-lock mr-2"></i>
-        This topic is locked. New replies cannot be posted.
-      </div>
-    {% endif %}
-  </main>
+  </div>
 {% endblock content %}
