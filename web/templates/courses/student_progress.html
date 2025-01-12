@@ -27,24 +27,40 @@
         <div class="mt-4 bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
           <div class="flex items-center">
             <i class="fas fa-exclamation-circle text-yellow-500 mr-3"></i>
-            <div>
+            <div class="w-full">
               <h3 class="font-medium text-yellow-800 dark:text-yellow-200">Payment Required</h3>
               <p class="text-sm text-yellow-700 dark:text-yellow-300">Please complete the payment to access the full course.</p>
-              <div class="mt-3">
-                <button id="payment-button"
-                        class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center">
+              <div class="mt-3 relative">
+                <!-- Initial Payment Button -->
+                <button type="button"
+                        onclick="initializePayment()"
+                        id="payment-button"
+                        class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center">
                   <i class="fas fa-credit-card mr-2"></i>
                   Pay {{ enrollment.course.price|floatformat:2 }} USD and Complete Enrollment
                 </button>
-                <div id="payment-form" class="hidden mt-4">
-                  {% csrf_token %}
-                  <div id="payment-element" class="bg-white dark:bg-gray-700 rounded-lg p-4"></div>
-                  <button id="submit-button"
-                          class="mt-4 w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center">
-                    <i class="fas fa-credit-card mr-2"></i>
-                    Complete Payment
-                  </button>
+                <!-- Payment Form Container -->
+                <div id="payment-form-container"
+                     class="hidden absolute top-0 left-0 w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 z-50">
+                  <form id="payment-form" class="space-y-4">
+                    {% csrf_token %}
+                    <div id="payment-element"
+                         class="min-h-[100px] bg-white dark:bg-gray-700 rounded-lg p-4"></div>
+                    <button type="submit"
+                            id="submit-button"
+                            class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center">
+                      <i class="fas fa-credit-card mr-2"></i>
+                      Complete Payment
+                    </button>
+                    <button type="button"
+                            onclick="cancelPayment()"
+                            class="w-full mt-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center">
+                      <i class="fas fa-times mr-2"></i>
+                      Cancel
+                    </button>
+                  </form>
                 </div>
+                <!-- Payment Message -->
                 <div id="payment-message" class="text-sm text-center mt-2"></div>
               </div>
             </div>
@@ -225,39 +241,40 @@
         let elements;
         let paymentElement;
 
-        // Wait for DOM to be ready
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, setting up payment button...');
-            const paymentButton = document.getElementById("payment-button");
-            if (paymentButton) {
-                console.log('Payment button found, adding click listener');
-                paymentButton.addEventListener("click", function(e) {
-                    console.log('Payment button clicked');
-                    initializePayment();
-                });
-            } else {
-                console.error('Payment button not found in DOM');
+        function showError(message) {
+            const messageDiv = document.querySelector("#payment-message");
+            if (messageDiv) {
+                messageDiv.textContent = message;
+                messageDiv.classList.add('text-red-600');
             }
-        });
+            console.error(message);
+        }
+
+        function cancelPayment() {
+            console.log('Canceling payment...');
+            document.getElementById("payment-form-container").classList.add('hidden');
+            document.getElementById("payment-button").classList.remove('hidden');
+            const messageDiv = document.querySelector("#payment-message");
+            if (messageDiv) {
+                messageDiv.textContent = '';
+            }
+        }
 
         async function initializePayment() {
-            console.log('Initializing payment...');
+            console.log('Initialize payment called');
+            const paymentButton = document.getElementById("payment-button");
+            const formContainer = document.getElementById("payment-form-container");
+            const messageDiv = document.querySelector("#payment-message");
+
+            if (!paymentButton || !formContainer) {
+                showError('Payment elements not found');
+                return;
+            }
+
             try {
-                // Hide the initial payment button and show the form
-                const paymentButton = document.getElementById("payment-button");
-                const paymentForm = document.getElementById("payment-form");
-
-                if (!paymentButton || !paymentForm) {
-                    console.error('Payment elements not found:', {
-                        paymentButton,
-                        paymentForm
-                    });
-                    return;
-                }
-
-                paymentButton.style.display = "none";
-                paymentForm.classList.remove("hidden");
-                console.log('Payment form revealed');
+                // Show loading state
+                paymentButton.disabled = true;
+                paymentButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Initializing...';
 
                 console.log('Fetching payment intent...');
                 const response = await fetch("{% url 'create_payment_intent' enrollment.course.slug %}");
@@ -270,63 +287,60 @@
                 const data = await response.json();
                 console.log('Payment intent data:', data);
 
-                const {
-                    clientSecret,
-                    error
-                } = data;
-
-                if (error) {
-                    console.error('Payment intent error:', error);
-                    const messageDiv = document.querySelector("#payment-message");
-                    messageDiv.textContent = error;
-                    return;
+                if (data.error) {
+                    throw new Error(data.error);
                 }
 
+                // Initialize Stripe Elements
                 console.log('Creating Stripe elements...');
-                const appearance = {
-                    theme: document.documentElement.classList.contains('dark') ? 'night' : 'stripe',
-                };
-
                 elements = stripe.elements({
-                    appearance,
-                    clientSecret
+                    appearance: {
+                        theme: document.documentElement.classList.contains('dark') ? 'night' : 'stripe',
+                    },
+                    clientSecret: data.clientSecret
                 });
 
+                // Create and mount the payment element
                 console.log('Creating payment element...');
                 paymentElement = elements.create("payment");
+
+                // Show the form container
+                paymentButton.classList.add('hidden');
+                formContainer.classList.remove('hidden');
+
                 console.log('Mounting payment element...');
                 await paymentElement.mount("#payment-element");
-                console.log('Payment element mounted');
+                console.log('Payment element mounted successfully');
 
-                // Add submit handler after mounting
-                const form = document.querySelector("#payment-form");
-                if (form) {
-                    console.log('Adding submit handler to form');
-                    form.addEventListener("submit", handleSubmit);
-                } else {
-                    console.error('Payment form not found after mounting');
+                // Clear any previous error messages
+                if (messageDiv) {
+                    messageDiv.textContent = '';
                 }
+
             } catch (error) {
                 console.error('Payment initialization error:', error);
-                const messageDiv = document.querySelector("#payment-message");
-                messageDiv.textContent = error.message || "An error occurred while initializing payment";
-                // Show the payment button again in case of error
-                document.getElementById("payment-button").style.display = "flex";
-                document.getElementById("payment-form").classList.add("hidden");
+                showError(error.message || 'Failed to initialize payment');
+
+                // Reset the button state
+                paymentButton.disabled = false;
+                paymentButton.innerHTML = '<i class="fas fa-credit-card mr-2"></i>Pay {{ enrollment.course.price|floatformat:2 }} USD and Complete Enrollment';
+
+                // Hide the form container if visible
+                formContainer.classList.add('hidden');
+                paymentButton.classList.remove('hidden');
             }
         }
 
-        async function handleSubmit(e) {
-            console.log('Handle submit called');
+        // Add submit handler to the form
+        document.getElementById("payment-form")?.addEventListener("submit", async function(e) {
             e.preventDefault();
-            setLoading(true);
+            console.log('Payment form submitted');
+
+            const submitButton = document.getElementById("submit-button");
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
 
             try {
-                if (!elements) {
-                    throw new Error('Payment elements not initialized');
-                }
-
-                console.log('Confirming payment...');
                 const {
                     error
                 } = await stripe.confirmPayment({
@@ -338,78 +352,45 @@
 
                 if (error) {
                     console.error('Payment confirmation error:', error);
-                    const messageDiv = document.querySelector("#payment-message");
-                    messageDiv.textContent = error.message;
+                    showError(error.message);
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '<i class="fas fa-credit-card mr-2"></i>Complete Payment';
                 }
             } catch (error) {
                 console.error('Payment submission error:', error);
-                const messageDiv = document.querySelector("#payment-message");
-                messageDiv.textContent = error.message || "An error occurred during payment";
-            } finally {
-                setLoading(false);
+                showError(error.message || 'An error occurred during payment');
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<i class="fas fa-credit-card mr-2"></i>Complete Payment';
             }
-        }
-
-        function setLoading(isLoading) {
-            console.log('Setting loading state:', isLoading);
-            const button = document.querySelector("#submit-button");
-            if (button) {
-                button.disabled = isLoading;
-                button.innerHTML = isLoading ?
-                    '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...' :
-                    '<i class="fas fa-credit-card mr-2"></i>Complete Payment';
-            } else {
-                console.error('Submit button not found');
-            }
-        }
+        });
 
         // Check payment status on page load
-        console.log('Checking initial payment status...');
-        checkStatus();
-
-        async function checkStatus() {
-            const clientSecret = new URLSearchParams(window.location.search).get(
-                "payment_intent_client_secret"
-            );
-
-            if (!clientSecret) {
-                console.log('No client secret found in URL');
-                return;
-            }
-
-            try {
-                console.log('Retrieving payment intent status...');
-                const {
-                    paymentIntent
-                } = await stripe.retrievePaymentIntent(clientSecret);
+        const clientSecret = new URLSearchParams(window.location.search).get("payment_intent_client_secret");
+        if (clientSecret) {
+            console.log('Checking payment status...');
+            stripe.retrievePaymentIntent(clientSecret).then(({
+                paymentIntent
+            }) => {
                 console.log('Payment intent status:', paymentIntent.status);
-
-                const messageDiv = document.querySelector("#payment-message");
-                if (!messageDiv) {
-                    console.error('Message div not found');
-                    return;
-                }
-
                 switch (paymentIntent.status) {
                     case "succeeded":
-                        messageDiv.textContent = "Payment successful! You are now enrolled.";
+                        showError("Payment successful! You are now enrolled.");
                         setTimeout(() => window.location.reload(), 2000);
                         break;
                     case "processing":
-                        messageDiv.textContent = "Payment processing. Please wait...";
+                        showError("Payment processing. Please wait...");
                         break;
                     case "requires_payment_method":
-                        messageDiv.textContent = "Payment failed. Please try another payment method.";
+                        showError("Payment failed. Please try another payment method.");
                         break;
                     default:
-                        messageDiv.textContent = "Something went wrong.";
+                        showError("Something went wrong.");
                         break;
                 }
-            } catch (error) {
+            }).catch(error => {
                 console.error('Error checking payment status:', error);
-                const messageDiv = document.querySelector("#payment-message");
-                messageDiv.textContent = "Error checking payment status";
-            }
+                showError("Error checking payment status");
+            });
         }
     </script>
   {% endif %}
