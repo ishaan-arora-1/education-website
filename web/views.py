@@ -246,17 +246,14 @@ def enroll_course(request, course_slug):
         messages.error(request, "This course is full.")
         return redirect("course_detail", slug=course_slug)
 
-    # For paid courses, enrollment is handled through Stripe webhook
+    # For paid courses, create pending enrollment
     if course.price > 0:
-        messages.error(request, "Please complete the payment process to enroll in this course.")
+        enrollment = Enrollment.objects.create(student=request.user, course=course, status="pending")
+        messages.info(request, "Please complete the payment process to enroll in this course.")
         return redirect("course_detail", slug=course_slug)
 
     # Create enrollment for free courses
-    enrollment = Enrollment.objects.create(
-        student=request.user,
-        course=course,
-        status="enrolled",
-    )
+    enrollment = Enrollment.objects.create(student=request.user, course=course, status="approved")
 
     # Send confirmation email
     send_enrollment_confirmation(enrollment)
@@ -553,52 +550,55 @@ def course_search(request):
 
 
 @login_required
-def create_payment_intent(request, slug):
-    course = Course.objects.get(slug=slug)
+def create_payment_intent(request, course_slug):
+    """Create a payment intent for Stripe."""
+    course = get_object_or_404(Course, slug=course_slug)
 
-    # Check if user is already enrolled
-    if Enrollment.objects.filter(student=request.user, course=course).exists():
-        return JsonResponse({"error": "Already enrolled in this course"}, status=400)
+    # Ensure user has a pending enrollment
+    get_object_or_404(Enrollment, student=request.user, course=course, status="pending")
 
     try:
-        # Create payment intent
+        # Create a PaymentIntent with the order amount and currency
         intent = stripe.PaymentIntent.create(
             amount=int(course.price * 100),  # Convert to cents
             currency="usd",
-            metadata={"course_id": course.id, "user_id": request.user.id},
+            metadata={
+                "course_id": course.id,
+                "user_id": request.user.id,
+            },
         )
-
-        return JsonResponse(
-            {
-                "clientSecret": intent.client_secret,
-                "publicKey": settings.STRIPE_PUBLISHABLE_KEY,
-            }
-        )
+        return JsonResponse({"clientSecret": intent.client_secret})
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=400)
+        return JsonResponse({"error": str(e)}, status=403)
 
 
 @csrf_exempt
 def stripe_webhook(request):
+    """Stripe webhook endpoint for handling payment events."""
     payload = request.body
     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
 
     try:
         event = stripe.Webhook.construct_event(payload, sig_header, settings.STRIPE_WEBHOOK_SECRET)
+    except ValueError:
+        # Invalid payload
+        return HttpResponse(status=400)
+    except stripe.error.SignatureVerificationError:
+        # Invalid signature
+        return HttpResponse(status=400)
 
-        if event.type == "payment_intent.succeeded":
-            payment_intent = event.data.object
-            handle_successful_payment(payment_intent)
-        elif event.type == "payment_intent.payment_failed":
-            payment_intent = event.data.object
-            handle_failed_payment(payment_intent)
+    if event.type == "payment_intent.succeeded":
+        payment_intent = event.data.object
+        handle_successful_payment(payment_intent)
+    elif event.type == "payment_intent.payment_failed":
+        payment_intent = event.data.object
+        handle_failed_payment(payment_intent)
 
-        return JsonResponse({"status": "success"})
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=400)
+    return HttpResponse(status=200)
 
 
 def handle_successful_payment(payment_intent):
+    """Handle successful payment by creating enrollment and sending notifications."""
     # Get metadata from the payment intent
     course_id = payment_intent.metadata.get("course_id")
     user_id = payment_intent.metadata.get("user_id")
@@ -607,7 +607,12 @@ def handle_successful_payment(payment_intent):
     course = Course.objects.get(id=course_id)
     user = User.objects.get(id=user_id)
 
-    enrollment = Enrollment.objects.create(student=user, course=course, status="approved")
+    # Create enrollment with pending status
+    enrollment = Enrollment.objects.get_or_create(student=user, course=course, defaults={"status": "pending"})[0]
+
+    # Update status to approved after successful payment
+    enrollment.status = "approved"
+    enrollment.save()
 
     # Send notifications
     send_enrollment_confirmation(enrollment)
@@ -615,8 +620,18 @@ def handle_successful_payment(payment_intent):
 
 
 def handle_failed_payment(payment_intent):
-    # Just log the failure, no need to update payment status since we're not tracking payments
-    pass
+    """Handle failed payment by updating enrollment status."""
+    course_id = payment_intent.metadata.get("course_id")
+    user_id = payment_intent.metadata.get("user_id")
+
+    try:
+        course = Course.objects.get(id=course_id)
+        user = User.objects.get(id=user_id)
+        enrollment = Enrollment.objects.get(student=user, course=course)
+        enrollment.status = "pending"
+        enrollment.save()
+    except (Course.DoesNotExist, User.DoesNotExist, Enrollment.DoesNotExist):
+        pass  # Log error or handle appropriately
 
 
 @login_required
