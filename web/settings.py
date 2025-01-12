@@ -22,6 +22,11 @@ else:
 # Debug settings
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
 
+PA_USER = "alphaonelabs99282llkb"
+PA_HOST = PA_USER + ".pythonanywhere.com"
+PA_WSGI = "/var/www/" + PA_USER + "_pythonanywhere_com_wsgi.py"
+PA_SOURCE_DIR = "/home/" + PA_USER + "/web"
+
 # Production settings
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
