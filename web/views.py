@@ -15,7 +15,7 @@ from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.db import models
-from django.db.models import Q
+from django.db.models import Avg, Count, Q
 from django.http import FileResponse, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -478,11 +478,21 @@ def course_search(request):
     max_price = request.GET.get("max_price", "")
     sort_by = request.GET.get("sort", "-created_at")
 
-    courses = Course.objects.all()
+    courses = Course.objects.filter(status="published")
 
     # Apply filters
     if query:
-        courses = courses.filter(Q(title__icontains=query) | Q(description__icontains=query) | Q(tags__icontains=query))
+        courses = courses.filter(
+            Q(title__icontains=query)
+            | Q(description__icontains=query)
+            | Q(tags__icontains=query)
+            | Q(learning_objectives__icontains=query)
+            | Q(prerequisites__icontains=query)
+            | Q(teacher__username__icontains=query)
+            | Q(teacher__first_name__icontains=query)
+            | Q(teacher__last_name__icontains=query)
+            | Q(teacher__profile__expertise__icontains=query)
+        )
 
     if subject:
         courses = courses.filter(subject=subject)
@@ -491,20 +501,34 @@ def course_search(request):
         courses = courses.filter(level=level)
 
     if min_price:
-        courses = courses.filter(price__gte=float(min_price))
+        try:
+            min_price = float(min_price)
+            courses = courses.filter(price__gte=min_price)
+        except ValueError:
+            pass
 
     if max_price:
-        courses = courses.filter(price__lte=float(max_price))
+        try:
+            max_price = float(max_price)
+            courses = courses.filter(price__lte=max_price)
+        except ValueError:
+            pass
+
+    # Annotate with average rating for sorting
+    courses = courses.annotate(
+        avg_rating=Avg("reviews__rating"),
+        total_students=Count("enrollments", filter=Q(enrollments__status="approved")),
+    )
 
     # Apply sorting
     if sort_by == "price":
-        courses = courses.order_by("price")
+        courses = courses.order_by("price", "-avg_rating")
     elif sort_by == "-price":
-        courses = courses.order_by("-price")
+        courses = courses.order_by("-price", "-avg_rating")
     elif sort_by == "title":
         courses = courses.order_by("title")
     elif sort_by == "rating":
-        courses = sorted(courses, key=lambda c: c.average_rating, reverse=True)
+        courses = courses.order_by("-avg_rating", "-total_students")
     else:  # Default to newest
         courses = courses.order_by("-created_at")
 
@@ -1393,5 +1417,6 @@ def teacher_dashboard(request):
         "courses": courses,
         "upcoming_sessions": upcoming_sessions,
         "course_stats": course_stats,
+        "completion_rate": (completed / total_students * 100) if total_students > 0 else 0,
     }
     return render(request, "dashboard/teacher.html", context)

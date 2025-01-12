@@ -159,10 +159,9 @@
                       name="subject"
                       class="block w-full border border-gray-300 dark:border-gray-600 rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800">
                 <option value="">All Subjects</option>
-                <!-- Add more subject options here -->
-                <option value="math">Math</option>
-                <option value="science">Science</option>
-                <option value="programming">Programming</option>
+                {% for value, label in subject_choices %}
+                  <option value="{{ value }}" {% if value == subject %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
               </select>
             </div>
             <!-- Level -->
@@ -172,10 +171,9 @@
                       name="level"
                       class="block w-full border border-gray-300 dark:border-gray-600 rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800">
                 <option value="">All Levels</option>
-                <!-- Add more level options here -->
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
+                {% for value, label in level_choices %}
+                  <option value="{{ value }}" {% if value == level %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
               </select>
             </div>
             <!-- Price Range -->

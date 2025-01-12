@@ -6,91 +6,151 @@
   Progress - {{ enrollment.course.title }}
 {% endblock title %}
 {% block content %}
-  <div class="container py-4">
-    <h1 class="mb-4">Course Progress - {{ enrollment.course.title }}</h1>
-    <div class="row">
-      <!-- Progress Overview -->
-      <div class="col-md-4">
-        <div class="card mb-4">
-          <div class="card-body">
-            <h5 class="card-title">Progress Overview</h5>
-            <div class="progress mb-3">
-              <div class="progress-bar"
-                   role="progressbar"
-                   style="width: {{ progress.completion_percentage }}%">{{ progress.completion_percentage }}%</div>
+  <div class="container mx-auto px-4 py-8">
+    <!-- Breadcrumbs -->
+    <nav class="text-sm mb-6">
+      <a href="{% url 'course_detail' enrollment.course.slug %}"
+         class="text-blue-600 hover:text-blue-800">{{ enrollment.course.title }}</a>
+      <span class="mx-2">/</span>
+      <span class="text-gray-600">Progress</span>
+    </nav>
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold mb-2">Course Progress</h1>
+      <p class="text-gray-600 dark:text-gray-400">Track your progress in {{ enrollment.course.title }}</p>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Left Column - Stats -->
+      <div class="space-y-6">
+        <!-- Overall Progress Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold mb-4">Overall Progress</h2>
+          <div class="mb-4">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-sm text-gray-600 dark:text-gray-400">Completion</span>
+              <span class="text-sm font-medium">{{ progress.completion_percentage }}%</span>
             </div>
-            <p>Sessions Completed: {{ progress.completed_sessions.count }}/{{ enrollment.course.sessions.count }}</p>
-            <p>Attendance Rate: {{ progress.attendance_rate }}%</p>
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+              <div class="bg-teal-500 h-2.5 rounded-full transition-all duration-500"
+                   style="width: {{ progress.completion_percentage }}%"></div>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600 dark:text-gray-400">Sessions Completed</span>
+              <span class="text-sm font-medium">{{ progress.completed_sessions.count }}/{{ enrollment.course.sessions.count }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600 dark:text-gray-400">Attendance Rate</span>
+              <span class="text-sm font-medium">{{ progress.attendance_rate }}%</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600 dark:text-gray-400">Last Accessed</span>
+              <span class="text-sm font-medium">{{ progress.last_accessed|date:"M j, Y" }}</span>
+            </div>
           </div>
         </div>
-        <!-- Achievements -->
-        <div class="card mb-4">
-          <div class="card-body">
-            <h5 class="card-title">Achievements</h5>
-            {% if achievements %}
+        <!-- Achievements Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold mb-4">Achievements</h2>
+          {% if achievements %}
+            <div class="space-y-4">
               {% for achievement in achievements %}
-                <div class="achievement mb-2">
-                  <h6>{{ achievement.title }}</h6>
-                  <p class="text-muted small">{{ achievement.description }}</p>
+                <div class="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div class="flex-shrink-0">
+                    {% if achievement.achievement_type == "completion" %}
+                      <i class="fas fa-trophy text-yellow-500 text-xl"></i>
+                    {% elif achievement.achievement_type == "attendance" %}
+                      <i class="fas fa-calendar-check text-green-500 text-xl"></i>
+                    {% else %}
+                      <i class="fas fa-star text-blue-500 text-xl"></i>
+                    {% endif %}
+                  </div>
+                  <div>
+                    <h3 class="font-medium">{{ achievement.title }}</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ achievement.description }}</p>
+                  </div>
                 </div>
               {% endfor %}
-            {% else %}
-              <p class="text-muted">No achievements yet. Keep learning!</p>
-            {% endif %}
-          </div>
+            </div>
+          {% else %}
+            <div class="text-center py-4">
+              <div class="text-gray-400 dark:text-gray-500 mb-2">
+                <i class="fas fa-trophy text-4xl"></i>
+              </div>
+              <p class="text-gray-600 dark:text-gray-400">Complete course milestones to earn achievements!</p>
+            </div>
+          {% endif %}
         </div>
       </div>
-      <!-- Session List -->
-      <div class="col-md-8">
+      <!-- Right Column - Sessions -->
+      <div class="lg:col-span-2 space-y-6">
         <!-- Past Sessions -->
-        <div class="card mb-4">
-          <div class="card-body">
-            <h5 class="card-title">Past Sessions</h5>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+          <div class="p-6">
+            <h2 class="text-xl font-semibold mb-4">Past Sessions</h2>
             {% if past_sessions %}
-              <div class="list-group">
+              <div class="space-y-4">
                 {% for session in past_sessions %}
-                  <div class="list-group-item">
-                    <div class="d-flex justify-content-between align-items-center">
-                      <div>
-                        <h6 class="mb-1">{{ session.title }}</h6>
-                        <p class="text-muted mb-0">{{ session.start_time|date:"F j, Y, g:i a" }}</p>
-                      </div>
-                      <div>
+                  <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div class="flex-1">
+                      <div class="flex items-center space-x-3">
                         {% if session in progress.completed_sessions.all %}
-                          <span class="badge bg-success">Completed</span>
+                          <i class="fas fa-check-circle text-green-500"></i>
                         {% else %}
-                          <form method="post"
-                                action="{% url 'mark_session_completed' session.id %}"
-                                class="d-inline">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-outline-primary">Mark Complete</button>
-                          </form>
+                          <i class="fas fa-circle text-gray-300"></i>
                         {% endif %}
+                        <div>
+                          <h3 class="font-medium">{{ session.title }}</h3>
+                          <p class="text-sm text-gray-600 dark:text-gray-400">{{ session.start_time|date:"F j, Y, g:i a" }}</p>
+                        </div>
                       </div>
+                    </div>
+                    <div>
+                      {% if session not in progress.completed_sessions.all %}
+                        <form method="post"
+                              action="{% url 'mark_session_completed' session.id %}"
+                              class="inline">
+                          {% csrf_token %}
+                          <button type="submit"
+                                  class="bg-teal-500 hover:bg-teal-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition duration-200">
+                            Mark Complete
+                          </button>
+                        </form>
+                      {% endif %}
                     </div>
                   </div>
                 {% endfor %}
               </div>
             {% else %}
-              <p class="text-muted">No past sessions.</p>
+              <p class="text-gray-600 dark:text-gray-400">No past sessions.</p>
             {% endif %}
           </div>
         </div>
         <!-- Upcoming Sessions -->
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Upcoming Sessions</h5>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+          <div class="p-6">
+            <h2 class="text-xl font-semibold mb-4">Upcoming Sessions</h2>
             {% if upcoming_sessions %}
-              <div class="list-group">
+              <div class="space-y-4">
                 {% for session in upcoming_sessions %}
-                  <div class="list-group-item">
-                    <h6 class="mb-1">{{ session.title }}</h6>
-                    <p class="text-muted mb-0">{{ session.start_time|date:"F j, Y, g:i a" }}</p>
+                  <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <h3 class="font-medium">{{ session.title }}</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">{{ session.start_time|date:"F j, Y, g:i a" }}</p>
+                      </div>
+                      <a href="{{ session.meeting_link }}"
+                         target="_blank"
+                         class="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition duration-200">
+                        <i class="fas fa-video mr-2"></i>Join Session
+                      </a>
+                    </div>
                   </div>
                 {% endfor %}
               </div>
             {% else %}
-              <p class="text-muted">No upcoming sessions scheduled.</p>
+              <p class="text-gray-600 dark:text-gray-400">No upcoming sessions scheduled.</p>
             {% endif %}
           </div>
         </div>
