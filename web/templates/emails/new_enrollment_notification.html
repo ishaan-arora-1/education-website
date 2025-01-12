@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="keywords"
+          content="new enrollment, student notification, education" />
+    <title>New Student Enrollment</title>
+    <meta name="description"
+          content="New student enrolled in {{ course.title }}" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .student-info {
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .course-stats {
+            background-color: #e9ecef;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>New Student Enrolled!</h1>
+      <p>
+        A new student has enrolled in your course <strong>{{ course.title }}</strong>.
+      </p>
+    </div>
+    <div class="student-info">
+      <h2>Student Information</h2>
+      <p>
+        <strong>Name:</strong> {{ student.get_full_name|default:student.username }}
+      </p>
+      <p>
+        <strong>Email:</strong> {{ student.email }}
+      </p>
+      {% if student.profile.bio %}
+        <p>
+          <strong>Bio:</strong> {{ student.profile.bio|truncatewords:50 }}
+        </p>
+      {% endif %}
+    </div>
+    <div class="course-stats">
+      <h2>Course Statistics</h2>
+      <p>
+        <strong>Total Enrollments:</strong> {{ course.enrollments.count }}
+      </p>
+      <p>
+        <strong>Available Spots:</strong> {{ course.available_spots }}
+      </p>
+      {% if course.sessions.all %}
+        <p>
+          <strong>Next Session:</strong> {{ course.sessions.first.start_time|date:"F j, Y, g:i a" }}
+        </p>
+      {% endif %}
+    </div>
+    <div class="footer">
+      <p>You can view detailed student information and manage your course through your teacher dashboard.</p>
+      <p>
+        Best regards,
+        <br />
+        The {{ course.title }} Team
+      </p>
+    </div>
+  </body>
+</html>

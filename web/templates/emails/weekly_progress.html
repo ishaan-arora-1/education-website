@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="keywords"
+          content="course progress, learning progress, weekly update, education" />
+    <title>Weekly Progress Update</title>
+    <meta name="description"
+          content="Your weekly progress update for {{ course.title }}" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .progress-bar {
+            background-color: #e9ecef;
+            border-radius: 5px;
+            height: 20px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            background-color: #007bff;
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-bar-fill-width-0 {
+            width: 0%;
+        }
+
+        .progress-bar-fill-width-10 {
+            width: 10%;
+        }
+
+        .progress-bar-fill-width-20 {
+            width: 20%;
+        }
+
+        .progress-bar-fill-width-30 {
+            width: 30%;
+        }
+
+        .progress-bar-fill-width-40 {
+            width: 40%;
+        }
+
+        .progress-bar-fill-width-50 {
+            width: 50%;
+        }
+
+        .progress-bar-fill-width-60 {
+            width: 60%;
+        }
+
+        .progress-bar-fill-width-70 {
+            width: 70%;
+        }
+
+        .progress-bar-fill-width-80 {
+            width: 80%;
+        }
+
+        .progress-bar-fill-width-90 {
+            width: 90%;
+        }
+
+        .progress-bar-fill-width-100 {
+            width: 100%;
+        }
+
+        .stat {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Weekly Progress Update</h1>
+      <p>Hello {{ student.get_full_name|default:student.username }},</p>
+      <p>
+        Here's your weekly progress update for <strong>{{ course.title }}</strong>.
+      </p>
+    </div>
+    <div class="progress">
+      <h2>Course Completion</h2>
+      <div class="progress-bar">
+        <div class="progress-bar-fill progress-bar-fill-width-{{ completion_percentage }}"></div>
+      </div>
+      <p>You've completed {{ completion_percentage }}% of the course!</p>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <h3>Attendance Rate</h3>
+        <p>Your attendance rate is {{ attendance_rate }}%</p>
+      </div>
+      <div class="stat">
+        <h3>Sessions Completed</h3>
+        <p>You've completed {{ progress.completed_sessions.count }} out of {{ course.sessions.count }} sessions.</p>
+      </div>
+    </div>
+    <div class="footer">
+      <p>Keep up the great work! If you have any questions, feel free to reach out to your instructor.</p>
+      <p>
+        Best regards,
+        <br />
+        The {{ course.title }} Team
+      </p>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}{{ course.title }}{% endblock %}
+{% block content %}
+  <div class="container mx-auto px-4 py-8">
+    <!-- Breadcrumbs -->
+    <nav class="text-sm mb-4">
+      <a href="{% url 'course_search' %}"
+         class="text-blue-600 hover:text-blue-800">Courses</a>
+      <span class="mx-2">/</span>
+      <span class="text-gray-600">{{ course.title }}</span>
+    </nav>
+    <!-- Course Title -->
+    <h1 class="text-3xl font-bold mb-6">{{ course.title }}</h1>
+    <!-- Course Materials Section -->
+    <div class="mt-8">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold">Course Materials</h2>
+        {% if user.is_authenticated and user == course.teacher %}
+          <a href="{% url 'upload_material' slug=course.slug %}"
+             class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">Upload Material</a>
+        {% endif %}
+      </div>
+      {% if course.materials.exists %}
+        <div class="space-y-4">
+          {% for material in course.materials.all %}
+            <div class="bg-white shadow-md rounded-lg p-4">
+              <div class="flex justify-between items-start">
+                <div>
+                  <h3 class="text-lg font-semibold">{{ material.title }}</h3>
+                  <p class="text-gray-600 text-sm">{{ material.get_material_type_display }}</p>
+                  {% if material.description %}<p class="text-gray-700 mt-2">{{ material.description }}</p>{% endif %}
+                  {% if material.session %}<p class="text-sm text-gray-500 mt-1">Session: {{ material.session.title }}</p>{% endif %}
+                </div>
+                <div class="flex space-x-2">
+                  {% if material.is_downloadable or user == course.teacher %}
+                    <a href="{% url 'download_material' slug=course.slug material_id=material.id %}"
+                       class="text-blue-600 hover:text-blue-800">Download</a>
+                  {% endif %}
+                  {% if user.is_authenticated and user == course.teacher %}
+                    <a href="{% url 'delete_material' slug=course.slug material_id=material.id %}"
+                       class="text-red-600 hover:text-red-800">Delete</a>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-gray-600">No materials have been uploaded yet.</p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock content %}

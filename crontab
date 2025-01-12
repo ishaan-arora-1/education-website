@@ -1,0 +1,5 @@
+# Send session reminders every hour
+0 * * * * cd /home/a/projects/AlphaOneLabs/education-website && poetry run python manage.py send_session_reminders
+
+# Send weekly progress updates every Monday at 8 AM
+0 8 * * 1 cd /home/a/projects/AlphaOneLabs/education-website && poetry run python manage.py send_weekly_updates

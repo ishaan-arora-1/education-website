@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <main class="flex-1 w-full max-w-[90rem] mx-auto mt-6 px-4 md:px-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Social Media Sharing -->
+      <div class="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
+        <div class="border-b border-gray-200 dark:border-gray-700 p-4">
+          <h2 class="text-lg font-semibold flex items-center">
+            <i class="fa-solid fa-share-nodes text-teal-600 dark:text-teal-400 mr-2"></i>
+            Social Media Sharing
+          </h2>
+        </div>
+        <div class="p-6">
+          <p class="mb-4 text-gray-600 dark:text-gray-400">
+            Generate content for sharing your course on social media platforms.
+          </p>
+          <button type="button"
+                  id="generateSocialContent"
+                  class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg flex items-center">
+            <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>
+            Generate Social Content
+          </button>
+          <div id="socialContent" class="mt-6 hidden space-y-6">
+            <div>
+              <h3 class="text-sm font-medium mb-2">Twitter</h3>
+              <textarea class="w-full rounded-lg border border-gray-300 dark:border-gray-600 p-3 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700 bg-white dark:bg-gray-800 resize-none"
+                        rows="3"
+                        readonly></textarea>
+              <button class="mt-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-semibold px-3 py-1 rounded-lg flex items-center text-sm copy-btn"
+                      data-platform="twitter">
+                <i class="fa-regular fa-copy mr-2"></i>
+                Copy Text
+              </button>
+            </div>
+            <div>
+              <h3 class="text-sm font-medium mb-2">Facebook</h3>
+              <textarea class="w-full rounded-lg border border-gray-300 dark:border-gray-600 p-3 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700 bg-white dark:bg-gray-800 resize-none"
+                        rows="3"
+                        readonly></textarea>
+              <button class="mt-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-semibold px-3 py-1 rounded-lg flex items-center text-sm copy-btn"
+                      data-platform="facebook">
+                <i class="fa-regular fa-copy mr-2"></i>
+                Copy Text
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Email Marketing -->
+      <div class="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
+        <div class="border-b border-gray-200 dark:border-gray-700 p-4">
+          <h2 class="text-lg font-semibold flex items-center">
+            <i class="fa-solid fa-envelope text-teal-600 dark:text-teal-400 mr-2"></i>
+            Email Marketing
+          </h2>
+        </div>
+        <div class="p-6">
+          <p class="mb-4 text-gray-600 dark:text-gray-400">
+            Create email campaigns to promote your course to potential students.
+          </p>
+          <button type="button"
+                  id="generateEmailContent"
+                  class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg flex items-center">
+            <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>
+            Generate Email Template
+          </button>
+          <div id="emailContent" class="mt-6 hidden space-y-6">
+            <div>
+              <h3 class="text-sm font-medium mb-2">Subject Line</h3>
+              <input type="text"
+                     class="w-full rounded-lg border border-gray-300 dark:border-gray-600 p-3 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700 bg-white dark:bg-gray-800"
+                     readonly />
+            </div>
+            <div>
+              <h3 class="text-sm font-medium mb-2">Email Body</h3>
+              <textarea class="w-full rounded-lg border border-gray-300 dark:border-gray-600 p-3 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700 bg-white dark:bg-gray-800 resize-none"
+                        rows="6"
+                        readonly></textarea>
+              <button class="mt-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-semibold px-3 py-1 rounded-lg flex items-center text-sm copy-btn"
+                      data-platform="email">
+                <i class="fa-regular fa-copy mr-2"></i>
+                Copy Text
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+{% endblock content %}
+{% block extra_js %}
+  <script>
+      document.addEventListener('DOMContentLoaded', function() {
+          // Social Media Content Generation
+          const generateSocialBtn = document.getElementById('generateSocialContent');
+          const socialContent = document.getElementById('socialContent');
+
+          generateSocialBtn.addEventListener('click', function() {
+              socialContent.classList.remove('hidden');
+              // Add your content generation logic here
+          });
+
+          // Email Content Generation
+          const generateEmailBtn = document.getElementById('generateEmailContent');
+          const emailContent = document.getElementById('emailContent');
+
+          generateEmailBtn.addEventListener('click', function() {
+              emailContent.classList.remove('hidden');
+              // Add your content generation logic here
+          });
+
+          // Copy Button Functionality
+          document.querySelectorAll('.copy-btn').forEach(button => {
+              button.addEventListener('click', function() {
+                  const platform = this.dataset.platform;
+                  const textarea = this.parentElement.querySelector('textarea') || this.parentElement.querySelector('input');
+
+                  navigator.clipboard.writeText(textarea.value).then(() => {
+                      const originalText = this.innerHTML;
+                      this.innerHTML = '<i class="fa-solid fa-check mr-2"></i>Copied!';
+                      setTimeout(() => {
+                          this.innerHTML = originalText;
+                      }, 2000);
+                  });
+              });
+          });
+      });
+  </script>
+{% endblock extra_js %}

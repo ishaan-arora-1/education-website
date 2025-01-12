@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block content %}
+  <div class="container mt-5">
+    <!-- Course Header -->
+    <div class="card shadow mb-4">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <h1 class="card-title mb-3">{{ course.title }}</h1>
+            <p class="text-muted mb-2">Taught by {{ course.teacher.get_full_name|default:course.teacher.username }}</p>
+            <span class="badge bg-{{ course.status }}">{{ course.get_status_display }}</span>
+            {% if is_teacher %}
+              <div class="mt-3">
+                <a href="{% url 'update_course' course.slug %}"
+                   class="btn btn-outline-primary btn-sm">Edit Course</a>
+                <a href="{% url 'add_session' course.slug %}"
+                   class="btn btn-outline-primary btn-sm">Add Session</a>
+                <a href="{% url 'course_progress_overview' course.slug %}"
+                   class="btn btn-outline-primary btn-sm">View Progress</a>
+              </div>
+            {% endif %}
+          </div>
+          <div class="text-end">
+            <h3 class="mb-3">${{ course.price }}</h3>
+            {% if not is_teacher and not is_enrolled %}
+              <form method="post" action="{% url 'enroll_course' course.slug %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">Enroll Now</button>
+              </form>
+            {% elif is_enrolled %}
+              <div class="alert alert-info">
+                You are enrolled in this course.
+                <a href="{% url 'student_progress' enrollment.id %}"
+                   class="btn btn-sm btn-primary ms-2">View Progress</a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <!-- Course Information -->
+      <div class="col-md-8">
+        <!-- Description -->
+        <div class="card shadow mb-4">
+          <div class="card-body">
+            <h3 class="card-title">About this Course</h3>
+            <p>{{ course.description|linebreaks }}</p>
+            <h4>Learning Objectives</h4>
+            <p>{{ course.learning_objectives|linebreaks }}</p>
+            {% if course.prerequisites %}
+              <h4>Prerequisites</h4>
+              <p>{{ course.prerequisites|linebreaks }}</p>
+            {% endif %}
+          </div>
+        </div>
+        <!-- Sessions -->
+        <div class="card shadow mb-4">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h3 class="card-title mb-0">Course Sessions</h3>
+              {% if is_teacher %}
+                <a href="{% url 'add_session' course.slug %}" class="btn btn-success">
+                  <i class="fas fa-plus"></i> Add Session
+                </a>
+              {% endif %}
+            </div>
+            {% if sessions %}
+              <div class="list-group">
+                {% for session in sessions %}
+                  <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                      <div>
+                        <h5 class="mb-1">{{ session.title }}</h5>
+                        <p class="mb-1">{{ session.description|truncatewords:30 }}</p>
+                        <small class="text-muted">
+                          {% if session.is_virtual %}
+                            Virtual Session
+                            {% if is_enrolled or is_teacher %}- <a href="{{ session.meeting_link }}" target="_blank">Join Meeting</a>{% endif %}
+                          {% else %}
+                            In-person at {{ session.location }}
+                          {% endif %}
+                        </small>
+                      </div>
+                      <div class="text-end">
+                        <small class="text-muted d-block">{{ session.start_time|date:"M d, Y" }}</small>
+                        {% if is_teacher %}
+                          <a href="{% url 'mark_session_attendance' session.id %}"
+                             class="btn btn-sm btn-outline-primary mt-2">Mark Attendance</a>
+                        {% elif is_enrolled %}
+                          {% if session.start_time < now %}
+                            {% if session in completed_sessions %}
+                              <span class="badge bg-success">Completed</span>
+                            {% else %}
+                              <form method="post"
+                                    action="{% url 'mark_session_completed' session.id %}"
+                                    class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Mark Complete</button>
+                              </form>
+                            {% endif %}
+                          {% endif %}
+                        {% endif %}
+                        {% if is_enrolled or is_teacher %}
+                          <a href="{% url 'calendar_links' session.id %}"
+                             class="btn btn-sm btn-outline-secondary mt-2">
+                            <i class="fas fa-calendar-plus"></i> Add to Calendar
+                          </a>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-muted">No sessions scheduled yet.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <!-- Sidebar -->
+      <div class="col-md-4">
+        <!-- Course Stats -->
+        <div class="card shadow mb-4">
+          <div class="card-body">
+            <h3 class="card-title">Course Information</h3>
+            <ul class="list-unstyled">
+              <li class="mb-2">
+                <i class="fas fa-users me-2"></i>
+                {{ course.enrollments.count }} enrolled of {{ course.max_students }} spots
+              </li>
+              <li class="mb-2">
+                <i class="fas fa-calendar me-2"></i>
+                {{ sessions.count }} sessions
+              </li>
+              <li class="mb-2">
+                <i class="fas fa-star me-2"></i>
+                {% with avg_rating=course.reviews.all|length %}
+                  {% if avg_rating > 0 %}
+                    {{ avg_rating }} rating{{ avg_rating|pluralize }}
+                  {% else %}
+                    No ratings yet
+                  {% endif %}
+                {% endwith %}
+              </li>
+            </ul>
+          </div>
+        </div>
+        <!-- Reviews -->
+        <div class="card shadow">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h3 class="card-title mb-0">Reviews</h3>
+              {% if is_enrolled and not is_teacher %}
+                <a href="{% url 'add_review' course.slug %}"
+                   class="btn btn-primary btn-sm">Write Review</a>
+              {% endif %}
+            </div>
+            {% if reviews %}
+              <div class="list-group">
+                {% for review in reviews %}
+                  <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h6 class="mb-1">{{ review.student.get_full_name|default:review.student.username }}</h6>
+                      <small class="text-muted">{{ review.created_at|date:"M d, Y" }}</small>
+                    </div>
+                    <div class="mb-2">
+                      {% for i in "12345"|make_list %}
+                        {% if forloop.counter <= review.rating %}
+                          <i class="fas fa-star text-warning"></i>
+                        {% else %}
+                          <i class="far fa-star"></i>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                    <p class="mb-1">{{ review.comment }}</p>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-muted">No reviews yet.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% if similar_courses %}
+    <section class="mt-12">
+      <h2 class="text-2xl font-bold mb-6">Similar Courses You Might Like</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for similar_course in similar_courses %}
+          <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="p-6">
+              <h3 class="text-xl font-semibold mb-2">
+                <a href="{% url 'course_detail' slug=similar_course.slug %}"
+                   class="text-blue-600 hover:text-blue-800">{{ similar_course.title }}</a>
+              </h3>
+              <p class="text-gray-600 text-sm mb-4">{{ similar_course.description|truncatewords:30 }}</p>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-700">${{ similar_course.price }}</span>
+                <span class="text-sm text-gray-500">{{ similar_course.get_subject_display }}</span>
+              </div>
+              {% if similar_course.avg_rating %}
+                <div class="mt-2 text-sm text-gray-500">Rating: {{ similar_course.avg_rating|floatformat:1 }} / 5</div>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+{% endblock content %}

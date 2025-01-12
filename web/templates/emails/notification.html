@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>{{ title }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .notification {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .notification-title {
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+
+        .notification-message {
+            margin-bottom: 15px;
+        }
+
+        .notification-footer {
+            font-size: 0.9em;
+            color: #6c757d;
+            border-top: 1px solid #dee2e6;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="notification">
+      <h2 class="notification-title">{{ title }}</h2>
+      <div class="notification-message">{{ message }}</div>
+      <div class="notification-footer">
+        This is an automated message from Alpha One Labs. Please do not reply to this email.
+      </div>
+    </div>
+  </body>
+</html>

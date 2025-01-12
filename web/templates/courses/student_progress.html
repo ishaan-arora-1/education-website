@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}
+  Progress - {{ enrollment.course.title }}
+{% endblock title %}
+{% block content %}
+  <div class="container py-4">
+    <h1 class="mb-4">Course Progress - {{ enrollment.course.title }}</h1>
+    <div class="row">
+      <!-- Progress Overview -->
+      <div class="col-md-4">
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Progress Overview</h5>
+            <div class="progress mb-3">
+              <div class="progress-bar"
+                   role="progressbar"
+                   style="width: {{ progress.completion_percentage }}%">{{ progress.completion_percentage }}%</div>
+            </div>
+            <p>Sessions Completed: {{ progress.completed_sessions.count }}/{{ enrollment.course.sessions.count }}</p>
+            <p>Attendance Rate: {{ progress.attendance_rate }}%</p>
+          </div>
+        </div>
+        <!-- Achievements -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Achievements</h5>
+            {% if achievements %}
+              {% for achievement in achievements %}
+                <div class="achievement mb-2">
+                  <h6>{{ achievement.title }}</h6>
+                  <p class="text-muted small">{{ achievement.description }}</p>
+                </div>
+              {% endfor %}
+            {% else %}
+              <p class="text-muted">No achievements yet. Keep learning!</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <!-- Session List -->
+      <div class="col-md-8">
+        <!-- Past Sessions -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Past Sessions</h5>
+            {% if past_sessions %}
+              <div class="list-group">
+                {% for session in past_sessions %}
+                  <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <h6 class="mb-1">{{ session.title }}</h6>
+                        <p class="text-muted mb-0">{{ session.start_time|date:"F j, Y, g:i a" }}</p>
+                      </div>
+                      <div>
+                        {% if session in progress.completed_sessions.all %}
+                          <span class="badge bg-success">Completed</span>
+                        {% else %}
+                          <form method="post"
+                                action="{% url 'mark_session_completed' session.id %}"
+                                class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Mark Complete</button>
+                          </form>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-muted">No past sessions.</p>
+            {% endif %}
+          </div>
+        </div>
+        <!-- Upcoming Sessions -->
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Upcoming Sessions</h5>
+            {% if upcoming_sessions %}
+              <div class="list-group">
+                {% for session in upcoming_sessions %}
+                  <div class="list-group-item">
+                    <h6 class="mb-1">{{ session.title }}</h6>
+                    <p class="text-muted mb-0">{{ session.start_time|date:"F j, Y, g:i a" }}</p>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-muted">No upcoming sessions scheduled.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

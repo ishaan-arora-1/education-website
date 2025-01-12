@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}
+  {{ category.name }} - Forum
+{% endblock title %}
+{% block content %}
+  <main class="flex-1 w-full max-w-[90rem] mx-auto mt-6 px-4 md:px-6">
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h1 class="text-2xl font-bold mb-2 flex items-center">
+          <i class="fa-solid fa-folder text-teal-600 dark:text-teal-400 mr-2"></i>
+          {{ category.name }}
+        </h1>
+        <p class="text-gray-600 dark:text-gray-400">{{ category.description }}</p>
+      </div>
+      <a href="{% url 'create_topic' category.slug %}"
+         class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg flex items-center">
+        <i class="fa-solid fa-plus mr-2"></i>
+        Create New Topic
+      </a>
+    </div>
+    <div class="border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-700">
+      {% for topic in topics %}
+        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200">
+          <div class="flex justify-between items-start">
+            <div class="space-y-2">
+              <h2 class="text-lg font-semibold">
+                <a href="{% url 'forum_topic' category.slug topic.id %}"
+                   class="hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-200">
+                  {% if topic.is_pinned %}<i class="fas fa-thumbtack text-gray-500 dark:text-gray-400 mr-2"></i>{% endif %}
+                  {{ topic.title }}
+                </a>
+              </h2>
+              <div class="flex items-center space-x-3 text-sm text-gray-500 dark:text-gray-400">
+                <span class="flex items-center">
+                  <i class="fa-solid fa-user mr-1"></i>
+                  {{ topic.author.get_full_name|default:topic.author.username }}
+                </span>
+                <span>·</span>
+                <span class="flex items-center">
+                  <i class="fa-solid fa-clock mr-1"></i>
+                  {{ topic.created_at|timesince }} ago
+                </span>
+                <span>·</span>
+                <span class="flex items-center">
+                  <i class="fa-solid fa-comments mr-1"></i>
+                  {{ topic.replies.count }} replies
+                </span>
+                <span>·</span>
+                <span class="flex items-center">
+                  <i class="fa-solid fa-eye mr-1"></i>
+                  {{ topic.views }} views
+                </span>
+              </div>
+            </div>
+            {% if topic.replies.exists %}
+              <div class="text-right text-sm text-gray-500 dark:text-gray-400">
+                <div class="font-medium">Latest reply</div>
+                <div>{{ topic.replies.last.created_at|timesince }} ago</div>
+                <div>by {{ topic.replies.last.author.get_full_name|default:topic.replies.last.author.username }}</div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% empty %}
+        <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+          <i class="fa-solid fa-comment-slash text-4xl mb-4"></i>
+          <p class="mb-4">No topics have been created in this category yet.</p>
+          <a href="{% url 'create_topic' category.slug %}"
+             class="inline-flex items-center bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg">
+            <i class="fa-solid fa-plus mr-2"></i>
+            Create the First Topic
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+  </main>
+{% endblock content %}

@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block content %}
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Page Title -->
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-bold mb-2">Explore Subjects</h1>
+      <p class="text-gray-700 dark:text-gray-300">
+        Browse exciting topics, see how many people are interested, and find out if there's already a teacher or not.
+      </p>
+    </div>
+    <!-- Subjects Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+      <!-- Example Subject Card -->
+      <div class="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex flex-col justify-between shadow hover:shadow-md transition-shadow">
+        <!-- Subject Icon/Name -->
+        <div class="flex items-center space-x-2 mb-2">
+          <i class="fa-solid fa-flask text-blue-500"></i>
+          <h2 class="text-lg font-semibold">Chemistry</h2>
+        </div>
+        <!-- Stats -->
+        <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1 mb-4">
+          <li>
+            <strong>Interested:</strong> 57 learners
+          </li>
+          <li>
+            <strong>Teacher Available:</strong> Yes
+          </li>
+          <li>
+            <strong>Courses:</strong> 4
+          </li>
+        </ul>
+        <!-- Teach or Learn Buttons -->
+        <div class="flex space-x-2 mt-auto">
+          <button class="bg-indigo-500 text-white py-1 px-2 rounded hover:bg-indigo-600 text-sm">Teach</button>
+          <button class="bg-orange-500 text-white py-1 px-2 rounded hover:bg-orange-600 text-sm">Learn</button>
+        </div>
+      </div>
+      <!-- Repeat for other subjects: 9 more examples -->
+      <div class="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex flex-col justify-between shadow hover:shadow-md transition-shadow">
+        <div class="flex items-center space-x-2 mb-2">
+          <i class="fa-solid fa-calculator text-green-500"></i>
+          <h2 class="text-lg font-semibold">Mathematics</h2>
+        </div>
+        <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1 mb-4">
+          <li>
+            <strong>Interested:</strong> 82 learners
+          </li>
+          <li>
+            <strong>Teacher Available:</strong> Yes
+          </li>
+          <li>
+            <strong>Courses:</strong> 7
+          </li>
+        </ul>
+        <div class="flex space-x-2 mt-auto">
+          <button class="bg-indigo-500 text-white py-1 px-2 rounded hover:bg-indigo-600 text-sm">Teach</button>
+          <button class="bg-orange-500 text-white py-1 px-2 rounded hover:bg-orange-600 text-sm">Learn</button>
+        </div>
+      </div>
+      <div class="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex flex-col justify-between shadow hover:shadow-md transition-shadow">
+        <div class="flex items-center space-x-2 mb-2">
+          <i class="fa-solid fa-code text-purple-500"></i>
+          <h2 class="text-lg font-semibold">Programming</h2>
+        </div>
+        <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1 mb-4">
+          <li>
+            <strong>Interested:</strong> 134 learners
+          </li>
+          <li>
+            <strong>Teacher Available:</strong> No
+          </li>
+          <li>
+            <strong>Courses:</strong> 3
+          </li>
+        </ul>
+        <div class="flex space-x-2 mt-auto">
+          <button class="bg-indigo-500 text-white py-1 px-2 rounded hover:bg-indigo-600 text-sm">Teach</button>
+          <button class="bg-orange-500 text-white py-1 px-2 rounded hover:bg-orange-600 text-sm">Learn</button>
+        </div>
+      </div>
+      <div class="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex flex-col justify-between shadow hover:shadow-md transition-shadow">
+        <div class="flex items-center space-x-2 mb-2">
+          <i class="fa-solid fa-brain text-pink-500"></i>
+          <h2 class="text-lg font-semibold">Psychology</h2>
+        </div>
+        <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1 mb-4">
+          <li>
+            <strong>Interested:</strong> 29 learners
+          </li>
+          <li>
+            <strong>Teacher Available:</strong> Yes
+          </li>
+          <li>
+            <strong>Courses:</strong> 1
+          </li>
+        </ul>
+        <div class="flex space-x-2 mt-auto">
+          <button class="bg-indigo-500 text-white py-1 px-2 rounded hover:bg-indigo-600 text-sm">Teach</button>
+          <button class="bg-orange-500 text-white py-1 px-2 rounded hover:bg-orange-600 text-sm">Learn</button>
+        </div>
+      </div>
+      <div class="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex flex-col justify-between shadow hover:shadow-md transition-shadow">
+        <div class="flex items-center space-x-2 mb-2">
+          <i class="fa-solid fa-microchip text-blue-500"></i>
+          <h2 class="text-lg font-semibold">Electronics</h2>
+        </div>
+        <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1 mb-4">
+          <li>
+            <strong>Interested:</strong> 16 learners
+          </li>
+          <li>
+            <strong>Teacher Available:</strong> No
+          </li>
+          <li>
+            <strong>Courses:</strong> 0
+          </li>
+        </ul>
+        <div class="flex space-x-2 mt-auto">
+          <button class="bg-indigo-500 text-white py-1 px-2 rounded hover:bg-indigo-600 text-sm">Teach</button>
+          <button class="bg-orange-500 text-white py-1 px-2 rounded hover:bg-orange-600 text-sm">Learn</button>
+        </div>
+      </div>
+      <!-- 5 more to reach 10 example subjects -->
+      <div class="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex flex-col justify-between shadow hover:shadow-md transition-shadow">
+        <div class="flex items-center space-x-2 mb-2">
+          <i class="fa-solid fa-earth-americas text-green-500"></i>
+          <h2 class="text-lg font-semibold">Geography</h2>
+        </div>
+        <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1 mb-4">
+          <li>
+            <strong>Interested:</strong> 48 learners
+          </li>
+          <li>
+            <strong>Teacher Available:</strong> Yes
+          </li>
+          <li>
+            <strong>Courses:</strong> 2
+          </li>
+        </ul>
+        <div class="flex space-x-2 mt-auto">
+          <button class="bg-indigo-500 text-white py-1 px-2 rounded hover:bg-indigo-600 text-sm">Teach</button>
+          <button class="bg-orange-500 text-white py-1 px-2 rounded hover:bg-orange-600 text-sm">Learn</button>
+        </div>
+      </div>
+      <div class="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex flex-col justify-between shadow hover:shadow-md transition-shadow">
+        <div class="flex items-center space-x-2 mb-2">
+          <i class="fa-solid fa-book text-orange-500"></i>
+          <h2 class="text-lg font-semibold">Literature</h2>
+        </div>
+        <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1 mb-4">
+          <li>
+            <strong>Interested:</strong> 65 learners
+          </li>
+          <li>
+            <strong>Teacher Available:</strong> Yes
+          </li>
+          <li>
+            <strong>Courses:</strong> 3
+          </li>
+        </ul>
+        <div class="flex space-x-2 mt-auto">
+          <button class="bg-indigo-500 text-white py-1 px-2 rounded hover:bg-indigo-600 text-sm">Teach</button>
+          <button class="bg-orange-500 text-white py-1 px-2 rounded hover:bg-orange-600 text-sm">Learn</button>
+        </div>
+      </div>
+      <div class="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex flex-col justify-between shadow hover:shadow-md transition-shadow">
+        <div class="flex items-center space-x-2 mb-2">
+          <i class="fa-solid fa-music text-pink-500"></i>
+          <h2 class="text-lg font-semibold">Music Theory</h2>
+        </div>
+        <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1 mb-4">
+          <li>
+            <strong>Interested:</strong> 22 learners
+          </li>
+          <li>
+            <strong>Teacher Available:</strong> Yes
+          </li>
+          <li>
+            <strong>Courses:</strong> 2
+          </li>
+        </ul>
+        <div class="flex space-x-2 mt-auto">
+          <button class="bg-indigo-500 text-white py-1 px-2 rounded hover:bg-indigo-600 text-sm">Teach</button>
+          <button class="bg-orange-500 text-white py-1 px-2 rounded hover:bg-orange-600 text-sm">Learn</button>
+        </div>
+      </div>
+      <div class="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex flex-col justify-between shadow hover:shadow-md transition-shadow">
+        <div class="flex items-center space-x-2 mb-2">
+          <i class="fa-solid fa-robot text-gray-500"></i>
+          <h2 class="text-lg font-semibold">Robotics</h2>
+        </div>
+        <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1 mb-4">
+          <li>
+            <strong>Interested:</strong> 73 learners
+          </li>
+          <li>
+            <strong>Teacher Available:</strong> No
+          </li>
+          <li>
+            <strong>Courses:</strong> 5
+          </li>
+        </ul>
+        <div class="flex space-x-2 mt-auto">
+          <button class="bg-indigo-500 text-white py-1 px-2 rounded hover:bg-indigo-600 text-sm">Teach</button>
+          <button class="bg-orange-500 text-white py-1 px-2 rounded hover:bg-orange-600 text-sm">Learn</button>
+        </div>
+      </div>
+      <div class="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex flex-col justify-between shadow hover:shadow-md transition-shadow">
+        <div class="flex items-center space-x-2 mb-2">
+          <i class="fa-solid fa-heart-pulse text-red-500"></i>
+          <h2 class="text-lg font-semibold">Health & Wellness</h2>
+        </div>
+        <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1 mb-4">
+          <li>
+            <strong>Interested:</strong> 41 learners
+          </li>
+          <li>
+            <strong>Teacher Available:</strong> Yes
+          </li>
+          <li>
+            <strong>Courses:</strong> 2
+          </li>
+        </ul>
+        <div class="flex space-x-2 mt-auto">
+          <button class="bg-indigo-500 text-white py-1 px-2 rounded hover:bg-indigo-600 text-sm">Teach</button>
+          <button class="bg-orange-500 text-white py-1 px-2 rounded hover:bg-orange-600 text-sm">Learn</button>
+        </div>
+      </div>
+    </div>
+    <!-- Button to Add a New Subject -->
+    <div class="mt-8 text-center">
+      <button class="bg-teal-600 text-white px-4 py-2 font-semibold rounded shadow hover:bg-teal-700 inline-flex items-center space-x-2">
+        <i class="fa-solid fa-plus"></i>
+        <span>Add a New Subject</span>
+      </button>
+    </div>
+  </div>
+{% endblock content %}

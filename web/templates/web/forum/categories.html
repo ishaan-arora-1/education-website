@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}
+  Forum Categories
+{% endblock title %}
+{% block content %}
+  <div class="container py-4">
+    <h1 class="mb-4">Forum Categories</h1>
+    <div class="row">
+      {% for category in categories %}
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-3">
+                <i class="{{ category.icon }} fa-2x me-3"></i>
+                <h2 class="h4 mb-0">
+                  <a href="{% url 'forum_category' category.slug %}"
+                     class="text-decoration-none">{{ category.name }}</a>
+                </h2>
+              </div>
+              <p class="card-text">{{ category.description }}</p>
+              <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">{{ category.topics.count }} topics</small>
+                <a href="{% url 'forum_category' category.slug %}"
+                   class="btn btn-primary btn-sm">View Topics</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% empty %}
+        <div class="col-12">
+          <div class="alert alert-info">No forum categories have been created yet.</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endblock content %}

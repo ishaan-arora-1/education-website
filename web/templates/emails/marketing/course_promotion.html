@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>New Course Recommendation - {{ site_name }}</title>
+    <meta name="description"
+          content="Discover a new course that matches your interests on {{ site_name }}" />
+    <meta name="keywords"
+          content="online course, education, learning, {{ course.subject }}, {{ course.tags }}" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .course-title {
+            font-size: 24px;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .course-info {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>New Course Recommendation</h1>
+      </div>
+      <div class="course-info">
+        <h2 class="course-title">{{ course.title }}</h2>
+        <p>
+          <strong>Instructor:</strong> {{ teacher.get_full_name }}
+        </p>
+        <p>{{ course.description|truncatewords:50 }}</p>
+        <ul>
+          <li>
+            <strong>Duration:</strong> {{ course.duration }}
+          </li>
+          <li>
+            <strong>Subject:</strong> {{ course.subject }}
+          </li>
+          <li>
+            <strong>Level:</strong> {{ course.level }}
+          </li>
+        </ul>
+      </div>
+      <p>Based on your learning interests, we thought you might be interested in this course. Join now to:</p>
+      <ul>
+        <li>Learn from an experienced instructor</li>
+        <li>Access high-quality course materials</li>
+        <li>Engage with other students</li>
+        <li>Earn a completion certificate</li>
+      </ul>
+      <div class="text-center">
+        <a href="{{ site_url }}/courses/{{ course.slug }}/" class="cta-button">View Course Details</a>
+      </div>
+      <div class="footer">
+        <p>You're receiving this email because you've shown interest in similar courses on {{ site_name }}.</p>
+        <p>
+          To unsubscribe from these notifications, please visit your <a href="{{ site_url }}/settings/notifications/">notification settings</a>.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

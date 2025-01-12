@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}
+  Progress Overview - {{ course.title }}
+{% endblock title %}
+{% block content %}
+  <div class="container py-4">
+    <h1 class="mb-4">Course Progress Overview - {{ course.title }}</h1>
+    <div class="card">
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Progress</th>
+                <th>Attendance</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for data in progress_data %}
+                <tr>
+                  <td>{{ data.enrollment.student.get_full_name }}</td>
+                  <td>
+                    <div class="progress" style="height: 20px;">
+                      <div class="progress-bar"
+                           role="progressbar"
+                           style="width: {{ data.progress.completion_percentage }}%">
+                        {{ data.progress.completion_percentage }}%
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="d-flex gap-2">
+                      {% for status in data.attendance %}
+                        <span class="badge {% if status.status == 'present' %}bg-success {% elif status.status == 'absent' %}bg-danger {% elif status.status == 'excused' %}bg-warning {% else %}bg-info{% endif %}">
+                          {{ status.status }}: {{ status.count }}
+                        </span>
+                      {% endfor %}
+                    </div>
+                  </td>
+                  <td>
+                    <a href="{% url 'student_progress' data.enrollment.id %}"
+                       class="btn btn-sm btn-outline-primary">View Details</a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

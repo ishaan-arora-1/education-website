@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <article class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+      {% if post.featured_image %}
+        <img src="{{ post.featured_image.url }}"
+             alt="{{ post.title }}"
+             class="w-full h-64 object-cover" />
+      {% endif %}
+      <div class="p-8">
+        <h1 class="text-3xl font-bold mb-4">{{ post.title }}</h1>
+        <div class="flex items-center text-sm text-gray-500 mb-8">
+          <i class="fa-regular fa-user mr-2"></i>
+          <span>{{ post.author.get_full_name }}</span>
+          <span class="mx-2">•</span>
+          <i class="fa-regular fa-calendar mr-2"></i>
+          <span>{{ post.published_at|date:"M d, Y" }}</span>
+        </div>
+        <div class="prose dark:prose-invert max-w-none">{{ post.content|safe }}</div>
+      </div>
+    </article>
+    <!-- Comments Section -->
+    <div class="mt-12">
+      <h2 class="text-2xl font-bold mb-8">Comments</h2>
+      {% if user.is_authenticated %}
+        <form method="post" class="mb-8">
+          {% csrf_token %}
+          <div class="mb-4">
+            <label for="comment" class="block text-sm font-medium mb-2">Your Comment</label>
+            <textarea id="comment"
+                      name="content"
+                      rows="4"
+                      class="w-full rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                      required></textarea>
+          </div>
+          <button type="submit"
+                  class="bg-orange-500 text-white px-4 py-2 rounded-full hover:bg-orange-600">Post Comment</button>
+        </form>
+      {% else %}
+        <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-8">
+          <p class="text-center">
+            Please <a href="{% url 'login' %}"
+    class="text-orange-500 hover:text-orange-600">login</a>
+            to post comments.
+          </p>
+        </div>
+      {% endif %}
+      {% if comments %}
+        <div class="space-y-6">
+          {% for comment in comments %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+              <div class="flex items-center mb-4">
+                <img src="https://ui-avatars.com/api/?name={{ comment.author.get_full_name|urlencode }}&background=random"
+                     alt="{{ comment.author.get_full_name }}"
+                     class="w-10 h-10 rounded-full mr-4" />
+                <div>
+                  <div class="font-medium">{{ comment.author.get_full_name }}</div>
+                  <div class="text-sm text-gray-500">{{ comment.created_at|timesince }} ago</div>
+                </div>
+              </div>
+              <p class="text-gray-600 dark:text-gray-300">{{ comment.content }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-gray-600 dark:text-gray-300">No comments yet. Be the first to comment!</p>
+      {% endif %}
+    </div>
+  </main>
+{% endblock %}

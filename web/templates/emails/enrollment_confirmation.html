@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="keywords" content="course enrollment, confirmation, education" />
+    <title>Enrollment Confirmation</title>
+    <meta name="description"
+          content="Enrollment confirmation for {{ course.title }}" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .course-info {
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .next-steps {
+            background-color: #e9ecef;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Welcome to {{ course.title }}!</h1>
+      <p>Dear {{ student.get_full_name|default:student.username }},</p>
+      <p>
+        Thank you for enrolling in <strong>{{ course.title }}</strong>. We're excited to have you join us!
+      </p>
+    </div>
+    <div class="course-info">
+      <h2>Course Details</h2>
+      <p>
+        <strong>Instructor:</strong> {{ teacher.get_full_name|default:teacher.username }}
+      </p>
+      <p>
+        <strong>Description:</strong> {{ course.description|truncatewords:50 }}
+      </p>
+      {% if course.sessions.all %}
+        <p>
+          <strong>First Session:</strong> {{ course.sessions.first.start_time|date:"F j, Y, g:i a" }}
+        </p>
+      {% endif %}
+    </div>
+    <div class="next-steps">
+      <h2>Next Steps</h2>
+      <ol>
+        <li>Review the course schedule and mark important dates in your calendar</li>
+        <li>Prepare any required materials or prerequisites</li>
+        <li>Join your first session on time</li>
+        <li>Reach out to your instructor if you have any questions</li>
+      </ol>
+    </div>
+    <div class="footer">
+      <p>We look forward to helping you achieve your learning goals!</p>
+      <p>
+        Best regards,
+        <br />
+        The {{ course.title }} Team
+      </p>
+      <p>
+        <small>This email was sent as part of your enrollment in {{ course.title }}.</small>
+      </p>
+    </div>
+  </body>
+</html>

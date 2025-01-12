@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}
+  Peer Connections
+{% endblock title %}
+{% block content %}
+  <main class="flex-1 w-full max-w-[90rem] mx-auto mt-6 px-4 md:px-6">
+    <h1 class="text-2xl font-bold mb-6 flex items-center">
+      <i class="fa-solid fa-users text-teal-600 dark:text-teal-400 mr-2"></i>
+      Peer Connections
+    </h1>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Pending Requests -->
+      <div>
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg h-full">
+          <div class="border-b border-gray-200 dark:border-gray-700 p-4">
+            <h2 class="text-lg font-semibold flex items-center">
+              <i class="fa-solid fa-clock text-teal-600 dark:text-teal-400 mr-2"></i>
+              Pending Requests
+            </h2>
+          </div>
+          <div class="divide-y divide-gray-200 dark:divide-gray-700">
+            {% for connection in received_connections %}
+              {% if connection.status == "pending" %}
+                <div class="p-4">
+                  <div class="flex justify-between items-center">
+                    <div class="flex items-center">
+                      <img src="{% static 'web/images/default-avatar.png' %}"
+                           alt="Avatar"
+                           width="40"
+                           height="40"
+                           class="w-10 h-10 rounded-full mr-3" />
+                      <div>
+                        <div class="font-medium">{{ connection.sender.get_full_name|default:connection.sender.username }}</div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Sent {{ connection.created_at|timesince }} ago</div>
+                      </div>
+                    </div>
+                    <div class="flex space-x-2">
+                      <form method="post"
+                            action="{% url 'handle_connection_request' connection.id 'accept' %}">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-lg flex items-center">
+                          <i class="fa-solid fa-check mr-2"></i>
+                          Accept
+                        </button>
+                      </form>
+                      <form method="post"
+                            action="{% url 'handle_connection_request' connection.id 'reject' %}">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="border border-red-300 dark:border-red-600 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/50 font-semibold px-4 py-2 rounded-lg flex items-center">
+                          <i class="fa-solid fa-times mr-2"></i>
+                          Reject
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              {% endif %}
+            {% empty %}
+              <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+                <i class="fa-solid fa-inbox text-4xl mb-4"></i>
+                <p>No pending connection requests.</p>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <!-- Connected Peers -->
+      <div>
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg h-full">
+          <div class="border-b border-gray-200 dark:border-gray-700 p-4">
+            <h2 class="text-lg font-semibold flex items-center">
+              <i class="fa-solid fa-link text-teal-600 dark:text-teal-400 mr-2"></i>
+              Connected Peers
+            </h2>
+          </div>
+          <div class="divide-y divide-gray-200 dark:divide-gray-700">
+            {% for connection in received_connections %}
+              {% if connection.status == "accepted" %}
+                <div class="p-4">
+                  <div class="flex justify-between items-center">
+                    <div class="flex items-center">
+                      <img src="{% static 'web/images/default-avatar.png' %}"
+                           alt="Avatar"
+                           width="40"
+                           height="40"
+                           class="w-10 h-10 rounded-full mr-3" />
+                      <div>
+                        <div class="font-medium">{{ connection.sender.get_full_name|default:connection.sender.username }}</div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Connected {{ connection.updated_at|timesince }} ago</div>
+                      </div>
+                    </div>
+                    <a href="{% url 'peer_messages' connection.sender.id %}"
+                       class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg flex items-center">
+                      <i class="fa-solid fa-paper-plane mr-2"></i>
+                      Message
+                    </a>
+                  </div>
+                </div>
+              {% endif %}
+            {% endfor %}
+            {% for connection in sent_connections %}
+              {% if connection.status == "accepted" %}
+                <div class="p-4">
+                  <div class="flex justify-between items-center">
+                    <div class="flex items-center">
+                      <img src="{% static 'web/images/default-avatar.png' %}"
+                           alt="Avatar"
+                           width="40"
+                           height="40"
+                           class="w-10 h-10 rounded-full mr-3" />
+                      <div>
+                        <div class="font-medium">{{ connection.receiver.get_full_name|default:connection.receiver.username }}</div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Connected {{ connection.updated_at|timesince }} ago</div>
+                      </div>
+                    </div>
+                    <a href="{% url 'peer_messages' connection.receiver.id %}"
+                       class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg flex items-center">
+                      <i class="fa-solid fa-paper-plane mr-2"></i>
+                      Message
+                    </a>
+                  </div>
+                </div>
+              {% endif %}
+            {% endfor %}
+            {% if not received_connections.exists and not sent_connections.exists %}
+              <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+                <i class="fa-solid fa-users-slash text-4xl mb-4"></i>
+                <p class="mb-2">You haven't connected with any peers yet.</p>
+                <p class="text-sm">Connect with other learners to collaborate and learn together!</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+{% endblock content %}

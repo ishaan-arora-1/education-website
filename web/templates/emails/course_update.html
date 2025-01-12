@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="keywords" content="course update, notification, education" />
+    <title>Course Update</title>
+    <meta name="description" content="Important update for {{ course.title }}" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .update-message {
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .important-note {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .course-link {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .course-link a {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Course Update</h1>
+      <p>Hello {{ student.get_full_name|default:student.username }},</p>
+      <p>
+        There has been an important update to your course <strong>{{ course.title }}</strong>.
+      </p>
+    </div>
+    <div class="update-message">
+      <h2>Update Details</h2>
+      {{ update_message|linebreaks }}
+    </div>
+    <div class="important-note">
+      <h3>What This Means For You</h3>
+      <p>
+        Please review this update carefully and make any necessary adjustments to your schedule or preparation. If you have any questions, don't hesitate to reach out to your instructor.
+      </p>
+    </div>
+    <div class="course-link">
+      <p>View the complete course details and updates on your dashboard:</p>
+      <a href="{% url 'course_detail' course.slug %}" target="_blank">View Course Details</a>
+    </div>
+    <div class="footer">
+      <p>Thank you for your attention to this update.</p>
+      <p>
+        Best regards,
+        <br />
+        The {{ course.title }} Team
+      </p>
+      <p>
+        <small>This email was sent because you are enrolled in {{ course.title }}.</small>
+      </p>
+    </div>
+  </body>
+</html>

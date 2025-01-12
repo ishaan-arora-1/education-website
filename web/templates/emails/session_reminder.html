@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="keywords" content="session reminder, course session, education" />
+    <title>Session Reminder</title>
+    <meta name="description"
+          content="Reminder for upcoming session in {{ course.title }}" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .session-info {
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .important-note {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .meeting-link {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            word-break: break-all;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Upcoming Session Reminder</h1>
+      <p>Hello {{ student.get_full_name|default:student.username }},</p>
+      <p>
+        This is a reminder about your upcoming session in <strong>{{ course.title }}</strong>.
+      </p>
+    </div>
+    <div class="session-info">
+      <h2>Session Details</h2>
+      <p>
+        <strong>Title:</strong> {{ session.title }}
+      </p>
+      <p>
+        <strong>Date:</strong> {{ session.start_time|date:"l, F j, Y" }}
+      </p>
+      <p>
+        <strong>Time:</strong> {{ session.start_time|date:"g:i a" }} - {{ session.end_time|date:"g:i a" }}
+      </p>
+      <p>
+        <strong>Type:</strong>
+        {% if session.is_virtual %}
+          Virtual Session
+        {% else %}
+          In-person Session
+        {% endif %}
+      </p>
+    </div>
+    {% if session.is_virtual %}
+      <div class="meeting-link">
+        <h3>Meeting Link</h3>
+        <p>Join the session using this link:</p>
+        <a href="{{ session.meeting_link }}" target="_blank">{{ session.meeting_link }}</a>
+      </div>
+    {% else %}
+      <div class="important-note">
+        <h3>Location</h3>
+        <p>{{ session.location }}</p>
+        <p>Please arrive a few minutes early to ensure a timely start.</p>
+      </div>
+    {% endif %}
+    <div class="important-note">
+      <h3>Preparation</h3>
+      <p>To make the most of this session:</p>
+      <ul>
+        <li>Review any assigned materials</li>
+        <li>Prepare any questions you may have</li>
+        <li>
+          {% if session.is_virtual %}
+            Test your audio/video equipment
+          {% else %}
+            Bring necessary materials
+          {% endif %}
+        </li>
+      </ul>
+    </div>
+    <div class="footer">
+      <p>We look forward to seeing you in the session!</p>
+      <p>
+        Best regards,
+        <br />
+        The {{ course.title }} Team
+      </p>
+      <p>
+        <small>This is an automated reminder for your enrolled course.</small>
+      </p>
+    </div>
+  </body>
+</html>

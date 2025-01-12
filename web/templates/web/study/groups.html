@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}
+  Study Groups - {{ course.title }}
+{% endblock title %}
+{% block content %}
+  <main class="flex-1 w-full max-w-[90rem] mx-auto mt-6 px-4 md:px-6">
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h1 class="text-2xl font-bold mb-2 flex items-center">
+          <i class="fa-solid fa-users text-teal-600 dark:text-teal-400 mr-2"></i>
+          Study Groups
+        </h1>
+        <p class="text-gray-600 dark:text-gray-400">{{ course.title }}</p>
+      </div>
+      <button type="button"
+              class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg flex items-center"
+              onclick="document.getElementById('createGroupModal').classList.remove('hidden')">
+        <i class="fa-solid fa-plus mr-2"></i>
+        Create Study Group
+      </button>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {% for group in groups %}
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg">
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <h2 class="text-lg font-semibold mb-1">
+                  <a href="{% url 'study_group_detail' group.id %}"
+                     class="hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-200">
+                    {{ group.name }}
+                  </a>
+                </h2>
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                  Created by {{ group.creator.get_full_name|default:group.creator.username }}
+                  {{ group.created_at|timesince }} ago
+                </div>
+              </div>
+              {% if group.is_private %}
+                <span class="bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-200 px-3 py-1 rounded-full text-sm font-medium">
+                  <i class="fas fa-lock mr-1"></i>
+                  Private
+                </span>
+              {% endif %}
+            </div>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">{{ group.description }}</p>
+            <div class="flex justify-between items-center">
+              <div class="text-sm text-gray-500 dark:text-gray-400">
+                <i class="fa-solid fa-user-group mr-1"></i>
+                {{ group.members.count }} / {{ group.max_members }} members
+              </div>
+              <div>
+                {% if request.user in group.members.all %}
+                  <form method="post" class="inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="leave" />
+                    <button type="submit"
+                            class="border border-red-300 dark:border-red-600 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/50 font-semibold px-4 py-2 rounded-lg flex items-center">
+                      <i class="fa-solid fa-right-from-bracket mr-2"></i>
+                      Leave Group
+                    </button>
+                  </form>
+                {% else %}
+                  <form method="post" class="inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="join" />
+                    <button type="submit"
+                            class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg flex items-center {% if group.members.count >= group.max_members %}opacity-50 cursor-not-allowed{% endif %}"
+                            {% if group.members.count >= group.max_members %}disabled{% endif %}>
+                      <i class="fa-solid fa-right-to-bracket mr-2"></i>
+                      Join Group
+                    </button>
+                  </form>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% empty %}
+        <div class="col-span-full">
+          <div class="bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 p-8 rounded-lg text-center">
+            <i class="fa-solid fa-users-slash text-4xl mb-4"></i>
+            <p class="mb-4">No study groups have been created for this course yet.</p>
+            <button type="button"
+                    class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg inline-flex items-center"
+                    onclick="document.getElementById('createGroupModal').classList.remove('hidden')">
+              <i class="fa-solid fa-plus mr-2"></i>
+              Create the First Study Group
+            </button>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </main>
+  <!-- Create Study Group Modal -->
+  <div id="createGroupModal"
+       class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg max-w-lg w-full">
+      <form method="post">
+        {% csrf_token %}
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold">Create Study Group</h2>
+            <button type="button"
+                    class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+                    onclick="document.getElementById('createGroupModal').classList.add('hidden')">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="space-y-6">
+            <div>
+              <label for="name" class="block text-sm font-medium mb-2">Group Name</label>
+              <input type="text"
+                     class="w-full rounded-lg border border-gray-300 dark:border-gray-600 p-3 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700 bg-white dark:bg-gray-800"
+                     id="name"
+                     name="name"
+                     required
+                     maxlength="200"
+                     placeholder="Enter a name for your study group" />
+            </div>
+            <div>
+              <label for="description" class="block text-sm font-medium mb-2">Description</label>
+              <textarea class="w-full rounded-lg border border-gray-300 dark:border-gray-600 p-3 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700 bg-white dark:bg-gray-800"
+                        id="description"
+                        name="description"
+                        rows="4"
+                        required
+                        placeholder="Describe the purpose and goals of your study group"></textarea>
+            </div>
+            <div>
+              <label for="max_members" class="block text-sm font-medium mb-2">Maximum Members</label>
+              <input type="number"
+                     class="w-full rounded-lg border border-gray-300 dark:border-gray-600 p-3 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700 bg-white dark:bg-gray-800"
+                     id="max_members"
+                     name="max_members"
+                     min="2"
+                     max="50"
+                     value="10" />
+              <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Choose a number between 2 and 50</p>
+            </div>
+            <div>
+              <label class="flex items-center">
+                <input type="checkbox"
+                       class="rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-500 h-4 w-4"
+                       id="is_private"
+                       name="is_private" />
+                <span class="ml-2 text-sm font-medium">Make this group private</span>
+              </label>
+              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Private groups require approval to join</p>
+            </div>
+          </div>
+        </div>
+        <div class="border-t border-gray-200 dark:border-gray-700 p-4 flex justify-end space-x-4">
+          <button type="button"
+                  class="border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-semibold px-4 py-2 rounded-lg"
+                  onclick="document.getElementById('createGroupModal').classList.add('hidden')">Cancel</button>
+          <button type="submit"
+                  class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg">
+            Create Group
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock content %}

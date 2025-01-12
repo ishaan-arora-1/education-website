@@ -1,176 +1,305 @@
+{% extends 'base.html' %}
+
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Alpha One Labs - Educational Platform</title>
-  
-  <!-- Font Awesome for icons -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-    integrity="sha512-Fo3rlrZj/k7ujTnH/PRanTqJdKrOJmQ5uBpCPl7bYqITStjnLuOFZlZmDgcANEVhXFR3m6rPRfZ6A9K6le8YBQ=="
-    crossorigin="anonymous"
-    referrerpolicy="no-referrer"
-  />
 
-<style>
-    /* Basic Reset */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    /* Body Styles: Solid black background to match the banner */
-    body {
-      font-family: "Arial", sans-serif;
-      background-color: #000;
-      color: #fff;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center; /* center horizontally */
-      justify-content: center; /* center vertically */
-    }
-
-    /* Container to center everything */
-    .container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      max-width: 1024px;
-      width: 90%;
-      margin: 0 auto;
-    }
-
-    /* Logo Wrapper to position the buttons relative to the banner */
-    .logo-wrapper {
-      position: relative;
-      display: inline-block;
-      margin-bottom: 2rem;
-      width: 100%;
-    }
-
-    /* Logo Image – keep it full width or scale as needed */
-    .logo {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-
-    /*
-      Button Group "under Labs":
-      Adjust `left` and `top` as needed.
-      Because the text "LABS" is more to the right, we place it accordingly.
-      You might tweak these depending on how your image is sized and text is positioned.
-    */
-    .button-group {
-      position: absolute;
-      top: 55%;  /* move down from top of the image; adjust as needed */
-      left: 60%; /* move from left of image; adjust as needed */
-      transform: translate(-50%, -50%);
-      display: flex;
-      gap: 1rem;
-    }
-
-    /* Buttons Styles */
-    .btn {
-      display: inline-block;
-      padding: 0.8rem 1.2rem;
-      text-decoration: none;
-      border-radius: 4px;
-      font-weight: bold;
-      transition: background-color 0.2s ease-in-out;
-      font-size: 1rem;
-    }
-
-    .learn-btn {
-      background-color: #f0ad4e; /* Orange-ish */
-      color: #ffffff;
-    }
-
-    .teach-btn {
-      background-color: #5cb85c; /* Green */
-      color: #ffffff;
-    }
-
-    .btn:hover {
-      filter: brightness(90%);
-    }
-
-    /* Info Links (About, X, Follow) */
-    .info-links {
-      display: flex;
-      gap: 1.5rem;
-      margin-top: 1rem;
-    }
-
-    .info-link {
-      color: #ffffff;
-      text-decoration: none;
-      font-size: 1rem;
-      display: flex;
-      align-items: center;
-      transition: color 0.2s ease-in-out;
-    }
-
-    .info-link i {
-      margin-right: 0.5rem;
-      font-size: 1.1rem;
-    }
-
-    .info-link:hover {
-      color: #f0ad4e; /* or any accent color you prefer */
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-      /* Logo scaled down automatically by width: 100% */
-      .button-group {
-        top: 70%;  /* push the buttons lower on smaller screens */
-        left: 50%;
-        transform: translate(-50%, -50%);
-      }
-
-      .info-links {
-        flex-direction: column;
-        gap: 1rem;
-      }
-    }
-</style>
-</head>
-<body>
-  <!-- Main Container -->
-  <div class="container">
-    
-    <!-- Logo Wrapper -->
-    <div class="logo-wrapper">
-      <!-- Replace 'header.png' with your actual banner image path -->
-      <img src="{% static 'header.png' %}" alt="Alpha One Labs Logo" class="logo" />
-
-      <!-- Buttons Over Logo (positioned under 'LABS') -->
-      <div class="button-group">
-        <a href="/learn" class="btn learn-btn">LEARN</a>
-        <a href="/teach" class="btn teach-btn">TEACH</a>
+{% block content %}
+  <main class="flex-1 w-full max-w-[90rem] mx-auto mt-6 px-4 md:px-6">
+    <!-- Update the messages div positioning -->
+    {% if messages %}
+      <div class="fixed left-1/2 transform -translate-x-1/2 top-20 z-50 w-full max-w-lg space-y-2">
+        {% for message in messages %}
+          <div class="flex items-center p-4 rounded-lg shadow-lg {% if message.tags == 'error' %}bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200{% elif message.tags == 'success' %}bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200{% elif message.tags == 'warning' %}bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-200{% else %}bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200{% endif %}">
+            <div class="mr-3">
+              {% if message.tags == 'error' %}
+                <i class="fas fa-exclamation-circle"></i>
+              {% elif message.tags == 'success' %}
+                <i class="fas fa-check-circle"></i>
+              {% elif message.tags == 'warning' %}
+                <i class="fas fa-exclamation-triangle"></i>
+              {% else %}
+                <i class="fas fa-info-circle"></i>
+              {% endif %}
+            </div>
+            <p class="flex-1">{{ message }}</p>
+            <button type="button" class="ml-auto" onclick="this.parentElement.remove()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    <div class="flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-6">
+      <div class="md:w-3/4 space-y-6">
+        <div class="space-y-4">
+          <blockquote class="text-xl italic">
+            “Somewhere, something incredible is waiting to be known.”
+            <span class="block text-right">- Carl Sagan</span>
+          </blockquote>
+          <p>
+            Alpha One Labs is an innovative platform dedicated to forging
+            meaningful connections between teachers and students. By bridging
+            the gap between knowledge seekers and knowledge givers, we
+            facilitate a dynamic educational experience that empowers everyone
+            involved. Whether you’re sharing expertise or searching for
+            guidance, Alpha One Labs helps turn curiosity into collaborative
+            learning—because when passionate minds come together, new
+            understanding is always within reach.
+          </p>
+        </div>
+        <!-- Featured Courses (3 across) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <!-- Course Card 1 -->
+          <div class="rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <img src="https://via.placeholder.com/300x150"
+                 alt="Course Image"
+                 width="300"
+                 height="150"
+                 class="w-full h-32 object-cover rounded mb-3" />
+            <div class="flex items-center justify-between mb-1 text-sm">
+              <span class="font-semibold text-teal-600 dark:text-teal-400">Subject</span>
+              <span class="text-orange-600 dark:text-orange-500">$49</span>
+            </div>
+            <div class="mb-2 text-xs text-gray-700 dark:text-gray-300">#Tag1 #Tag2 #Tag3</div>
+            <p class="mb-2 text-sm">
+              Introductory course covering fundamental concepts of ...
+              <a href="#" class="text-gray-400 ml-1 hover:underline">more</a>
+            </p>
+            <div class="mb-3 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
+              <span>Level: Beginner</span>
+              <span>
+                <i class="fa-solid fa-star text-yellow-400"></i> 4.5
+              </span>
+            </div>
+            <div class="flex items-center mb-3">
+              <img src="https://via.placeholder.com/24"
+                   alt="Teacher Avatar"
+                   width="24"
+                   height="24"
+                   class="h-6 w-6 rounded-full mr-2" />
+              <span class="text-sm">Jane Doe</span>
+            </div>
+            <button class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-3 py-1 rounded-full flex items-center">
+              <i class="fa-solid fa-cart-plus mr-2"></i> Enroll
+            </button>
+          </div>
+          <!-- Course Card 2 -->
+          <div class="rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <img src="https://via.placeholder.com/300x150"
+                 alt="Course Image"
+                 width="300"
+                 height="150"
+                 class="w-full h-32 object-cover rounded mb-3" />
+            <div class="flex items-center justify-between mb-1 text-sm">
+              <span class="font-semibold text-teal-600 dark:text-teal-400">Subject</span>
+              <span class="text-orange-600 dark:text-orange-500">$99</span>
+            </div>
+            <div class="mb-2 text-xs text-gray-700 dark:text-gray-300">#TagA #TagB</div>
+            <p class="mb-2 text-sm">
+              An in-depth exploration of advanced concepts ...
+              <a href="#" class="text-gray-400 ml-1 hover:underline">more</a>
+            </p>
+            <div class="mb-3 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
+              <span>Level: Intermediate</span>
+              <span>
+                <i class="fa-solid fa-star text-yellow-400"></i> 4.8
+              </span>
+            </div>
+            <div class="flex items-center mb-3">
+              <img src="https://via.placeholder.com/24"
+                   alt="Teacher Avatar"
+                   width="24"
+                   height="24"
+                   class="h-6 w-6 rounded-full mr-2" />
+              <span class="text-sm">John Smith</span>
+            </div>
+            <button class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-3 py-1 rounded-full flex items-center">
+              <i class="fa-solid fa-cart-plus mr-2"></i> Enroll
+            </button>
+          </div>
+          <!-- Course Card 3 -->
+          <div class="rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <img src="https://via.placeholder.com/300x150"
+                 alt="Course Image"
+                 width="300"
+                 height="150"
+                 class="w-full h-32 object-cover rounded mb-3" />
+            <div class="flex items-center justify-between mb-1 text-sm">
+              <span class="font-semibold text-teal-600 dark:text-teal-400">Subject</span>
+              <span class="text-orange-600 dark:text-orange-500">Free</span>
+            </div>
+            <div class="mb-2 text-xs text-gray-700 dark:text-gray-300">#Science #Math</div>
+            <p class="mb-2 text-sm">
+              Dive into fascinating discoveries and research ...
+              <a href="#" class="text-gray-400 ml-1 hover:underline">more</a>
+            </p>
+            <div class="mb-3 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
+              <span>Level: Advanced</span>
+              <span>
+                <i class="fa-solid fa-star text-yellow-400"></i> 4.9
+              </span>
+            </div>
+            <div class="flex items-center mb-3">
+              <img src="https://via.placeholder.com/24"
+                   alt="Teacher Avatar"
+                   width="24"
+                   height="24"
+                   class="h-6 w-6 rounded-full mr-2" />
+              <span class="text-sm">Dr. Alice</span>
+            </div>
+            <button class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-3 py-1 rounded-full flex items-center">
+              <i class="fa-solid fa-cart-plus mr-2"></i> Enroll
+            </button>
+          </div>
+        </div>
+        <!-- Add view more link -->
+        <div class="text-right mt-4">
+          <a href="{% url 'course_search' %}"
+             class="text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300">
+            <span>Browse all courses</span>
+            <i class="fas fa-arrow-right ml-2"></i>
+          </a>
+        </div>
+      </div>
+      <!-- Two cards next to each other: For Learners & For Teachers -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- For Learners -->
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <h3 class="text-lg font-semibold mb-2 flex items-center">
+            <i class="fa-solid fa-user-graduate text-teal-600 dark:text-teal-400 mr-2"></i>
+            For Learners
+          </h3>
+          <ul class="list-disc list-inside space-y-2 text-sm text-gray-800 dark:text-gray-200">
+            <li>
+              <i class="fa-solid fa-robot text-gray-600 dark:text-gray-300 mr-2"></i>
+              Advanced search with AI-powered recommendations
+            </li>
+            <li>
+              <i class="fa-solid fa-calendar-check text-gray-600 dark:text-gray-300 mr-2"></i>
+              Flexible scheduling with calendar integration
+            </li>
+            <li>
+              <i class="fa-solid fa-trophy text-gray-600 dark:text-gray-300 mr-2"></i>
+              Track your progress and earn achievements
+            </li>
+            <li>
+              <i class="fa-solid fa-users text-gray-600 dark:text-gray-300 mr-2"></i>
+              Join study groups and connect with peers
+            </li>
+            <li>
+              <i class="fa-solid fa-chalkboard-teacher text-gray-600 dark:text-gray-300 mr-2"></i>
+              Access both virtual and in-person classes
+            </li>
+          </ul>
+        </div>
+        <!-- For Teachers -->
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <h3 class="text-lg font-semibold mb-2 flex items-center">
+            <i class="fa-solid fa-chalkboard-user text-teal-600 dark:text-teal-400 mr-2"></i>
+            For Teachers
+          </h3>
+          <ul class="list-disc list-inside space-y-2 text-sm text-gray-800 dark:text-gray-200">
+            <li>
+              <i class="fa-solid fa-clipboard-list text-gray-600 dark:text-gray-300 mr-2"></i>
+              Comprehensive course management tools
+            </li>
+            <li>
+              <i class="fa-solid fa-chart-line text-gray-600 dark:text-gray-300 mr-2"></i>
+              Analytics and student progress tracking
+            </li>
+            <li>
+              <i class="fa-solid fa-credit-card text-gray-600 dark:text-gray-300 mr-2"></i>
+              Secure payment processing and earnings management
+            </li>
+            <li>
+              <i class="fa-solid fa-bullhorn text-gray-600 dark:text-gray-300 mr-2"></i>
+              Marketing tools to promote your courses
+            </li>
+            <li>
+              <i class="fa-solid fa-comments text-gray-600 dark:text-gray-300 mr-2"></i>
+              Direct communication with students
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
-
-    <!-- Info Links (About, X, Follow) -->
-    <div class="info-links">
-      <a href="/about" class="info-link">
-        <i class="fas fa-info-circle"></i>
-        <span>About</span>
-      </a>
-      <a href="https://x.com/alphaonelabs" class="info-link">
-        <i class="fas fa-times-circle"></i>
-        <span>X</span>
-      </a>
+    <div class="md:w-1/3 space-y-6">
+      <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <h2 class="text-xl font-semibold mb-4">
+          <i class="fa-solid fa-chalkboard-user mr-2"></i>
+          Teach a Course
+        </h2>
+        <form method="post" class="space-y-4">
+          {% csrf_token %}
+          <div>
+            <label for="email" class="block text-sm font-medium mb-1">Email</label>
+            <input type="email"
+                   id="email"
+                   name="email"
+                   class="block w-full border {% if form.email.errors %}border-red-500 dark:border-red-500{% else %}border-gray-300 dark:border-gray-600{% endif %} rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800"
+                   placeholder="your.email@example.com"
+                   value="{{ form.email.value|default:'' }}"
+                   required />
+            {% if form.email.errors %}
+              <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.email.errors|join:", " }}</p>
+            {% endif %}
+          </div>
+          <div>
+            <label for="subject" class="block text-sm font-medium mb-1">Subject</label>
+            <input type="text"
+                   id="subject"
+                   name="subject"
+                   class="block w-full border {% if form.subject.errors %}border-red-500 dark:border-red-500{% else %}border-gray-300 dark:border-gray-600{% endif %} rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800"
+                   placeholder="Your subject to teach"
+                   value="{{ form.subject.value|default:'' }}"
+                   required />
+            {% if form.subject.errors %}
+              <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.subject.errors|join:", " }}</p>
+            {% endif %}
+          </div>
+          <div>
+            <label for="captcha" class="block text-sm font-medium mb-1">Verification</label>
+            <div class="{% if form.captcha.errors %}border border-red-500 dark:border-red-500 rounded p-2{% endif %}">
+              {{ form.captcha }}
+            </div>
+            {% if form.captcha.errors %}
+              <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.captcha.errors|join:", " }}</p>
+            {% endif %}
+          </div>
+          <button type="submit"
+                  class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-full flex items-center">
+            <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> Continue
+          </button>
+        </form>
+      </div>
+      <!-- Recent Forum Post -->
+      <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <h2 class="text-lg font-semibold mb-2 flex items-center">
+          <i class="fa-solid fa-comments text-purple-600 dark:text-purple-400 mr-2"></i>
+          Recent Forum Post
+        </h2>
+        <p class="text-sm">
+          <strong class="block text-gray-900 dark:text-gray-200 mb-1">How to get started with advanced mathematics?</strong>
+          “I'm looking for resources on group theory and number theory. Any
+          recommendations?” — <em>posted by user123</em>
+        </p>
+        <a href="#"
+           class="text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300">View Discussion →</a>
+      </div>
+      <!-- Recent Blog Post -->
+      <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <h2 class="text-lg font-semibold mb-2 flex items-center">
+          <i class="fa-solid fa-blog text-red-600 dark:text-red-400 mr-2"></i>
+          Recent Blog Post
+        </h2>
+        <p class="text-sm">
+          <strong class="block text-gray-900 dark:text-gray-200 mb-1">The Future of Online Education</strong>
+          Learn how new technologies are shaping the way we teach and learn,
+          including AI-driven insights and personalized curriculum...
+        </p>
+        <a href="#"
+           class="text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300">Read More →</a>
+      </div>
     </div>
   </div>
-</br>
- Last modified: {{last_modified_time}}
-</body>
-</html>
+</main>
+{% endblock content %}

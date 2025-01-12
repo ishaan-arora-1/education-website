@@ -1,0 +1,203 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en" class="overflow-y-scroll">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description"
+          content="Alpha One Labs - Open Source Education Platform" />
+    <meta name="keywords"
+          content="education, open source, courses, learning, Alpha One Labs" />
+    <title>
+      {% block title %}
+        Alpha One Labs - Open Source Education Platform
+      {% endblock title %}
+    </title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome (Free CDN) -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <script>
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+        // Toggle the language dropdown
+        function toggleLanguageDropdown() {
+            document.getElementById('language-dropdown').classList.toggle('hidden');
+        }
+    </script>
+    <style>
+        /* Force Tailwind to respect dark mode classes */
+        :root {
+            color-scheme: light dark;
+        }
+    </style>
+    {% block extra_head %}
+    {% endblock extra_head %}
+  </head>
+  <body class="min-h-screen flex flex-col bg-white text-gray-900 dark:bg-black dark:text-gray-100 transition-colors duration-300">
+    <!-- Add this right after body tag -->
+    {% if messages %}
+      <div class="fixed top-4 right-4 z-50 space-y-2">
+        {% for message in messages %}
+          <div class="flex items-center p-4 rounded-lg shadow-lg {% if message.tags == 'error' %}bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200{% elif message.tags == 'success' %}bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200{% elif message.tags == 'warning' %}bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-200{% else %}bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200{% endif %}">
+            <div class="mr-3">
+              {% if message.tags == 'error' %}
+                <i class="fas fa-exclamation-circle"></i>
+              {% elif message.tags == 'success' %}
+                <i class="fas fa-check-circle"></i>
+              {% elif message.tags == 'warning' %}
+                <i class="fas fa-exclamation-triangle"></i>
+              {% else %}
+                <i class="fas fa-info-circle"></i>
+              {% endif %}
+            </div>
+            <p>{{ message }}</p>
+            <button type="button" class="ml-auto" onclick="this.parentElement.remove()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    <!-- HEADER -->
+    <header class="w-full bg-teal-600 dark:bg-teal-800 text-white">
+      <div class="max-w-[90rem] mx-auto px-4 flex items-center justify-between h-[50px]">
+        <!-- Logo and Title -->
+        <a href="{% url 'index' %}" class="flex items-center space-x-2">
+          <img src="{% static 'logo.png' %}"
+               alt="Alpha One Labs"
+               height="40"
+               width="40"
+               class="h-10 w-10" />
+          <span class="font-bold text-xl tracking-wide">Alpha One Labs</span>
+        </a>
+        <!-- Nav and additional actions -->
+        <nav class="flex items-center space-x-4">
+          <!-- Search bar (visible on larger screens) -->
+          <div class="relative hidden lg:inline-block w-[250px]">
+            <input type="text"
+                   placeholder="What do you want to learn?"
+                   class="rounded-full w-[250px] bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700" />
+            <i class="fas fa-search absolute right-3 top-2 text-gray-500 dark:text-gray-300"></i>
+          </div>
+          <!-- Main navigation links (home, about, etc.) -->
+          <div class="hidden md:flex space-x-4">
+            <a href="{% url 'index' %}" class="hover:underline flex items-center">
+              <i class="fa-solid fa-house mr-1"></i> Home
+            </a>
+            <a href="{% url 'about' %}" class="hover:underline flex items-center">
+              <i class="fa-solid fa-circle-info mr-1"></i> About
+            </a>
+            <a href="{% url 'course_search' %}"
+               class="hover:underline flex items-center">
+              <i class="fa-solid fa-book-open mr-1"></i> Courses
+            </a>
+            <a href="{% url 'subjects' %}" class="hover:underline flex items-center">
+              <i class="fa-solid fa-list-check mr-1"></i> Subjects
+            </a>
+          </div>
+          <!-- Language dropdown -->
+          <div class="relative">
+            <button class="focus:outline-none hover:underline flex items-center"
+                    onclick="toggleLanguageDropdown()">
+              <i class="fa-solid fa-globe mr-1"></i>
+            </button>
+            <!-- The dropdown (hidden by default) -->
+            <div id="language-dropdown"
+                 class="hidden absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 shadow-lg rounded-md py-2 z-50">
+              <a href="#"
+                 class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">English</a>
+              <a href="#"
+                 class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Spanish</a>
+              <a href="#"
+                 class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">French</a>
+              <a href="#"
+                 class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">German</a>
+              <a href="#"
+                 class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Chinese</a>
+            </div>
+          </div>
+          <!-- Dark / Light Mode Toggle -->
+          <button class="focus:outline-none flex items-center hover:underline"
+                  title="Toggle Dark / Light Mode"
+                  onclick="toggleDarkMode()">
+            <i class="fas fa-adjust"></i>
+          </button>
+          <!-- Login Link -->
+          <a href="{% url 'account_login' %}"
+             class="hover:underline flex items-center">
+            <i class="fa-solid fa-right-to-bracket mr-1"></i> Login
+          </a>
+          <!-- Signup Button -->
+          <a href="{% url 'account_signup' %}"
+             class="px-3 py-1 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-semibold flex items-center">
+            <i class="fa-solid fa-user-plus mr-2"></i> Signup
+          </a>
+        </nav>
+      </div>
+    </header>
+    {% block extra_body %}
+      {% block content %}
+      {% endblock content %}
+    {% endblock extra_body %}
+    <div class="h-16"></div>
+    <footer class="w-full py-4 flex flex-col items-center justify-center text-sm border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+      <div class="flex items-center space-x-8 mb-4">
+        <a href="{% url 'forum_categories' %}"
+           class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors duration-200">
+          <i class="fa-solid fa-comments mr-2"></i>
+          <span>Forum</span>
+        </a>
+        <a href="https://x.com"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors duration-200">
+          <i class="fa-brands fa-twitter mr-2"></i>
+          <span>Twitter</span>
+        </a>
+        <a href="https://facebook.com"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors duration-200">
+          <i class="fa-brands fa-facebook mr-2"></i>
+          <span>Facebook</span>
+        </a>
+        <a href="https://youtube.com"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors duration-200">
+          <i class="fa-brands fa-youtube mr-2"></i>
+          <span>YouTube</span>
+        </a>
+        <a href="https://slack.com"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors duration-200">
+          <i class="fa-brands fa-slack mr-2"></i>
+          <span>Slack</span>
+        </a>
+        <a href="/blog"
+           class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors duration-200">
+          <i class="fa-solid fa-blog mr-2"></i>
+          <span>Blog</span>
+        </a>
+        <a href="https://github.com/alphaonelabs"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors duration-200">
+          <i class="fa-brands fa-github mr-2"></i>
+          <span>GitHub</span>
+        </a>
+        <a href="{% url 'sitemap' %}"
+           class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors duration-200">
+          <i class="fa-solid fa-sitemap mr-2"></i>
+          <span>Sitemap</span>
+        </a>
+      </div>
+      <div class="text-gray-600 dark:text-gray-400">© Alpha One Labs, 2025</div>
+    </footer>
+  </body>
+</html>

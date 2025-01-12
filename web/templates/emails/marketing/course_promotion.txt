@@ -1,0 +1,28 @@
+New Course Recommendation
+
+Hi there!
+
+Based on your learning interests, we thought you might be interested in this course:
+
+{{ course.title }}
+Instructor: {{ teacher.get_full_name }}
+
+{{ course.description }}
+
+Course Details:
+- Duration: {{ course.duration }}
+- Subject: {{ course.subject }}
+- Level: {{ course.level }}
+
+Join now to:
+* Learn from an experienced instructor
+* Access high-quality course materials
+* Engage with other students
+* Earn a completion certificate
+
+View the course details at:
+{{ site_url }}/courses/{{ course.slug }}/
+
+---
+You're receiving this email because you've shown interest in similar courses on {{ site_name }}.
+To unsubscribe from these notifications, visit: {{ site_url }}/settings/notifications/

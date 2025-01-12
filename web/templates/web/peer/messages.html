@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}
+  Messages with {{ peer.get_full_name|default:peer.username }}
+{% endblock title %}
+{% block content %}
+  <main class="flex-1 w-full max-w-[90rem] mx-auto mt-6 px-4 md:px-6">
+    <div class="flex justify-between items-center mb-6">
+      <div class="flex items-center space-x-4">
+        <a href="{% url 'peer_connections' %}"
+           class="border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-semibold px-4 py-2 rounded-lg flex items-center">
+          <i class="fas fa-arrow-left mr-2"></i>
+          Back to Connections
+        </a>
+        <div>
+          <h1 class="text-2xl font-bold">{{ peer.get_full_name|default:peer.username }}</h1>
+          <p class="text-gray-600 dark:text-gray-400">Messages</p>
+        </div>
+      </div>
+    </div>
+    <div class="border border-gray-200 dark:border-gray-700 rounded-lg">
+      <div class="p-6">
+        <!-- Messages Container -->
+        <div class="messages-container mb-6 h-[500px] overflow-y-auto">
+          {% for message in messages %}
+            <div class="message mb-4 {% if message.sender == request.user %}text-right{% endif %}">
+              <div class="inline-block max-w-[75%] {% if message.sender == request.user %}bg-orange-500 text-white{% else %}bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100{% endif %} rounded-lg p-4">
+                <div class="message-content prose dark:prose-invert max-w-none">{{ message.content|linebreaks }}</div>
+                <div class="text-sm mt-2 {% if message.sender == request.user %}text-orange-100{% else %}text-gray-500 dark:text-gray-400{% endif %}">
+                  {{ message.created_at|timesince }} ago
+                </div>
+              </div>
+            </div>
+          {% empty %}
+            <div class="text-center text-gray-500 dark:text-gray-400 py-8">
+              <i class="fa-solid fa-comments text-4xl mb-4"></i>
+              <p class="mb-2">No messages yet.</p>
+              <p class="text-sm">Start the conversation by sending a message!</p>
+            </div>
+          {% endfor %}
+        </div>
+        <!-- Message Form -->
+        <form method="post" class="message-form">
+          {% csrf_token %}
+          <div class="flex space-x-4">
+            <textarea name="content"
+                      class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 p-3 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700 bg-white dark:bg-gray-800 resize-none"
+                      rows="2"
+                      placeholder="Type your message..."
+                      required></textarea>
+            <button type="submit"
+                    class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-2 rounded-lg flex items-center self-end">
+              <i class="fas fa-paper-plane mr-2"></i>
+              Send
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+  {% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Scroll to bottom of messages container
+            const messagesContainer = document.querySelector('.messages-container');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            // Auto-resize textarea
+            const textarea = document.querySelector('textarea');
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+
+            // Auto-scroll on new messages
+            const messageForm = document.querySelector('.message-form');
+            messageForm.addEventListener('submit', function() {
+                setTimeout(() => {
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }, 100);
+            });
+        });
+    </script>
+  {% endblock extra_js %}
+{% endblock content %}
