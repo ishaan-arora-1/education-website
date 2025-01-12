@@ -1,6 +1,7 @@
 import os
 
 from allauth.account.signals import user_signed_up
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -77,10 +78,7 @@ class Course(models.Model):
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, max_length=200)
     image = models.ImageField(
-        upload_to="course_images/%Y/%m/%d/",
-        help_text="Course image (300x150 pixels)",
-        blank=True,
-        null=True,
+        upload_to="course_images/%Y/%m/%d/", help_text="Course image (300x150 pixels)", blank=True
     )
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name="courses_teaching")
     description = models.TextField(blank=True, default="")
@@ -583,34 +581,37 @@ def set_user_type(sender, request, user, **kwargs):
 
 
 class Cart(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="cart", null=True, blank=True)
-    session_key = models.CharField(max_length=40, null=True, blank=True)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="cart",
+        null=True,
+        blank=True,
+    )
+    session_key = models.CharField(max_length=40, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        if self.user:
-            return f"Cart for {self.user.username}"
-        return f"Guest Cart ({self.session_key})"
 
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=(
-                    models.Q(user__isnull=False, session_key__isnull=True)
-                    | models.Q(user__isnull=True, session_key__isnull=False)
-                ),
+                check=models.Q(user__isnull=False) | models.Q(session_key__gt=""),
                 name="cart_user_or_session_key",
             )
         ]
 
     @property
-    def total(self):
-        return sum(item.total for item in self.items.all())
-
-    @property
     def item_count(self):
         return self.items.count()
+
+    @property
+    def total(self):
+        return sum(item.price for item in self.items.all())
+
+    def __str__(self):
+        if self.user:
+            return f"Cart for {self.user.username}"
+        return "Anonymous cart"
 
 
 class CartItem(models.Model):
@@ -639,12 +640,12 @@ class CartItem(models.Model):
         super().save(*args, **kwargs)
 
     @property
-    def total(self):
+    def price(self):
         if self.course:
             return self.course.price
         return self.session.price or 0
 
     def __str__(self):
         if self.course:
-            return f"{self.course.title} (Full Course)"
-        return f"{self.session.title} (Individual Session)"
+            return f"{self.course.title} in cart for {self.cart}"
+        return f"{self.session.title} in cart for {self.cart}"

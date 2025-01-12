@@ -1572,7 +1572,7 @@ def checkout_success(request):
 
             # Associate the cart with the new user
             cart.user = user
-            cart.session_key = None
+            cart.session_key = ""  # Use empty string instead of None
             cart.save()
 
             # Send welcome email with password reset link

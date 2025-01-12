@@ -122,7 +122,7 @@ class Migration(migrations.Migration):
             name="Cart",
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("session_key", models.CharField(blank=True, max_length=40, null=True)),
+                ("session_key", models.CharField(blank=True, max_length=40, default="")),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 (
@@ -148,7 +148,6 @@ class Migration(migrations.Migration):
                     models.ImageField(
                         blank=True,
                         help_text="Course image (300x150 pixels)",
-                        null=True,
                         upload_to="course_images/%Y/%m/%d/",
                     ),
                 ),
