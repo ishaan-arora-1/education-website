@@ -21,7 +21,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
-from .calendar_sync import generate_google_calendar_link, generate_outlook_calendar_link
+from .calendar_sync import generate_google_calendar_link, generate_ical_feed, generate_outlook_calendar_link
 from .decorators import teacher_required
 from .forms import CourseForm, CourseMaterialForm, ProfileUpdateForm, ReviewForm, SessionForm, TeacherSignupForm
 from .marketing import (
@@ -41,7 +41,6 @@ from .models import (
     ForumCategory,
     ForumReply,
     ForumTopic,
-    Payment,
     PeerConnection,
     PeerMessage,
     Review,
@@ -589,21 +588,14 @@ def handle_successful_payment(payment_intent):
 
     enrollment = Enrollment.objects.create(student=user, course=course, status="approved")
 
-    Payment.objects.create(
-        enrollment=enrollment,
-        amount=payment_intent.amount / 100,  # Convert from cents
-        currency=payment_intent.currency,
-        stripe_payment_intent_id=payment_intent.id,
-        status="completed",
-    )
-
     # Send notifications
     send_enrollment_confirmation(enrollment)
     notify_teacher_new_enrollment(enrollment)
 
 
 def handle_failed_payment(payment_intent):
-    Payment.objects.filter(stripe_payment_intent_id=payment_intent.id).update(status="failed")
+    # Just log the failure, no need to update payment status since we're not tracking payments
+    pass
 
 
 @login_required
@@ -856,7 +848,6 @@ def course_analytics(request, slug):
 @login_required
 def calendar_feed(request):
     """Generate and serve an iCal feed of the user's course sessions."""
-    from .calendar_sync import generate_ical_feed
 
     response = HttpResponse(generate_ical_feed(request.user), content_type="text/calendar")
     response["Content-Disposition"] = f'attachment; filename="{settings.SITE_NAME}-schedule.ics"'

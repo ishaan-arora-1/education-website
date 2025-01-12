@@ -187,15 +187,19 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 if os.environ.get("DATABASE_URL"):
     DEBUG = False
     DATABASES = {"default": env.db()}
-    DATABASES["default"]["OPTIONS"] = {
-        "sql_mode": (
-            "STRICT_TRANS_TABLES,"
-            "NO_ZERO_IN_DATE,"
-            "NO_ZERO_DATE,"
-            "ERROR_FOR_DIVISION_BY_ZERO,"
-            "NO_ENGINE_SUBSTITUTION"
-        ),
-    }
+
+    # Only add MySQL-specific options if using MySQL
+    if DATABASES["default"]["ENGINE"] == "django.db.backends.mysql":
+        DATABASES["default"]["OPTIONS"] = {
+            "sql_mode": (
+                "STRICT_TRANS_TABLES,"
+                "NO_ZERO_IN_DATE,"
+                "NO_ZERO_DATE,"
+                "ERROR_FOR_DIVISION_BY_ZERO,"
+                "NO_ENGINE_SUBSTITUTION"
+            ),
+        }
+
     SENDGRID_API_KEY = os.getenv("SENDGRID_PASSWORD", "blank")
     EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
     EMAIL_FROM = os.getenv("EMAIL_FROM")

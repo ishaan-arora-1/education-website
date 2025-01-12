@@ -5,21 +5,17 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.utils import timezone
 
-from web.forms import (
+from web.forms import CourseCreationForm, CourseMaterialForm, ProfileUpdateForm, SessionForm, UserRegistrationForm
+from web.forms_additional import (
     BlogCommentForm,
-    CourseCreationForm,
-    CourseMaterialForm,
     CourseReviewForm,
     CourseSearchForm,
     CourseUpdateForm,
     LearningInquiryForm,
     MessageForm,
-    ProfileUpdateForm,
-    SessionForm,
     StudyGroupForm,
     TeachingInquiryForm,
     TopicCreationForm,
-    UserRegistrationForm,
 )
 from web.models import Course, ForumCategory, Subject, User
 

@@ -2,21 +2,9 @@ from captcha.fields import CaptchaField
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from django.template.defaultfilters import slugify
 from django.utils.crypto import get_random_string
-from django.utils.text import slugify
 
-from .forms_additional import (
-    BlogCommentForm,
-    CourseReviewForm,
-    CourseSearchForm,
-    CourseUpdateForm,
-    LearningInquiryForm,
-    MaterialUploadForm,
-    MessageForm,
-    StudyGroupForm,
-    TeachingInquiryForm,
-    TopicCreationForm,
-)
 from .models import Course, CourseMaterial, Profile, Review, Session, Subject
 from .widgets import (
     TailwindCaptchaTextInput,
@@ -39,17 +27,7 @@ __all__ = [
     "ReviewForm",
     "CourseMaterialForm",
     "TeacherSignupForm",
-    "BlogCommentForm",
-    "CourseReviewForm",
-    "CourseSearchForm",
-    "CourseUpdateForm",
-    "LearningInquiryForm",
-    "MaterialUploadForm",
-    "MessageForm",
     "ProfileUpdateForm",
-    "StudyGroupForm",
-    "TeachingInquiryForm",
-    "TopicCreationForm",
 ]
 
 
