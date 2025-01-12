@@ -55,7 +55,7 @@
                 async function initialize() {
                     try {
                         console.log('Fetching payment intent...');
-                        const response = await fetch("{% url 'create_payment_intent' course_slug=enrollment.course.slug %}");
+                        const response = await fetch("{% url 'create_payment_intent' slug=enrollment.course.slug %}");
 
                         if (!response.ok) {
                             throw new Error('Failed to create payment intent');
@@ -192,7 +192,7 @@
                   async function initialize() {
                       try {
                           console.log('Fetching payment intent...');
-                          const response = await fetch("{% url 'create_payment_intent' course_slug=enrollment.course.slug %}");
+                          const response = await fetch("{% url 'create_payment_intent' slug=enrollment.course.slug %}");
 
                           if (!response.ok) {
                               throw new Error('Failed to create payment intent');
