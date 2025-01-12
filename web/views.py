@@ -106,6 +106,7 @@ def index(request):
         "featured_courses": featured_courses,
         "recommended_courses": recommended_courses,
         "form": form,
+        "last_modified_time": get_wsgi_last_modified_time(),
     }
     return render(request, "index.html", context)
 
