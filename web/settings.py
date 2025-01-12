@@ -119,13 +119,13 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_AUTHENTICATION_METHOD = "email"
-# ACCOUNT_LOGIN_ATTEMPTS_LIMIT = 5
-ACCOUNT_RATE_LIMITS = [
-    "login_attempt",
-    "create_user",
-]
-
-# ACCOUNT_LOGIN_ATTEMPTS_TIMEOUT = 300
+ACCOUNT_RATE_LIMITS = {
+    "login_attempt": "5/5m",  # 5 attempts per 5 minutes
+    "login_failed": "3/5m",  # 3 failed attempts per 5 minutes
+    "signup": "5/h",  # 5 signups per hour
+    "send_email": "5/5m",  # 5 emails per 5 minutes
+    "change_email": "3/h",  # 3 email changes per hour
+}
 ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
 ACCOUNT_LOGOUT_ON_GET = False
 ACCOUNT_SESSION_REMEMBER = True
