@@ -15,11 +15,19 @@
         </h1>
         <p class="text-gray-600 dark:text-gray-400">{{ category.description }}</p>
       </div>
-      <a href="{% url 'create_topic' category.slug %}"
-         class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg flex items-center">
-        <i class="fa-solid fa-plus mr-2"></i>
-        Create New Topic
-      </a>
+      {% if user.is_authenticated %}
+        <a href="{% url 'create_topic' category.slug %}"
+           class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg flex items-center">
+          <i class="fa-solid fa-plus mr-2"></i>
+          Create New Topic
+        </a>
+      {% else %}
+        <a href="{% url 'login' %}?next={% url 'create_topic' category.slug %}"
+           class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg flex items-center">
+          <i class="fa-solid fa-sign-in-alt mr-2"></i>
+          Login to Create Topic
+        </a>
+      {% endif %}
     </div>
     <div class="border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-700">
       {% for topic in topics %}
@@ -68,11 +76,19 @@
         <div class="p-8 text-center text-gray-500 dark:text-gray-400">
           <i class="fa-solid fa-comment-slash text-4xl mb-4"></i>
           <p class="mb-4">No topics have been created in this category yet.</p>
-          <a href="{% url 'create_topic' category.slug %}"
-             class="inline-flex items-center bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg">
-            <i class="fa-solid fa-plus mr-2"></i>
-            Create the First Topic
-          </a>
+          {% if user.is_authenticated %}
+            <a href="{% url 'create_topic' category.slug %}"
+               class="inline-flex items-center bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg">
+              <i class="fa-solid fa-plus mr-2"></i>
+              Create the First Topic
+            </a>
+          {% else %}
+            <a href="{% url 'login' %}?next={% url 'create_topic' category.slug %}"
+               class="inline-flex items-center bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg">
+              <i class="fa-solid fa-sign-in-alt mr-2"></i>
+              Login to Create Topic
+            </a>
+          {% endif %}
         </div>
       {% endfor %}
     </div>

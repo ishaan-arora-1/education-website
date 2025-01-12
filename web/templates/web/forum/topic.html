@@ -39,16 +39,14 @@
             <form method="post" class="space-y-4">
               {% csrf_token %}
               <input type="hidden" name="action" value="add_reply" />
-              {% for field in form %}
-                <div>
-                  <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
-                  {{ field }}
-                  {% if field.help_text %}
-                    <small class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</small>
-                  {% endif %}
-                  {% if field.errors %}<div class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors }}</div>{% endif %}
-                </div>
-              {% endfor %}
+              <div>
+                <label for="content" class="block text-sm font-medium mb-2">Your Reply</label>
+                <textarea name="content"
+                          id="content"
+                          rows="4"
+                          class="w-full border border-gray-300 dark:border-gray-600 rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 bg-white dark:bg-gray-800"
+                          required></textarea>
+              </div>
               <button type="submit"
                       class="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
                 Post Reply
@@ -56,10 +54,14 @@
             </form>
           </div>
         {% else %}
-          <p class="text-gray-600 dark:text-gray-400 mb-8">
-            Please <a href="{% url 'login' %}"
-    class="text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300">log in</a> to reply.
-          </p>
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+            <p class="text-gray-600 dark:text-gray-400 mb-4">Please log in to join the discussion.</p>
+            <a href="{% url 'login' %}?next={{ request.path }}"
+               class="inline-flex items-center bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded">
+              <i class="fa-solid fa-sign-in-alt mr-2"></i>
+              Log In to Reply
+            </a>
+          </div>
         {% endif %}
         <!-- Replies List -->
         {% for reply in replies %}
@@ -91,7 +93,7 @@
             <div class="prose dark:prose-invert max-w-none">{{ reply.content|linebreaks }}</div>
           </div>
         {% empty %}
-          <p class="text-gray-500 dark:text-gray-400">No replies yet.</p>
+          <p class="text-gray-500 dark:text-gray-400">No replies yet. Be the first to reply!</p>
         {% endfor %}
       </div>
     </div>

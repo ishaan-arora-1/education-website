@@ -98,11 +98,17 @@ def index(request):
         else get_popular_courses(limit=3)
     )
 
+    # Get latest forum topic and blog post
+    latest_topic = ForumTopic.objects.filter(is_locked=False).order_by("-created_at").first()
+    latest_post = BlogPost.objects.filter(status="published").order_by("-published_at").first()
+
     context = {
         "featured_courses": featured_courses,
         "recommended_courses": recommended_courses,
         "form": form,
         "last_modified_time": get_wsgi_last_modified_time(),
+        "latest_topic": latest_topic,
+        "latest_post": latest_post,
     }
     return render(request, "index.html", context)
 
@@ -885,14 +891,12 @@ def calendar_links(request, session_id):
     )
 
 
-@login_required
 def forum_categories(request):
     """Display all forum categories."""
     categories = ForumCategory.objects.all()
     return render(request, "web/forum/categories.html", {"categories": categories})
 
 
-@login_required
 def forum_category(request, slug):
     """Display topics in a specific category."""
     category = get_object_or_404(ForumCategory, slug=slug)
@@ -900,7 +904,6 @@ def forum_category(request, slug):
     return render(request, "web/forum/category.html", {"category": category, "topics": topics})
 
 
-@login_required
 def forum_topic(request, category_slug, topic_id):
     """Display a specific forum topic and its replies."""
     category = get_object_or_404(ForumCategory, slug=category_slug)
@@ -908,6 +911,10 @@ def forum_topic(request, category_slug, topic_id):
     replies = topic.replies.all()
 
     if request.method == "POST":
+        if not request.user.is_authenticated:
+            messages.error(request, "You must be logged in to post replies.")
+            return redirect("login")
+
         content = request.POST.get("content")
         if content:
             ForumReply.objects.create(topic=topic, author=request.user, content=content)
@@ -917,7 +924,11 @@ def forum_topic(request, category_slug, topic_id):
     return render(
         request,
         "web/forum/topic.html",
-        {"category": category, "topic": topic, "replies": replies},
+        {
+            "category": category,
+            "topic": topic,
+            "replies": replies,
+        },
     )
 
 

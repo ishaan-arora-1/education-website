@@ -265,11 +265,10 @@
           Recent Forum Post
         </h2>
         <p class="text-sm">
-          <strong class="block text-gray-900 dark:text-gray-200 mb-1">How to get started with advanced mathematics?</strong>
-          “I'm looking for resources on group theory and number theory. Any
-          recommendations?” — <em>posted by user123</em>
+          <strong class="block text-gray-900 dark:text-gray-200 mb-1">{{ latest_topic.title|default:"How to get started with advanced mathematics?" }}</strong>
+          "{{ latest_topic.content|default:"I'm looking for resources on group theory and number theory. Any recommendations?" }}" — <em>posted by {{ latest_topic.author.username|default:"user123" }}</em>
         </p>
-        <a href="#"
+        <a href="{% if latest_topic %}{% url 'forum_topic' latest_topic.category.slug latest_topic.id %}{% else %}{% url 'forum_categories' %}{% endif %}"
            class="text-orange-500 dark:text-orange-400 text-sm hover:underline inline-block mt-2">View Discussion &rarr;</a>
       </div>
       <!-- Recent Blog Post -->
@@ -279,11 +278,10 @@
           Recent Blog Post
         </h2>
         <p class="text-sm">
-          <strong class="block text-gray-900 dark:text-gray-200 mb-1">The Future of Online Education</strong>
-          Learn how new technologies are shaping the way we teach and learn,
-          including AI-driven insights and personalized curriculum...
+          <strong class="block text-gray-900 dark:text-gray-200 mb-1">{{ latest_post.title|default:"The Future of Online Education" }}</strong>
+          {{ latest_post.excerpt|default:"Learn how new technologies are shaping the way we teach and learn, including AI-driven insights and personalized curriculum..." }}
         </p>
-        <a href="#"
+        <a href="{% if latest_post %}{% url 'blog_detail' latest_post.slug %}{% else %}{% url 'blog' %}{% endif %}"
            class="text-orange-500 dark:text-orange-400 text-sm hover:underline inline-block mt-2">Read More &rarr;</a>
       </div>
     </div>
