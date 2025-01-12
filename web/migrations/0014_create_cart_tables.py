@@ -36,6 +36,35 @@ def create_cart_tables(apps, schema_editor):
                 """
                 )
 
+                # Create trigger for cart validation
+                cursor.execute(
+                    """
+                    CREATE TRIGGER cart_user_or_session_key_trigger
+                    BEFORE INSERT ON web_cart
+                    FOR EACH ROW
+                    BEGIN
+                        IF NEW.user_id IS NULL AND NEW.session_key = '' THEN
+                            SIGNAL SQLSTATE '45000'
+                            SET MESSAGE_TEXT = 'Either user_id must not be NULL or session_key must not be empty';
+                        END IF;
+                    END;
+                """
+                )
+
+                cursor.execute(
+                    """
+                    CREATE TRIGGER cart_user_or_session_key_update_trigger
+                    BEFORE UPDATE ON web_cart
+                    FOR EACH ROW
+                    BEGIN
+                        IF NEW.user_id IS NULL AND NEW.session_key = '' THEN
+                            SIGNAL SQLSTATE '45000'
+                            SET MESSAGE_TEXT = 'Either user_id must not be NULL or session_key must not be empty';
+                        END IF;
+                    END;
+                """
+                )
+
             # Check if CartItem table exists
             cursor.execute(
                 f"""
@@ -70,25 +99,6 @@ def create_cart_tables(apps, schema_editor):
                         UNIQUE KEY unique_cart_course (cart_id, course_id),
                         UNIQUE KEY unique_cart_session (cart_id, session_id)
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-                """
-                )
-
-            # Add constraint if it doesn't exist
-            cursor.execute(
-                f"""
-                SELECT COUNT(*)
-                FROM information_schema.table_constraints
-                WHERE table_schema = '{db_name}'
-                AND table_name = 'web_cart'
-                AND constraint_name = 'cart_user_or_session_key'
-            """
-            )
-            if cursor.fetchone()[0] == 0:
-                cursor.execute(
-                    """
-                    ALTER TABLE web_cart
-                    ADD CONSTRAINT cart_user_or_session_key
-                    CHECK ((user_id IS NOT NULL) OR (session_key != ''))
                 """
                 )
     except (OperationalError, ProgrammingError) as e:
