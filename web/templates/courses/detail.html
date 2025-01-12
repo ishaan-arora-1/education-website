@@ -85,9 +85,7 @@
               </div>
               <!-- Enrollment Button -->
               {% if not is_teacher and not is_enrolled %}
-                <form method="post"
-                      action="{% url 'enroll_course' course.slug %}"
-                      class="mb-6">
+                <form method="post" action="{% url 'enroll' course.slug %}" class="mb-6">
                   {% csrf_token %}
                   <button type="submit"
                           class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
