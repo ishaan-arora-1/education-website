@@ -73,6 +73,7 @@ class CourseCreationForm(forms.ModelForm):
         fields = (
             "title",
             "description",
+            "image",
             "learning_objectives",
             "prerequisites",
             "price",
@@ -83,6 +84,12 @@ class CourseCreationForm(forms.ModelForm):
         )
         widgets = {
             "description": forms.Textarea(attrs={"rows": 4}),
+            "image": TailwindFileInput(
+                attrs={
+                    "accept": "image/*",
+                    "help_text": "Course image must be 300x150 pixels",
+                }
+            ),
             "learning_objectives": forms.Textarea(attrs={"rows": 4}),
             "prerequisites": forms.Textarea(attrs={"rows": 4}),
             "tags": forms.TextInput(attrs={"placeholder": "Enter comma-separated tags"}),
@@ -107,6 +114,7 @@ class CourseForm(forms.ModelForm):
         fields = [
             "title",
             "description",
+            "image",
             "learning_objectives",
             "prerequisites",
             "price",
@@ -118,6 +126,12 @@ class CourseForm(forms.ModelForm):
         widgets = {
             "title": TailwindInput(),
             "description": TailwindTextarea(attrs={"rows": 4}),
+            "image": TailwindFileInput(
+                attrs={
+                    "accept": "image/*",
+                    "help_text": "Course image must be 300x150 pixels",
+                }
+            ),
             "learning_objectives": TailwindTextarea(attrs={"rows": 4}),
             "prerequisites": TailwindTextarea(attrs={"rows": 4}),
             "price": TailwindNumberInput(attrs={"min": "0", "step": "0.01"}),

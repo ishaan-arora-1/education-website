@@ -48,13 +48,7 @@ from .models import (
     SessionAttendance,
     StudyGroup,
 )
-from .notifications import (
-    notify_course_update,
-    notify_session_reminder,
-    notify_teacher_new_enrollment,
-    send_enrollment_confirmation,
-)
-from .recommendations import get_course_recommendations, get_popular_courses
+from .notifications import notify_session_reminder, notify_teacher_new_enrollment, send_enrollment_confirmation
 
 GOOGLE_CREDENTIALS_PATH = os.path.join(settings.BASE_DIR, "google_credentials.json")
 
@@ -89,26 +83,12 @@ def index(request):
     else:
         form = TeacherSignupForm()
 
-    featured_courses = Course.objects.filter(status="published").order_by("-created_at")[:6]
-
-    # Get recommendations if user is authenticated
-    recommended_courses = (
-        get_course_recommendations(request.user, limit=3)
-        if request.user.is_authenticated
-        else get_popular_courses(limit=3)
-    )
-
-    # Get latest forum topic and blog post
-    latest_topic = ForumTopic.objects.filter(is_locked=False).order_by("-created_at").first()
-    latest_post = BlogPost.objects.filter(status="published").order_by("-published_at").first()
+    # Get featured courses - newest courses with highest ratings
+    featured_courses = Course.objects.all().order_by("-created_at")[:3]
 
     context = {
-        "featured_courses": featured_courses,
-        "recommended_courses": recommended_courses,
         "form": form,
-        "last_modified_time": get_wsgi_last_modified_time(),
-        "latest_topic": latest_topic,
-        "latest_post": latest_post,
+        "featured_courses": featured_courses,
     }
     return render(request, "index.html", context)
 
@@ -200,11 +180,12 @@ def create_course(request):
         return HttpResponseForbidden()
 
     if request.method == "POST":
-        form = CourseForm(request.POST)
+        form = CourseForm(request.POST, request.FILES)
         if form.is_valid():
             course = form.save(commit=False)
             course.teacher = request.user
             course.save()
+            form.save_m2m()  # Save many-to-many relationships
             return redirect("course_detail", slug=course.slug)
     else:
         form = CourseForm()
@@ -606,21 +587,15 @@ def handle_failed_payment(payment_intent):
 
 @login_required
 def update_course(request, slug):
-    course = Course.objects.get(slug=slug)
+    course = get_object_or_404(Course, slug=slug)
     if request.user != course.teacher:
-        messages.error(request, "Only the course teacher can update the course!")
-        return redirect("course_detail", slug=slug)
+        return HttpResponseForbidden()
 
     if request.method == "POST":
-        form = CourseForm(request.POST, instance=course)
+        form = CourseForm(request.POST, request.FILES, instance=course)
         if form.is_valid():
             form.save()
-            # Send update notification to enrolled students
-            update_message = request.POST.get("update_message", "").strip()
-            if update_message:
-                notify_course_update(course, update_message)
-            messages.success(request, "Course updated successfully!")
-            return redirect("course_detail", slug=slug)
+            return redirect("course_detail", slug=course.slug)
     else:
         form = CourseForm(instance=course)
 

@@ -11,7 +11,7 @@
         <p class="text-gray-600 dark:text-gray-300">Fill out the form below to create your new course.</p>
       </div>
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <form method="post" class="space-y-6">
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
           {% csrf_token %}
           {% for field in form %}
             <div>

@@ -74,6 +74,11 @@ class Course(models.Model):
 
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, max_length=200)
+    image = models.ImageField(
+        upload_to="course_images/%Y/%m/%d/",
+        help_text="Course image (300x150 pixels)",
+        blank=True,
+    )
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name="courses_teaching")
     description = models.TextField()
     learning_objectives = models.TextField()
@@ -120,6 +125,26 @@ class Course(models.Model):
         if not reviews:
             return 0
         return sum(review.rating for review in reviews) / len(reviews)
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        from PIL import Image
+
+        super().clean()
+
+        if self.image:
+            # Open the uploaded image
+            img = Image.open(self.image)
+
+            # Check dimensions
+            if img.size != (300, 150):
+                raise ValidationError(
+                    {
+                        "image": "Image dimensions must be 300x150 pixels. Current dimensions are {}x{}".format(
+                            img.size[0], img.size[1]
+                        )
+                    }
+                )
 
 
 class Session(models.Model):
