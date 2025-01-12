@@ -1,4 +1,5 @@
 {% load static %}
+{% load cart_tags %}
 
 <!DOCTYPE html>
 <html lang="en" class="overflow-y-scroll">
@@ -160,6 +161,20 @@
           </div>
           <!-- Language and Dark Mode -->
           <div class="flex items-center space-x-2">
+            <!-- Cart Icon -->
+            <a href="{% url 'cart_view' %}"
+               class="relative hover:underline flex items-center p-2 hover:bg-teal-700 rounded-lg">
+              <i class="fa-solid fa-shopping-cart"></i>
+              {% if request.user.cart.item_count > 0 or request.session.session_key and request.session.session_key|get_cart_item_count > 0 %}
+                <span class="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                  {% if request.user.is_authenticated %}
+                    {{ request.user.cart.item_count }}
+                  {% else %}
+                    {{ request.session.session_key|get_cart_item_count }}
+                  {% endif %}
+                </span>
+              {% endif %}
+            </a>
             <div class="relative">
               <button class="focus:outline-none hover:underline flex items-center p-2 hover:bg-teal-700 rounded-lg"
                       onclick="toggleLanguageDropdown()">
@@ -259,54 +274,76 @@
           {% endif %}
         </nav>
         <!-- Mobile Menu (hidden by default) -->
-        <div id="mobile-menu" class="hidden fixed inset-0 z-50">
-          <div class="absolute inset-0 bg-black bg-opacity-50"
-               onclick="toggleMobileMenu()"></div>
-          <div class="absolute right-0 top-0 h-full w-64 bg-white dark:bg-gray-800 shadow-lg p-4">
-            <div class="flex justify-between items-center mb-4">
-              <h2 class="text-lg font-bold">Menu</h2>
-              <button onclick="toggleMobileMenu()"
-                      class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                <i class="fas fa-times"></i>
-              </button>
-            </div>
-            <div class="flex flex-col space-y-4">
+        <div id="mobile-menu"
+             class="hidden fixed inset-0 z-50 bg-black bg-opacity-50"
+             onclick="if (event.target === this) toggleMobileMenu()">
+          <div class="absolute right-0 top-0 h-full w-64 bg-white dark:bg-gray-800 shadow-lg overflow-y-auto">
+            <!-- Close button -->
+            <button class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    onclick="toggleMobileMenu()">
+              <i class="fas fa-times text-xl"></i>
+            </button>
+            <!-- Mobile menu content -->
+            <div class="pt-16 px-4">
+              <!-- Search bar -->
+              <div class="relative mb-6">
+                <input type="text"
+                       placeholder="What do you want to learn?"
+                       class="w-full rounded-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700" />
+                <i class="fas fa-search absolute right-3 top-2.5 text-gray-500 dark:text-gray-400"></i>
+              </div>
+              <!-- Cart Link -->
+              <a href="{% url 'cart_view' %}"
+                 class="flex items-center space-x-2 px-4 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                <i class="fa-solid fa-shopping-cart"></i>
+                <span>Cart</span>
+                {% if request.user.cart.item_count > 0 or request.session.session_key and request.session.session_key|get_cart_item_count > 0 %}
+                  <span class="bg-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center ml-auto">
+                    {% if request.user.is_authenticated %}
+                      {{ request.user.cart.item_count }}
+                    {% else %}
+                      {{ request.session.session_key|get_cart_item_count }}
+                    {% endif %}
+                  </span>
+                {% endif %}
+              </a>
+              <!-- Navigation Links -->
               <a href="{% url 'index' %}"
-                 class="flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                 class="flex items-center space-x-2 px-4 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                 <i class="fa-solid fa-house"></i>
                 <span>Home</span>
               </a>
               <a href="{% url 'about' %}"
-                 class="flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                 class="flex items-center space-x-2 px-4 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                 <i class="fa-solid fa-circle-info"></i>
                 <span>About</span>
               </a>
               <a href="{% url 'course_search' %}"
-                 class="flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                 class="flex items-center space-x-2 px-4 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                 <i class="fa-solid fa-book-open"></i>
                 <span>Courses</span>
               </a>
               <a href="{% url 'subjects' %}"
-                 class="flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                 class="flex items-center space-x-2 px-4 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                 <i class="fa-solid fa-list-check"></i>
                 <span>Subjects</span>
               </a>
               {% if user.is_authenticated %}
                 <a href="{% url 'profile' %}"
-                   class="flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                   class="flex items-center space-x-2 px-4 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                   <i class="fas fa-user-circle"></i>
                   <span>Profile</span>
                 </a>
                 <form method="post" action="{% url 'account_logout' %}">
                   {% csrf_token %}
                   <button type="submit"
-                          class="w-full flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                          class="w-full flex items-center space-x-2 px-4 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
                   </button>
                 </form>
               {% else %}
-                <div class="flex flex-col space-y-2">
+                <div class="flex flex-col space-y-2 px-4 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                   <a href="{% url 'account_login' %}"
                      class="flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                     <i class="fa-solid fa-right-to-bracket"></i>
