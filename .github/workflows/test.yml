@@ -7,14 +7,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-
-    services:
-      redis:
-        image: redis
-        ports:
-          - 6379:6379
-        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
-
     steps:
     - uses: actions/checkout@v3
 
@@ -26,11 +18,13 @@ jobs:
 
     - name: Run pre-commit hooks
       run: |
+        pip install pre-commit black isort flake8 djlint
         pre-commit install
         pre-commit run --all-files
 
     - name: Run tests
       run: |
+        cp .env.sample .env
         python -m pip install --upgrade pip wheel setuptools
         # Install main requirements with verbosity
         pip install -v -r requirements.txt
