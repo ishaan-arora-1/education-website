@@ -37,6 +37,137 @@
             </div>
           </div>
         </div>
+        <!-- Stripe JS -->
+        <script src="https://js.stripe.com/v3/"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('Payment script loading...');
+                const stripe = Stripe('{{ stripe_public_key }}');
+                let elements;
+
+                initialize();
+                checkStatus();
+
+                document
+                    .querySelector("#payment-form")
+                    .addEventListener("submit", handleSubmit);
+
+                async function initialize() {
+                    try {
+                        console.log('Fetching payment intent...');
+                        const response = await fetch("{% url 'create_payment_intent' enrollment.course.slug %}");
+
+                        if (!response.ok) {
+                            throw new Error('Failed to create payment intent');
+                        }
+
+                        const {
+                            clientSecret
+                        } = await response.json();
+
+                        const appearance = {
+                            theme: document.documentElement.classList.contains('dark') ? 'night' : 'stripe',
+                        };
+
+                        elements = stripe.elements({
+                            appearance,
+                            clientSecret
+                        });
+
+                        const paymentElement = elements.create("payment");
+                        paymentElement.mount("#payment-element");
+                        console.log('Payment element mounted successfully');
+                    } catch (error) {
+                        console.error('Error initializing payment:', error);
+                        showError('Failed to initialize payment. Please try again.');
+                    }
+                }
+
+                async function handleSubmit(e) {
+                    e.preventDefault();
+                    setLoading(true);
+
+                    try {
+                        const {
+                            error
+                        } = await stripe.confirmPayment({
+                            elements,
+                            confirmParams: {
+                                return_url: window.location.origin + "{% url 'course_detail' enrollment.course.slug %}",
+                            },
+                        });
+
+                        if (error) {
+                            showError(error.message);
+                        }
+                    } catch (error) {
+                        console.error('Payment error:', error);
+                        showError('An unexpected error occurred. Please try again.');
+                    }
+
+                    setLoading(false);
+                }
+
+                async function checkStatus() {
+                    const clientSecret = new URLSearchParams(window.location.search).get(
+                        "payment_intent_client_secret"
+                    );
+
+                    if (!clientSecret) return;
+
+                    try {
+                        const {
+                            paymentIntent
+                        } = await stripe.retrievePaymentIntent(clientSecret);
+
+                        switch (paymentIntent.status) {
+                            case "succeeded":
+                                showMessage("Payment successful! You are now enrolled.");
+                                setTimeout(() => window.location.reload(), 2000);
+                                break;
+                            case "processing":
+                                showMessage("Payment processing. Please wait...");
+                                break;
+                            case "requires_payment_method":
+                                showMessage("Payment failed. Please try another payment method.");
+                                break;
+                            default:
+                                showMessage("Something went wrong.");
+                                break;
+                        }
+                    } catch (error) {
+                        console.error('Error checking payment status:', error);
+                        showError('Failed to check payment status');
+                    }
+                }
+
+                function showMessage(messageText) {
+                    const messageContainer = document.querySelector("#payment-message");
+                    messageContainer.textContent = messageText;
+                    messageContainer.style.display = "block";
+                }
+
+                function showError(messageText) {
+                    showMessage(messageText);
+                }
+
+                function setLoading(isLoading) {
+                    const submitButton = document.querySelector("#submit-button");
+                    const spinner = document.querySelector("#spinner");
+                    const buttonText = document.querySelector("#button-text");
+
+                    if (isLoading) {
+                        submitButton.disabled = true;
+                        spinner.classList.remove("d-none");
+                        buttonText.classList.add("d-none");
+                    } else {
+                        submitButton.disabled = false;
+                        spinner.classList.add("d-none");
+                        buttonText.classList.remove("d-none");
+                    }
+                }
+            });
+        </script>
       {% endif %}
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Left Column - Stats -->
@@ -285,16 +416,4 @@
   </div>
 {% endblock content %}
 {% block extra_js_bottom %}
-  {% if enrollment.status == 'pending' and enrollment.course.price > 0 %}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Payment script loading...');
-            // Remove duplicate Stripe initialization
-            if (typeof stripe === 'undefined') {
-                console.log('Initializing Stripe...');
-                const stripe = Stripe('{{ stripe_public_key }}');
-            }
-        });
-    </script>
-  {% endif %}
 {% endblock extra_js_bottom %}
