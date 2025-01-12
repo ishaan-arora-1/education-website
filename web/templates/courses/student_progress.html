@@ -8,6 +8,102 @@
 {% block extra_js %}
   {% if enrollment.status == 'pending' and enrollment.course.price > 0 %}
     <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        // Define the payment functions in global scope
+        window.initializePayment = async function() {
+            console.log('Initialize payment called');
+            const paymentButton = document.getElementById("payment-button");
+            const formContainer = document.getElementById("payment-form-container");
+            const messageDiv = document.querySelector("#payment-message");
+
+            if (!paymentButton || !formContainer) {
+                showError('Payment elements not found');
+                return;
+            }
+
+            try {
+                // Show loading state
+                paymentButton.disabled = true;
+                paymentButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Initializing...';
+
+                console.log('Fetching payment intent...');
+                const response = await fetch("{% url 'create_payment_intent' enrollment.course.slug %}");
+                console.log('Payment intent response:', response);
+
+                if (!response.ok) {
+                    throw new Error('Failed to create payment intent');
+                }
+
+                const data = await response.json();
+                console.log('Payment intent data:', data);
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Initialize Stripe Elements
+                console.log('Creating Stripe elements...');
+                window.elements = window.stripe.elements({
+                    appearance: {
+                        theme: document.documentElement.classList.contains('dark') ? 'night' : 'stripe',
+                    },
+                    clientSecret: data.clientSecret
+                });
+
+                // Create and mount the payment element
+                console.log('Creating payment element...');
+                window.paymentElement = window.elements.create("payment");
+
+                // Show the form container
+                paymentButton.classList.add('hidden');
+                formContainer.classList.remove('hidden');
+
+                console.log('Mounting payment element...');
+                await window.paymentElement.mount("#payment-element");
+                console.log('Payment element mounted successfully');
+
+                // Clear any previous error messages
+                if (messageDiv) {
+                    messageDiv.textContent = '';
+                }
+
+            } catch (error) {
+                console.error('Payment initialization error:', error);
+                showError(error.message || 'Failed to initialize payment');
+
+                // Reset the button state
+                paymentButton.disabled = false;
+                paymentButton.innerHTML = '<i class="fas fa-credit-card mr-2"></i>Pay {{ enrollment.course.price|floatformat:2 }} USD and Complete Enrollment';
+
+                // Hide the form container if visible
+                formContainer.classList.add('hidden');
+                paymentButton.classList.remove('hidden');
+            }
+        };
+
+        window.cancelPayment = function() {
+            console.log('Canceling payment...');
+            document.getElementById("payment-form-container").classList.add('hidden');
+            document.getElementById("payment-button").classList.remove('hidden');
+            const messageDiv = document.querySelector("#payment-message");
+            if (messageDiv) {
+                messageDiv.textContent = '';
+            }
+        };
+
+        function showError(message) {
+            const messageDiv = document.querySelector("#payment-message");
+            if (messageDiv) {
+                messageDiv.textContent = message;
+                messageDiv.classList.add('text-red-600');
+            }
+            console.error(message);
+        }
+
+        // Initialize Stripe
+        console.log('Payment script loading...');
+        window.stripe = Stripe('{{ stripe_public_key }}');
+    </script>
   {% endif %}
 {% endblock extra_js %}
 {% block content %}
@@ -236,162 +332,73 @@
 {% block extra_js_bottom %}
   {% if enrollment.status == 'pending' and enrollment.course.price > 0 %}
     <script>
-        console.log('Payment script loading...');
-        const stripe = Stripe('{{ stripe_public_key }}');
-        let elements;
-        let paymentElement;
+        // Add submit handler to the form when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Setting up payment form handler');
+            const form = document.getElementById("payment-form");
+            if (form) {
+                form.addEventListener("submit", async function(e) {
+                    e.preventDefault();
+                    console.log('Payment form submitted');
 
-        function showError(message) {
-            const messageDiv = document.querySelector("#payment-message");
-            if (messageDiv) {
-                messageDiv.textContent = message;
-                messageDiv.classList.add('text-red-600');
-            }
-            console.error(message);
-        }
+                    const submitButton = document.getElementById("submit-button");
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
 
-        function cancelPayment() {
-            console.log('Canceling payment...');
-            document.getElementById("payment-form-container").classList.add('hidden');
-            document.getElementById("payment-button").classList.remove('hidden');
-            const messageDiv = document.querySelector("#payment-message");
-            if (messageDiv) {
-                messageDiv.textContent = '';
-            }
-        }
+                    try {
+                        const {
+                            error
+                        } = await window.stripe.confirmPayment({
+                            elements: window.elements,
+                            confirmParams: {
+                                return_url: window.location.origin + "{% url 'course_detail' enrollment.course.slug %}",
+                            },
+                        });
 
-        async function initializePayment() {
-            console.log('Initialize payment called');
-            const paymentButton = document.getElementById("payment-button");
-            const formContainer = document.getElementById("payment-form-container");
-            const messageDiv = document.querySelector("#payment-message");
-
-            if (!paymentButton || !formContainer) {
-                showError('Payment elements not found');
-                return;
-            }
-
-            try {
-                // Show loading state
-                paymentButton.disabled = true;
-                paymentButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Initializing...';
-
-                console.log('Fetching payment intent...');
-                const response = await fetch("{% url 'create_payment_intent' enrollment.course.slug %}");
-                console.log('Payment intent response:', response);
-
-                if (!response.ok) {
-                    throw new Error('Failed to create payment intent');
-                }
-
-                const data = await response.json();
-                console.log('Payment intent data:', data);
-
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                // Initialize Stripe Elements
-                console.log('Creating Stripe elements...');
-                elements = stripe.elements({
-                    appearance: {
-                        theme: document.documentElement.classList.contains('dark') ? 'night' : 'stripe',
-                    },
-                    clientSecret: data.clientSecret
+                        if (error) {
+                            console.error('Payment confirmation error:', error);
+                            showError(error.message);
+                            submitButton.disabled = false;
+                            submitButton.innerHTML = '<i class="fas fa-credit-card mr-2"></i>Complete Payment';
+                        }
+                    } catch (error) {
+                        console.error('Payment submission error:', error);
+                        showError(error.message || 'An error occurred during payment');
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = '<i class="fas fa-credit-card mr-2"></i>Complete Payment';
+                    }
                 });
-
-                // Create and mount the payment element
-                console.log('Creating payment element...');
-                paymentElement = elements.create("payment");
-
-                // Show the form container
-                paymentButton.classList.add('hidden');
-                formContainer.classList.remove('hidden');
-
-                console.log('Mounting payment element...');
-                await paymentElement.mount("#payment-element");
-                console.log('Payment element mounted successfully');
-
-                // Clear any previous error messages
-                if (messageDiv) {
-                    messageDiv.textContent = '';
-                }
-
-            } catch (error) {
-                console.error('Payment initialization error:', error);
-                showError(error.message || 'Failed to initialize payment');
-
-                // Reset the button state
-                paymentButton.disabled = false;
-                paymentButton.innerHTML = '<i class="fas fa-credit-card mr-2"></i>Pay {{ enrollment.course.price|floatformat:2 }} USD and Complete Enrollment';
-
-                // Hide the form container if visible
-                formContainer.classList.add('hidden');
-                paymentButton.classList.remove('hidden');
             }
-        }
 
-        // Add submit handler to the form
-        document.getElementById("payment-form")?.addEventListener("submit", async function(e) {
-            e.preventDefault();
-            console.log('Payment form submitted');
-
-            const submitButton = document.getElementById("submit-button");
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
-
-            try {
-                const {
-                    error
-                } = await stripe.confirmPayment({
-                    elements,
-                    confirmParams: {
-                        return_url: window.location.origin + "{% url 'course_detail' enrollment.course.slug %}",
-                    },
+            // Check payment status on page load
+            const clientSecret = new URLSearchParams(window.location.search).get("payment_intent_client_secret");
+            if (clientSecret) {
+                console.log('Checking payment status...');
+                window.stripe.retrievePaymentIntent(clientSecret).then(({
+                    paymentIntent
+                }) => {
+                    console.log('Payment intent status:', paymentIntent.status);
+                    switch (paymentIntent.status) {
+                        case "succeeded":
+                            showError("Payment successful! You are now enrolled.");
+                            setTimeout(() => window.location.reload(), 2000);
+                            break;
+                        case "processing":
+                            showError("Payment processing. Please wait...");
+                            break;
+                        case "requires_payment_method":
+                            showError("Payment failed. Please try another payment method.");
+                            break;
+                        default:
+                            showError("Something went wrong.");
+                            break;
+                    }
+                }).catch(error => {
+                    console.error('Error checking payment status:', error);
+                    showError("Error checking payment status");
                 });
-
-                if (error) {
-                    console.error('Payment confirmation error:', error);
-                    showError(error.message);
-                    submitButton.disabled = false;
-                    submitButton.innerHTML = '<i class="fas fa-credit-card mr-2"></i>Complete Payment';
-                }
-            } catch (error) {
-                console.error('Payment submission error:', error);
-                showError(error.message || 'An error occurred during payment');
-                submitButton.disabled = false;
-                submitButton.innerHTML = '<i class="fas fa-credit-card mr-2"></i>Complete Payment';
             }
         });
-
-        // Check payment status on page load
-        const clientSecret = new URLSearchParams(window.location.search).get("payment_intent_client_secret");
-        if (clientSecret) {
-            console.log('Checking payment status...');
-            stripe.retrievePaymentIntent(clientSecret).then(({
-                paymentIntent
-            }) => {
-                console.log('Payment intent status:', paymentIntent.status);
-                switch (paymentIntent.status) {
-                    case "succeeded":
-                        showError("Payment successful! You are now enrolled.");
-                        setTimeout(() => window.location.reload(), 2000);
-                        break;
-                    case "processing":
-                        showError("Payment processing. Please wait...");
-                        break;
-                    case "requires_payment_method":
-                        showError("Payment failed. Please try another payment method.");
-                        break;
-                    default:
-                        showError("Something went wrong.");
-                        break;
-                }
-            }).catch(error => {
-                console.error('Error checking payment status:', error);
-                showError("Error checking payment status");
-            });
-        }
     </script>
   {% endif %}
 {% endblock extra_js_bottom %}
