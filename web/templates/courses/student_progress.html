@@ -220,33 +220,69 @@
 {% block extra_js_bottom %}
   {% if enrollment.status == 'pending' and enrollment.course.price > 0 %}
     <script>
+        console.log('Payment script loading...');
         const stripe = Stripe('{{ stripe_public_key }}');
         let elements;
         let paymentElement;
 
-        document.getElementById("payment-button").addEventListener("click", initializePayment);
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, setting up payment button...');
+            const paymentButton = document.getElementById("payment-button");
+            if (paymentButton) {
+                console.log('Payment button found, adding click listener');
+                paymentButton.addEventListener("click", function(e) {
+                    console.log('Payment button clicked');
+                    initializePayment();
+                });
+            } else {
+                console.error('Payment button not found in DOM');
+            }
+        });
 
         async function initializePayment() {
+            console.log('Initializing payment...');
             try {
                 // Hide the initial payment button and show the form
-                document.getElementById("payment-button").style.display = "none";
-                document.getElementById("payment-form").classList.remove("hidden");
+                const paymentButton = document.getElementById("payment-button");
+                const paymentForm = document.getElementById("payment-form");
 
+                if (!paymentButton || !paymentForm) {
+                    console.error('Payment elements not found:', {
+                        paymentButton,
+                        paymentForm
+                    });
+                    return;
+                }
+
+                paymentButton.style.display = "none";
+                paymentForm.classList.remove("hidden");
+                console.log('Payment form revealed');
+
+                console.log('Fetching payment intent...');
                 const response = await fetch("{% url 'create_payment_intent' enrollment.course.slug %}");
+                console.log('Payment intent response:', response);
+
                 if (!response.ok) {
                     throw new Error('Failed to create payment intent');
                 }
+
+                const data = await response.json();
+                console.log('Payment intent data:', data);
+
                 const {
                     clientSecret,
                     error
-                } = await response.json();
+                } = data;
 
                 if (error) {
+                    console.error('Payment intent error:', error);
                     const messageDiv = document.querySelector("#payment-message");
                     messageDiv.textContent = error;
                     return;
                 }
 
+                console.log('Creating Stripe elements...');
                 const appearance = {
                     theme: document.documentElement.classList.contains('dark') ? 'night' : 'stripe',
                 };
@@ -256,18 +292,32 @@
                     clientSecret
                 });
 
+                console.log('Creating payment element...');
                 paymentElement = elements.create("payment");
+                console.log('Mounting payment element...');
                 await paymentElement.mount("#payment-element");
+                console.log('Payment element mounted');
 
                 // Add submit handler after mounting
-                document.querySelector("#payment-form").addEventListener("submit", handleSubmit);
+                const form = document.querySelector("#payment-form");
+                if (form) {
+                    console.log('Adding submit handler to form');
+                    form.addEventListener("submit", handleSubmit);
+                } else {
+                    console.error('Payment form not found after mounting');
+                }
             } catch (error) {
+                console.error('Payment initialization error:', error);
                 const messageDiv = document.querySelector("#payment-message");
                 messageDiv.textContent = error.message || "An error occurred while initializing payment";
+                // Show the payment button again in case of error
+                document.getElementById("payment-button").style.display = "flex";
+                document.getElementById("payment-form").classList.add("hidden");
             }
         }
 
         async function handleSubmit(e) {
+            console.log('Handle submit called');
             e.preventDefault();
             setLoading(true);
 
@@ -276,6 +326,7 @@
                     throw new Error('Payment elements not initialized');
                 }
 
+                console.log('Confirming payment...');
                 const {
                     error
                 } = await stripe.confirmPayment({
@@ -286,10 +337,12 @@
                 });
 
                 if (error) {
+                    console.error('Payment confirmation error:', error);
                     const messageDiv = document.querySelector("#payment-message");
                     messageDiv.textContent = error.message;
                 }
             } catch (error) {
+                console.error('Payment submission error:', error);
                 const messageDiv = document.querySelector("#payment-message");
                 messageDiv.textContent = error.message || "An error occurred during payment";
             } finally {
@@ -298,16 +351,20 @@
         }
 
         function setLoading(isLoading) {
+            console.log('Setting loading state:', isLoading);
             const button = document.querySelector("#submit-button");
             if (button) {
                 button.disabled = isLoading;
                 button.innerHTML = isLoading ?
                     '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...' :
                     '<i class="fas fa-credit-card mr-2"></i>Complete Payment';
+            } else {
+                console.error('Submit button not found');
             }
         }
 
         // Check payment status on page load
+        console.log('Checking initial payment status...');
         checkStatus();
 
         async function checkStatus() {
@@ -315,13 +372,23 @@
                 "payment_intent_client_secret"
             );
 
-            if (!clientSecret) return;
+            if (!clientSecret) {
+                console.log('No client secret found in URL');
+                return;
+            }
 
             try {
+                console.log('Retrieving payment intent status...');
                 const {
                     paymentIntent
                 } = await stripe.retrievePaymentIntent(clientSecret);
+                console.log('Payment intent status:', paymentIntent.status);
+
                 const messageDiv = document.querySelector("#payment-message");
+                if (!messageDiv) {
+                    console.error('Message div not found');
+                    return;
+                }
 
                 switch (paymentIntent.status) {
                     case "succeeded":
@@ -339,6 +406,7 @@
                         break;
                 }
             } catch (error) {
+                console.error('Error checking payment status:', error);
                 const messageDiv = document.querySelector("#payment-message");
                 messageDiv.textContent = "Error checking payment status";
             }
