@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Teacher Dashboard - {{ user.get_full_name|default:user.username }}
+{% endblock title %}
+{% block content %}
+  <div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="text-3xl font-bold">Teacher Dashboard</h1>
+      <a href="{% url 'create_course' %}"
+         class="bg-teal-500 hover:bg-teal-600 text-white font-semibold px-4 py-2 rounded-lg flex items-center">
+        <i class="fas fa-plus mr-2"></i> Create New Course
+      </a>
+    </div>
+    <!-- Overview Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <!-- Total Courses -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Total Courses</p>
+            <h3 class="text-2xl font-bold">{{ courses.count }}</h3>
+          </div>
+          <div class="bg-teal-100 dark:bg-teal-900 rounded-full p-3">
+            <i class="fas fa-book text-teal-500 dark:text-teal-300 text-xl"></i>
+          </div>
+        </div>
+      </div>
+      <!-- Total Students -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Total Students</p>
+            <h3 class="text-2xl font-bold">
+              {% with total=0 %}
+                {% for stat in course_stats %}
+                  {% with total=total|add:stat.total_students %}{% endwith %}
+                {% endfor %}
+                {{ total }}
+              {% endwith %}
+            </h3>
+          </div>
+          <div class="bg-orange-100 dark:bg-orange-900 rounded-full p-3">
+            <i class="fas fa-users text-orange-500 dark:text-orange-300 text-xl"></i>
+          </div>
+        </div>
+      </div>
+      <!-- Average Completion Rate -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Avg. Completion Rate</p>
+            <h3 class="text-2xl font-bold">
+              {% with total=0 count=0 %}
+                {% for stat in course_stats %}
+                  {% if stat.total_students > 0 %}
+                    {% with total=total|add:stat.completion_rate count=count|add:1 %}{% endwith %}
+                  {% endif %}
+                {% endfor %}
+                {{ total|divisibleby:count|default:0 }}%
+              {% endwith %}
+            </h3>
+          </div>
+          <div class="bg-green-100 dark:bg-green-900 rounded-full p-3">
+            <i class="fas fa-chart-line text-green-500 dark:text-green-300 text-xl"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Course List -->
+      <div class="lg:col-span-2">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+          <div class="p-6">
+            <h2 class="text-xl font-semibold mb-4">Your Courses</h2>
+            {% if courses %}
+              <div class="space-y-6">
+                {% for course in courses %}
+                  <div class="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
+                    <div class="flex justify-between items-start">
+                      <div>
+                        <h3 class="font-medium">{{ course.title }}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ course.description|truncatewords:30 }}</p>
+                        <div class="flex items-center mt-2 space-x-4">
+                          <span class="text-sm text-gray-500 dark:text-gray-400">
+                            <i class="fas fa-users mr-1"></i> {{ course.enrollments.count }} students
+                          </span>
+                          <span class="text-sm text-gray-500 dark:text-gray-400">
+                            <i class="fas fa-calendar mr-1"></i> {{ course.sessions.count }} sessions
+                          </span>
+                        </div>
+                      </div>
+                      <div class="flex space-x-2">
+                        <a href="{% url 'course_detail' course.slug %}"
+                           class="text-teal-500 hover:text-teal-600 dark:text-teal-400">
+                          <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{% url 'update_course' course.slug %}"
+                           class="text-blue-500 hover:text-blue-600 dark:text-blue-400">
+                          <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'course_progress_overview' course.slug %}"
+                           class="text-orange-500 hover:text-orange-600 dark:text-orange-400">
+                          <i class="fas fa-chart-bar"></i>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-gray-500 dark:text-gray-400">You haven't created any courses yet.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <!-- Upcoming Sessions -->
+      <div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+          <div class="p-6">
+            <h2 class="text-xl font-semibold mb-4">Upcoming Sessions</h2>
+            {% if upcoming_sessions %}
+              <div class="space-y-4">
+                {% for session in upcoming_sessions %}
+                  <div class="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
+                    <div class="flex items-start">
+                      <div class="bg-orange-100 dark:bg-orange-900 rounded-lg p-2 mr-4">
+                        <i class="fas fa-calendar text-orange-500 dark:text-orange-300"></i>
+                      </div>
+                      <div>
+                        <h4 class="font-medium">{{ session.title }}</h4>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ session.course.title }}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                          {{ session.start_time|date:"M d, Y" }} at {{ session.start_time|time:"g:i A" }}
+                        </p>
+                        {% if session.is_virtual %}
+                          <a href="{{ session.meeting_link }}"
+                             target="_blank"
+                             class="inline-block mt-2 text-sm text-teal-500 hover:text-teal-600 dark:text-teal-400">
+                            <i class="fas fa-video mr-1"></i> Join Meeting
+                          </a>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-gray-500 dark:text-gray-400">No upcoming sessions scheduled.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

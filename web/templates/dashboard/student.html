@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Student Dashboard - {{ user.get_full_name|default:user.username }}
+{% endblock title %}
+{% block content %}
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">Student Dashboard</h1>
+    <!-- Overview Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <!-- Total Courses -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Total Courses</p>
+            <h3 class="text-2xl font-bold">{{ enrollments.count }}</h3>
+          </div>
+          <div class="bg-teal-100 dark:bg-teal-900 rounded-full p-3">
+            <i class="fas fa-book text-teal-500 dark:text-teal-300 text-xl"></i>
+          </div>
+        </div>
+      </div>
+      <!-- Upcoming Sessions -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Upcoming Sessions</p>
+            <h3 class="text-2xl font-bold">{{ upcoming_sessions.count }}</h3>
+          </div>
+          <div class="bg-orange-100 dark:bg-orange-900 rounded-full p-3">
+            <i class="fas fa-calendar text-orange-500 dark:text-orange-300 text-xl"></i>
+          </div>
+        </div>
+      </div>
+      <!-- Average Progress -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Average Progress</p>
+            <h3 class="text-2xl font-bold">
+              {% with total=0 %}
+                {% for data in progress_data %}
+                  {% with total=total|add:data.progress.completion_percentage %}{% endwith %}
+                {% endfor %}
+                {{ total|divisibleby:progress_data|length|default:0 }}%
+              {% endwith %}
+            </h3>
+          </div>
+          <div class="bg-green-100 dark:bg-green-900 rounded-full p-3">
+            <i class="fas fa-chart-line text-green-500 dark:text-green-300 text-xl"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Course Progress -->
+      <div class="lg:col-span-2">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+          <div class="p-6">
+            <h2 class="text-xl font-semibold mb-4">Course Progress</h2>
+            {% if progress_data %}
+              <div class="space-y-6">
+                {% for data in progress_data %}
+                  <div class="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
+                    <div class="flex justify-between items-center mb-2">
+                      <h3 class="font-medium">{{ data.enrollment.course.title }}</h3>
+                      <span class="text-sm text-gray-500 dark:text-gray-400">{{ data.progress.completion_percentage }}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                      <div class="bg-teal-500 h-2.5 rounded-full"
+                           style="width: {{ data.progress.completion_percentage }}%"></div>
+                    </div>
+                    <div class="mt-2 flex justify-between text-sm">
+                      <span class="text-gray-500 dark:text-gray-400">
+                        {{ data.progress.completed_sessions.count }} / {{ data.enrollment.course.sessions.count }} sessions completed
+                      </span>
+                      <a href="{% url 'student_progress' data.enrollment.id %}"
+                         class="text-teal-500 hover:text-teal-600 dark:text-teal-400">View Details</a>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-gray-500 dark:text-gray-400">No courses enrolled yet.</p>
+              <a href="{% url 'course_search' %}"
+                 class="inline-block mt-4 px-4 py-2 bg-teal-500 text-white rounded hover:bg-teal-600">
+                Browse Courses
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <!-- Upcoming Sessions -->
+      <div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+          <div class="p-6">
+            <h2 class="text-xl font-semibold mb-4">Upcoming Sessions</h2>
+            {% if upcoming_sessions %}
+              <div class="space-y-4">
+                {% for session in upcoming_sessions %}
+                  <div class="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
+                    <div class="flex items-start">
+                      <div class="bg-orange-100 dark:bg-orange-900 rounded-lg p-2 mr-4">
+                        <i class="fas fa-calendar text-orange-500 dark:text-orange-300"></i>
+                      </div>
+                      <div>
+                        <h4 class="font-medium">{{ session.title }}</h4>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ session.course.title }}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                          {{ session.start_time|date:"M d, Y" }} at {{ session.start_time|time:"g:i A" }}
+                        </p>
+                        {% if session.is_virtual %}
+                          <a href="{{ session.meeting_link }}"
+                             target="_blank"
+                             class="inline-block mt-2 text-sm text-teal-500 hover:text-teal-600 dark:text-teal-400">
+                            <i class="fas fa-video mr-1"></i> Join Meeting
+                          </a>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-gray-500 dark:text-gray-400">No upcoming sessions scheduled.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

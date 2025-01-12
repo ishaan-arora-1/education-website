@@ -1298,3 +1298,66 @@ def blog_detail(request, slug):
             return redirect("blog_detail", slug=slug)
 
     return render(request, "blog/detail.html", {"post": post, "comments": comments})
+
+
+@login_required
+def student_dashboard(request):
+    """Dashboard view for students showing their enrollments, progress, and upcoming sessions."""
+    if request.user.profile.is_teacher:
+        messages.error(request, "This dashboard is for students only.")
+        return redirect("profile")
+
+    enrollments = Enrollment.objects.filter(student=request.user).select_related("course")
+    upcoming_sessions = Session.objects.filter(
+        course__enrollments__student=request.user, start_time__gt=timezone.now()
+    ).order_by("start_time")[:5]
+
+    # Get progress for each enrollment
+    progress_data = []
+    for enrollment in enrollments:
+        progress, _ = CourseProgress.objects.get_or_create(enrollment=enrollment)
+        progress_data.append(
+            {
+                "enrollment": enrollment,
+                "progress": progress,
+            }
+        )
+
+    context = {
+        "enrollments": enrollments,
+        "upcoming_sessions": upcoming_sessions,
+        "progress_data": progress_data,
+    }
+    return render(request, "dashboard/student.html", context)
+
+
+@login_required
+@teacher_required
+def teacher_dashboard(request):
+    """Dashboard view for teachers showing their courses, student progress, and upcoming sessions."""
+    courses = Course.objects.filter(teacher=request.user)
+    upcoming_sessions = Session.objects.filter(course__teacher=request.user, start_time__gt=timezone.now()).order_by(
+        "start_time"
+    )[:5]
+
+    # Get enrollment and progress stats for each course
+    course_stats = []
+    for course in courses:
+        enrollments = course.enrollments.filter(status="approved")
+        total_students = enrollments.count()
+        completed = enrollments.filter(status="completed").count()
+        course_stats.append(
+            {
+                "course": course,
+                "total_students": total_students,
+                "completed": completed,
+                "completion_rate": (completed / total_students * 100) if total_students > 0 else 0,
+            }
+        )
+
+    context = {
+        "courses": courses,
+        "upcoming_sessions": upcoming_sessions,
+        "course_stats": course_stats,
+    }
+    return render(request, "dashboard/teacher.html", context)

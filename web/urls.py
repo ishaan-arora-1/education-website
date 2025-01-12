@@ -22,6 +22,9 @@ urlpatterns += i18n_patterns(
     # path("logout/", views.logout_view, name="logout"),
     path("profile/", views.profile, name="profile"),
     path("accounts/profile/", views.profile, name="accounts_profile"),
+    # Dashboard URLs
+    path("dashboard/student/", views.student_dashboard, name="student_dashboard"),
+    path("dashboard/teacher/", views.teacher_dashboard, name="teacher_dashboard"),
     # Course Management
     path("accounts/", include("allauth.urls")),
     path("courses/create/", views.create_course, name="create_course"),
