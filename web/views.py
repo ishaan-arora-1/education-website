@@ -739,9 +739,9 @@ def student_progress(request, enrollment_id):
         "achievements": achievements,
         "past_sessions": past_sessions,
         "upcoming_sessions": upcoming_sessions,
-        "stripe_public_key": settings.STRIPE_PUBLISHABLE_KEY
-        if enrollment.status == "pending" and enrollment.course.price > 0
-        else None,
+        "stripe_public_key": (
+            settings.STRIPE_PUBLISHABLE_KEY if enrollment.status == "pending" and enrollment.course.price > 0 else None
+        ),
     }
     return render(request, "courses/student_progress.html", context)
 
@@ -1448,3 +1448,8 @@ def custom_404(request, exception):
 def custom_500(request):
     """Custom 500 error handler"""
     return render(request, "500.html", status=500)
+
+
+def custom_429(request, exception=None):
+    """Custom 429 error page."""
+    return render(request, "429.html", status=429)

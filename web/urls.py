@@ -128,3 +128,7 @@ urlpatterns += i18n_patterns(
     path("sitemap/", views.sitemap, name="sitemap"),
     prefix_default_language=True,
 )
+
+handler404 = "web.views.custom_404"
+handler500 = "web.views.custom_500"
+handler429 = "web.views.custom_429"
