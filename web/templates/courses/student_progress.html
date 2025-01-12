@@ -5,6 +5,11 @@
 {% block title %}
   Progress - {{ enrollment.course.title }}
 {% endblock title %}
+{% block extra_js %}
+  {% if enrollment.status == 'pending' and enrollment.course.price > 0 %}
+    <script src="https://js.stripe.com/v3/"></script>
+  {% endif %}
+{% endblock extra_js %}
 {% block content %}
   <div class="container mx-auto px-4 py-8">
     <!-- Breadcrumbs -->
@@ -40,94 +45,6 @@
             </div>
           </div>
         </div>
-        <!-- Stripe JS -->
-        <script src="https://js.stripe.com/v3/"></script>
-        <script>
-            const stripe = Stripe('{{ stripe_public_key }}');
-            let elements;
-
-            initialize();
-            checkStatus();
-
-            document.querySelector("#payment-form").addEventListener("submit", handleSubmit);
-
-            async function initialize() {
-                const response = await fetch("{% url 'create_payment_intent' enrollment.course.slug %}");
-                const {
-                    clientSecret
-                } = await response.json();
-
-                const appearance = {
-                    theme: document.documentElement.classList.contains('dark') ? 'night' : 'stripe',
-                };
-
-                elements = stripe.elements({
-                    appearance,
-                    clientSecret
-                });
-                const paymentElement = elements.create("payment");
-                paymentElement.mount("#payment-element");
-            }
-
-            async function handleSubmit(e) {
-                e.preventDefault();
-                setLoading(true);
-
-                const {
-                    error
-                } = await stripe.confirmPayment({
-                    elements,
-                    confirmParams: {
-                        return_url: window.location.origin + "{% url 'course_detail' enrollment.course.slug %}",
-                    },
-                });
-
-                if (error) {
-                    const messageDiv = document.querySelector("#payment-message");
-                    messageDiv.textContent = error.message;
-                }
-
-                setLoading(false);
-            }
-
-            function setLoading(isLoading) {
-                const button = document.querySelector("#submit-button");
-                button.disabled = isLoading;
-                button.innerHTML = isLoading ?
-                    '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...' :
-                    '<i class="fas fa-credit-card mr-2"></i>Pay {{ enrollment.course.price|floatformat:2 }} USD and Complete Enrollment';
-            }
-
-            async function checkStatus() {
-                const clientSecret = new URLSearchParams(window.location.search).get(
-                    "payment_intent_client_secret"
-                );
-
-                if (!clientSecret) return;
-
-                const {
-                    paymentIntent
-                } = await stripe.retrievePaymentIntent(clientSecret);
-
-                const messageDiv = document.querySelector("#payment-message");
-
-                switch (paymentIntent.status) {
-                    case "succeeded":
-                        messageDiv.textContent = "Payment successful! You are now enrolled.";
-                        setTimeout(() => window.location.reload(), 2000);
-                        break;
-                    case "processing":
-                        messageDiv.textContent = "Payment processing. Please wait...";
-                        break;
-                    case "requires_payment_method":
-                        messageDiv.textContent = "Payment failed. Please try another payment method.";
-                        break;
-                    default:
-                        messageDiv.textContent = "Something went wrong.";
-                        break;
-                }
-            }
-        </script>
       {% endif %}
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -295,3 +212,124 @@
     </div>
   </div>
 {% endblock content %}
+{% block extra_js_bottom %}
+  {% if enrollment.status == 'pending' and enrollment.course.price > 0 %}
+    <script>
+        const stripe = Stripe('{{ stripe_public_key }}');
+        let elements;
+
+        initialize();
+        checkStatus();
+
+        document.querySelector("#payment-form").addEventListener("submit", handleSubmit);
+
+        async function initialize() {
+            try {
+                const response = await fetch("{% url 'create_payment_intent' enrollment.course.slug %}");
+                if (!response.ok) {
+                    throw new Error('Failed to create payment intent');
+                }
+                const {
+                    clientSecret,
+                    error
+                } = await response.json();
+
+                if (error) {
+                    const messageDiv = document.querySelector("#payment-message");
+                    messageDiv.textContent = error;
+                    return;
+                }
+
+                const appearance = {
+                    theme: document.documentElement.classList.contains('dark') ? 'night' : 'stripe',
+                };
+
+                elements = stripe.elements({
+                    appearance,
+                    clientSecret
+                });
+
+                const paymentElement = elements.create("payment");
+                await paymentElement.mount("#payment-element");
+            } catch (error) {
+                const messageDiv = document.querySelector("#payment-message");
+                messageDiv.textContent = error.message || "An error occurred while initializing payment";
+            }
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+            setLoading(true);
+
+            try {
+                if (!elements) {
+                    throw new Error('Payment elements not initialized');
+                }
+
+                const {
+                    error
+                } = await stripe.confirmPayment({
+                    elements,
+                    confirmParams: {
+                        return_url: window.location.origin + "{% url 'course_detail' enrollment.course.slug %}",
+                    },
+                });
+
+                if (error) {
+                    const messageDiv = document.querySelector("#payment-message");
+                    messageDiv.textContent = error.message;
+                }
+            } catch (error) {
+                const messageDiv = document.querySelector("#payment-message");
+                messageDiv.textContent = error.message || "An error occurred during payment";
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function setLoading(isLoading) {
+            const button = document.querySelector("#submit-button");
+            if (button) {
+                button.disabled = isLoading;
+                button.innerHTML = isLoading ?
+                    '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...' :
+                    '<i class="fas fa-credit-card mr-2"></i>Pay {{ enrollment.course.price|floatformat:2 }} USD and Complete Enrollment';
+            }
+        }
+
+        async function checkStatus() {
+            const clientSecret = new URLSearchParams(window.location.search).get(
+                "payment_intent_client_secret"
+            );
+
+            if (!clientSecret) return;
+
+            try {
+                const {
+                    paymentIntent
+                } = await stripe.retrievePaymentIntent(clientSecret);
+                const messageDiv = document.querySelector("#payment-message");
+
+                switch (paymentIntent.status) {
+                    case "succeeded":
+                        messageDiv.textContent = "Payment successful! You are now enrolled.";
+                        setTimeout(() => window.location.reload(), 2000);
+                        break;
+                    case "processing":
+                        messageDiv.textContent = "Payment processing. Please wait...";
+                        break;
+                    case "requires_payment_method":
+                        messageDiv.textContent = "Payment failed. Please try another payment method.";
+                        break;
+                    default:
+                        messageDiv.textContent = "Something went wrong.";
+                        break;
+                }
+            } catch (error) {
+                const messageDiv = document.querySelector("#payment-message");
+                messageDiv.textContent = "Error checking payment status";
+            }
+        }
+    </script>
+  {% endif %}
+{% endblock extra_js_bottom %}

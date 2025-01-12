@@ -552,12 +552,12 @@ def course_search(request):
 @login_required
 def create_payment_intent(request, course_slug):
     """Create a payment intent for Stripe."""
-    course = get_object_or_404(Course, slug=course_slug)
-
-    # Ensure user has a pending enrollment
-    get_object_or_404(Enrollment, student=request.user, course=course, status="pending")
-
     try:
+        course = get_object_or_404(Course, slug=course_slug)
+
+        # Ensure user has a pending enrollment
+        get_object_or_404(Enrollment, student=request.user, course=course, status="pending")
+
         # Create a PaymentIntent with the order amount and currency
         intent = stripe.PaymentIntent.create(
             amount=int(course.price * 100),  # Convert to cents
@@ -567,9 +567,17 @@ def create_payment_intent(request, course_slug):
                 "user_id": request.user.id,
             },
         )
-        return JsonResponse({"clientSecret": intent.client_secret})
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=403)
+        return JsonResponse(
+            {
+                "clientSecret": intent.client_secret,
+                "amount": course.price,
+                "currency": "usd",
+            }
+        )
+    except stripe.error.StripeError as e:
+        return JsonResponse({"error": str(e)}, status=400)
+    except Exception:
+        return JsonResponse({"error": "An unexpected error occurred"}, status=500)
 
 
 @csrf_exempt
