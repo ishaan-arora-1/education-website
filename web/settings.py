@@ -135,9 +135,11 @@ SITE_DOMAIN = "alphaonelabs.com"
 
 # Allauth settings
 ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_AUTHENTICATION_METHOD = "email"
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_RATE_LIMITS = {
     "login_attempt": "5/5m",  # 5 attempts per 5 minutes
     "login_failed": "3/5m",  # 3 failed attempts per 5 minutes
