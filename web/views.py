@@ -21,7 +21,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
-from .ai_recommendations import get_ai_recommendations
 from .calendar_sync import generate_google_calendar_link, generate_outlook_calendar_link
 from .decorators import teacher_required
 from .forms import CourseForm, CourseMaterialForm, ProfileForm, ReviewForm, SessionForm, TeacherSignupForm
@@ -57,6 +56,7 @@ from .notifications import (
     notify_teacher_new_enrollment,
     send_enrollment_confirmation,
 )
+from .recommendations import get_course_recommendations, get_popular_courses
 
 GOOGLE_CREDENTIALS_PATH = os.path.join(settings.BASE_DIR, "google_credentials.json")
 
@@ -95,13 +95,12 @@ def index(request):
 
     featured_courses = Course.objects.filter(status="published").order_by("-created_at")[:6]
 
-    # Get AI-driven recommendations if user is authenticated
-    recommended_courses = []
-    if request.user.is_authenticated:
-        try:
-            recommended_courses = get_ai_recommendations(request.user, limit=3)
-        except Exception:
-            pass  # Fail silently if recommendations fail
+    # Get recommendations if user is authenticated
+    recommended_courses = (
+        get_course_recommendations(request.user, limit=3)
+        if request.user.is_authenticated
+        else get_popular_courses(limit=3)
+    )
 
     context = {
         "featured_courses": featured_courses,
