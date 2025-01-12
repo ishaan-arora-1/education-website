@@ -6,12 +6,16 @@ from django.db.utils import OperationalError, ProgrammingError
 def create_cart_tables(apps, schema_editor):
     try:
         with schema_editor.connection.cursor() as cursor:
+            # Get current database name
+            cursor.execute("SELECT DATABASE()")
+            db_name = cursor.fetchone()[0]
+
             # Check if Cart table exists
             cursor.execute(
-                """
+                f"""
                 SELECT COUNT(*)
                 FROM information_schema.tables
-                WHERE table_schema = DATABASE()
+                WHERE table_schema = '{db_name}'
                 AND table_name = 'web_cart'
             """
             )
@@ -28,16 +32,16 @@ def create_cart_tables(apps, schema_editor):
                             FOREIGN KEY (user_id)
                             REFERENCES auth_user(id)
                             ON DELETE CASCADE
-                    )
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
                 """
                 )
 
             # Check if CartItem table exists
             cursor.execute(
-                """
+                f"""
                 SELECT COUNT(*)
                 FROM information_schema.tables
-                WHERE table_schema = DATABASE()
+                WHERE table_schema = '{db_name}'
                 AND table_name = 'web_cartitem'
             """
             )
@@ -65,16 +69,16 @@ def create_cart_tables(apps, schema_editor):
                             ON DELETE CASCADE,
                         UNIQUE KEY unique_cart_course (cart_id, course_id),
                         UNIQUE KEY unique_cart_session (cart_id, session_id)
-                    )
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
                 """
                 )
 
             # Add constraint if it doesn't exist
             cursor.execute(
-                """
+                f"""
                 SELECT COUNT(*)
                 FROM information_schema.table_constraints
-                WHERE table_schema = DATABASE()
+                WHERE table_schema = '{db_name}'
                 AND table_name = 'web_cart'
                 AND constraint_name = 'cart_user_or_session_key'
             """
@@ -87,7 +91,9 @@ def create_cart_tables(apps, schema_editor):
                     CHECK ((user_id IS NOT NULL) OR (session_key != ''))
                 """
                 )
-    except (OperationalError, ProgrammingError):
+    except (OperationalError, ProgrammingError) as e:
+        # Log the error for debugging
+        print(f"Error in create_cart_tables: {str(e)}")
         # Table already exists or other error, skip
         pass
 
