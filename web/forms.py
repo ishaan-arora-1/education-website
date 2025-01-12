@@ -39,6 +39,11 @@ class UserRegistrationForm(SignupForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["email"].widget.attrs["value"] = self.initial.get("email", "")
+
+        for field in self.fields.values():
+            field.widget.attrs["class"] = "form-control"
+
         self.fields["captcha"].widget.attrs.update(
             {
                 "class": (
@@ -47,20 +52,6 @@ class UserRegistrationForm(SignupForm):
                 )
             }
         )
-
-    def clean_username(self):
-        username = self.cleaned_data.get("username")
-        if username and User.objects.filter(username__iexact=username).exists():
-            raise forms.ValidationError("This username is already taken. Please choose a different one.")
-        return username
-
-    def clean_password2(self):
-        password1 = self.cleaned_data.get("password1")
-        password2 = self.cleaned_data.get("password2")
-        if password1 and password2:
-            if password1 != password2:
-                raise forms.ValidationError("The two password fields didn't match.")
-        return password2
 
     def save(self, request):
         user = super().save(request)

@@ -9,6 +9,8 @@ from django.urls import reverse
 @override_settings(
     ACCOUNT_EMAIL_VERIFICATION="mandatory",
     ACCOUNT_EMAIL_REQUIRED=True,
+    ACCOUNT_USERNAME_REQUIRED=False,
+    ACCOUNT_AUTHENTICATION_METHOD="email",
     ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE=True,
 )
 class SignupFormTest(TestCase):
@@ -27,7 +29,6 @@ class SignupFormTest(TestCase):
         self.assertTemplateUsed(response, "account/signup.html")
 
         # Check for required form fields
-        self.assertContains(response, 'id="id_username"')
         self.assertContains(response, 'id="id_email"')
         self.assertContains(response, 'id="id_first_name"')
         self.assertContains(response, 'id="id_last_name"')
@@ -43,11 +44,10 @@ class SignupFormTest(TestCase):
         # Test empty form
         response = self.client.post(self.signup_url, {})
         self.assertEqual(response.status_code, 200)
-        self.assertIn("This field is required.", str(response.context["form"].errors["username"]))
+        self.assertIn("This field is required.", str(response.context["form"].errors["email"]))
 
         # Test invalid email
         data = {
-            "username": "testuser",
             "email": "invalid-email",
             "first_name": "Test",
             "last_name": "User",
@@ -68,7 +68,6 @@ class SignupFormTest(TestCase):
     def test_successful_signup_as_student(self, mock_signed_up, mock_email_confirmed):
         """Test successful signup as a student"""
         data = {
-            "username": "student",
             "email": "student@example.com",
             "first_name": "Student",
             "last_name": "User",
@@ -83,7 +82,6 @@ class SignupFormTest(TestCase):
         # Verify user was created
         self.assertEqual(User.objects.count(), 1)
         user = User.objects.first()
-        self.assertEqual(user.username, "student")
         self.assertEqual(user.email, "student@example.com")
         self.assertFalse(user.profile.is_teacher)
 
@@ -99,7 +97,6 @@ class SignupFormTest(TestCase):
     def test_successful_signup_as_teacher(self, mock_signed_up, mock_email_confirmed):
         """Test successful signup as a teacher"""
         data = {
-            "username": "teacher",
             "email": "teacher@example.com",
             "first_name": "Teacher",
             "last_name": "User",
@@ -115,7 +112,6 @@ class SignupFormTest(TestCase):
         # Verify user was created
         self.assertEqual(User.objects.count(), 1)
         user = User.objects.first()
-        self.assertEqual(user.username, "teacher")
         self.assertEqual(user.email, "teacher@example.com")
         self.assertTrue(user.profile.is_teacher)
 
