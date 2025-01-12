@@ -3,27 +3,38 @@
 {% load static %}
 
 {% block content %}
-  <div class="container mt-5">
-    <div class="row justify-content-center">
-      <div class="col-md-8">
-        <div class="card shadow">
-          <div class="card-body">
-            <h2 class="card-title text-center mb-4">Add Session to {{ course.title }}</h2>
-            {% if form.errors %}<div class="alert alert-danger">Please correct the errors below.</div>{% endif %}
+  <div class="container mx-auto px-4 mt-5">
+    <div class="flex justify-center">
+      <div class="w-full max-w-2xl">
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+          <div class="p-6">
+            <h2 class="text-2xl font-bold text-center mb-6">Add Session to {{ course.title }}</h2>
+            {% if form.errors %}
+              <div class="p-4 mb-4 text-red-600 bg-red-100 dark:bg-red-900 dark:text-red-200 rounded-lg">
+                Please correct the errors below.
+              </div>
+            {% endif %}
             <form method="post" novalidate>
               {% csrf_token %}
               {% for field in form %}
-                <div class="mb-3">
-                  <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                <div class="mb-4">
+                  <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
                   {{ field }}
-                  {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                  {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+                  {% if field.help_text %}
+                    <small class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</small>
+                  {% endif %}
+                  {% if field.errors %}<div class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors }}</div>{% endif %}
                 </div>
               {% endfor %}
-              <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-success">Add Session</button>
+              <div class="space-y-3">
+                <button type="submit"
+                        class="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-lg">
+                  Add Session
+                </button>
                 <a href="{% url 'course_detail' course.slug %}"
-                   class="btn btn-secondary">Back to Course</a>
+                   class="block w-full text-center bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 py-2 px-4 rounded-lg">
+                  Back to Course
+                </a>
               </div>
             </form>
           </div>

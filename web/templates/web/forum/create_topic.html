@@ -28,25 +28,25 @@
           <div class="mb-6">
             <label for="title" class="block text-sm font-medium mb-2">Topic Title</label>
             <input type="text"
-                   class="w-full rounded-lg border border-gray-300 dark:border-gray-600 p-3 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700 bg-white dark:bg-gray-800"
+                   class="block w-full border {% if field.errors %}border-red-500 dark:border-red-500{% else %}border-gray-300 dark:border-gray-600{% endif %} rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800"
                    id="title"
                    name="title"
                    required
                    maxlength="200"
                    placeholder="Enter a descriptive title" />
-            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Make your title clear and specific to help others understand your topic.
             </p>
           </div>
           <div class="mb-6">
             <label for="content" class="block text-sm font-medium mb-2">Topic Content</label>
-            <textarea class="w-full rounded-lg border border-gray-300 dark:border-gray-600 p-3 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700 bg-white dark:bg-gray-800"
+            <textarea class="block w-full border {% if field.errors %}border-red-500 dark:border-red-500{% else %}border-gray-300 dark:border-gray-600{% endif %} rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800"
                       id="content"
                       name="content"
                       rows="10"
                       required
                       placeholder="Describe your topic in detail"></textarea>
-            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Provide all relevant details to help others understand and respond to your topic.
               You can use basic formatting like line breaks.
             </p>

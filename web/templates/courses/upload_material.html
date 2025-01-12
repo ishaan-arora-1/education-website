@@ -9,11 +9,14 @@
         {% csrf_token %}
         {% for field in form %}
           <div class="space-y-2">
-            <label for="{{ field.id_for_label }}"
-                   class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
-            {{ field }}
-            {% if field.help_text %}<p class="text-sm text-gray-500">{{ field.help_text }}</p>{% endif %}
-            {% if field.errors %}<div class="text-red-500 text-sm">{{ field.errors }}</div>{% endif %}
+            <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
+            {% if field.field.widget.input_type == 'checkbox' or field.field.widget.input_type == 'radio' %}
+              {{ field|attr:"class:rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-800 h-4 w-4" }}
+            {% else %}
+              {{ field|attr:"class:block w-full border border-gray-300 dark:border-gray-600 rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800" }}
+            {% endif %}
+            {% if field.help_text %}<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</p>{% endif %}
+            {% if field.errors %}<div class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors }}</div>{% endif %}
           </div>
         {% endfor %}
         <div class="flex justify-between">

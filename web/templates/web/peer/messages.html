@@ -46,7 +46,7 @@
           {% csrf_token %}
           <div class="flex space-x-4">
             <textarea name="content"
-                      class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 p-3 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700 bg-white dark:bg-gray-800 resize-none"
+                      class="block w-full border {% if field.errors %}border-red-500 dark:border-red-500{% else %}border-gray-300 dark:border-gray-600{% endif %} rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800"
                       rows="2"
                       placeholder="Type your message..."
                       required></textarea>

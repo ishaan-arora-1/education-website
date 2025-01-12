@@ -19,7 +19,25 @@
             {% for field in form %}
               <div>
                 <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
-                {{ field.as_widget|default:field }}
+                {% if field.widget_type == 'checkbox' or field.widget_type == 'radio' %}
+                  {{ field|attr:"class:rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-800 h-4 w-4" }}
+                {% elif field.widget_type == 'select' %}
+                  {{ field|attr:"class:block w-full border
+                  {% if field.errors %}
+                    border-red-500 dark:border-red-500
+                  {% else %}
+                    border-gray-300 dark:border-gray-600
+                  {% endif %}
+                  rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800" }}
+                {% else %}
+                  {{ field|attr:"class:block w-full border
+                  {% if field.errors %}
+                    border-red-500 dark:border-red-500
+                  {% else %}
+                    border-gray-300 dark:border-gray-600
+                  {% endif %}
+                  rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800" }}
+                {% endif %}
                 {% if field.help_text %}<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</p>{% endif %}
                 {% if field.errors %}<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors }}</p>{% endif %}
               </div>

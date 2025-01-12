@@ -5,7 +5,43 @@ from django.contrib.auth.models import User
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
+from .forms_additional import (
+    BlogCommentForm,
+    CourseReviewForm,
+    CourseSearchForm,
+    CourseUpdateForm,
+    LearningInquiryForm,
+    MaterialUploadForm,
+    MessageForm,
+    ProfileUpdateForm,
+    StudyGroupForm,
+    TeachingInquiryForm,
+    TopicCreationForm,
+)
 from .models import Course, CourseMaterial, Profile, Review, Session, Subject
+
+__all__ = [
+    "UserRegistrationForm",
+    "ProfileForm",
+    "CourseCreationForm",
+    "CourseForm",
+    "SessionForm",
+    "ReviewForm",
+    "CourseMaterialForm",
+    "TailwindCaptchaTextInput",
+    "TeacherSignupForm",
+    "BlogCommentForm",
+    "CourseReviewForm",
+    "CourseSearchForm",
+    "CourseUpdateForm",
+    "LearningInquiryForm",
+    "MaterialUploadForm",
+    "MessageForm",
+    "ProfileUpdateForm",
+    "StudyGroupForm",
+    "TeachingInquiryForm",
+    "TopicCreationForm",
+]
 
 
 class UserRegistrationForm(UserCreationForm):

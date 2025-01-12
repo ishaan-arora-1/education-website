@@ -9,28 +9,38 @@
         <div class="card shadow">
           <div class="card-body">
             <h2 class="card-title text-center mb-4">Update {{ course.title }}</h2>
-            {% if form.errors %}<div class="alert alert-danger">Please correct the errors below.</div>{% endif %}
+            {% if form.errors %}
+              <div class="mt-1 text-sm text-red-600 dark:text-red-400">Please correct the errors below.</div>
+            {% endif %}
             <form method="post" novalidate>
               {% csrf_token %}
               {% for field in form %}
                 <div class="mb-3">
-                  <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                  {{ field }}
-                  {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                  {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+                  <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
+                  {{ field|add_class:"block w-full border
+                  {% if field.errors %}
+                    border-red-500 dark:border-red-500
+                  {% else %}
+                    border-gray-300 dark:border-gray-600
+                  {% endif %}
+                  rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800" }}
+                  {% if field.help_text %}
+                    <small class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</small>
+                  {% endif %}
+                  {% if field.errors %}<div class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors }}</div>{% endif %}
                 </div>
               {% endfor %}
               <div class="mb-3">
-                <label for="update_message" class="form-label">
+                <label for="update_message" class="block text-sm font-medium mb-2">
                   Update Message for Students
-                  <small class="text-muted">(optional)</small>
+                  <small class="text-gray-500 dark:text-gray-400">(optional)</small>
                 </label>
                 <textarea name="update_message"
                           id="update_message"
-                          class="form-control"
+                          class="block w-full border border-gray-300 dark:border-gray-600 rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800"
                           rows="4"
                           placeholder="Enter a message to notify enrolled students about the changes..."></textarea>
-                <small class="form-text text-muted">
+                <small class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   If you provide a message, all enrolled students will be notified by email about the update.
                 </small>
               </div>

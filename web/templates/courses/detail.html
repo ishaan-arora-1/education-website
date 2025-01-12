@@ -28,13 +28,18 @@
             {% if not is_teacher and not is_enrolled %}
               <form method="post" action="{% url 'enroll_course' course.slug %}">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-primary">Enroll Now</button>
+                <button type="submit"
+                        class="block w-full border border-gray-300 dark:border-gray-600 rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800">
+                  Enroll Now
+                </button>
               </form>
             {% elif is_enrolled %}
               <div class="alert alert-info">
                 You are enrolled in this course.
                 <a href="{% url 'student_progress' enrollment.id %}"
-                   class="btn btn-sm btn-primary ms-2">View Progress</a>
+                   class="block w-full border border-gray-300 dark:border-gray-600 rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800">
+                  View Progress
+                </a>
               </div>
             {% endif %}
           </div>
@@ -99,7 +104,10 @@
                                     action="{% url 'mark_session_completed' session.id %}"
                                     class="d-inline">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-outline-primary">Mark Complete</button>
+                                <button type="submit"
+                                        class="block w-full border border-gray-300 dark:border-gray-600 rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800">
+                                  Mark Complete
+                                </button>
                               </form>
                             {% endif %}
                           {% endif %}
