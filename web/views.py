@@ -203,6 +203,7 @@ def course_detail(request, slug):
     is_enrolled = False
     is_teacher = False
     completed_sessions = []
+    enrollment = None
 
     if request.user.is_authenticated:
         is_enrolled = request.user.enrollments.filter(course=course).exists()
@@ -210,7 +211,8 @@ def course_detail(request, slug):
 
         if is_enrolled:
             enrollment = request.user.enrollments.get(course=course)
-            completed_sessions = enrollment.completed_sessions.all()
+            progress = CourseProgress.objects.get_or_create(enrollment=enrollment)[0]
+            completed_sessions = progress.completed_sessions.all()
 
     # Get similar courses based on subject and level
     similar_courses = Course.objects.exclude(id=course.id).filter(Q(subject=course.subject) | Q(level=course.level))[:3]
@@ -221,10 +223,12 @@ def course_detail(request, slug):
         "reviews": reviews,
         "is_enrolled": is_enrolled,
         "is_teacher": is_teacher,
+        "enrollment": enrollment,
         "completed_sessions": completed_sessions,
         "similar_courses": similar_courses,
+        "now": timezone.now(),
     }
-    return render(request, "courses/course_detail.html", context)
+    return render(request, "courses/detail.html", context)
 
 
 @login_required
