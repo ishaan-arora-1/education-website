@@ -286,11 +286,15 @@
 {% endblock content %}
 {% block extra_js_bottom %}
   {% if enrollment.status == 'pending' and enrollment.course.price > 0 %}
-    // Add submit handler to the form when DOM is ready
-    document.addEventListener('DOMContentLoaded', function() {
-    console.log('Payment script loading...');
-    const stripe = Stripe('{{ stripe_public_key }}');
-    const stripe = Stripe('{{ stripe_public_key }}');
-    let elements;
-    const stripe = Stripe('{{ stripe_public_key }}');
-    document.getElementById("payment-button").addEventListener("click", initializePayment);
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Payment script loading...');
+            // Remove duplicate Stripe initialization
+            if (typeof stripe === 'undefined') {
+                console.log('Initializing Stripe...');
+                const stripe = Stripe('{{ stripe_public_key }}');
+            }
+        });
+    </script>
+  {% endif %}
+{% endblock extra_js_bottom %}
