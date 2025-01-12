@@ -48,6 +48,12 @@ class UserRegistrationForm(SignupForm):
             }
         )
 
+    def clean_username(self):
+        username = self.cleaned_data.get("username")
+        if username and User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError("This username is already taken. Please choose a different one.")
+        return username
+
     def clean_password2(self):
         password1 = self.cleaned_data.get("password1")
         password2 = self.cleaned_data.get("password2")
