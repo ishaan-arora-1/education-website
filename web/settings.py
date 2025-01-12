@@ -144,6 +144,11 @@ ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
 ACCOUNT_LOGOUT_ON_GET = False
 ACCOUNT_SESSION_REMEMBER = True
 
+# Override allauth forms
+ACCOUNT_FORMS = {
+    "signup": "web.forms.UserRegistrationForm",
+}
+
 LOGIN_REDIRECT_URL = "index"
 LOGOUT_REDIRECT_URL = "index"
 

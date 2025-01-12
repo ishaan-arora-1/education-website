@@ -1,6 +1,6 @@
+from allauth.account.forms import SignupForm
 from captcha.fields import CaptchaField
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.template.defaultfilters import slugify
 from django.utils.crypto import get_random_string
@@ -31,30 +31,43 @@ __all__ = [
 ]
 
 
-class UserRegistrationForm(UserCreationForm):
-    email = forms.EmailField(required=True, widget=TailwindEmailInput())
-    first_name = forms.CharField(required=True, widget=TailwindInput())
-    last_name = forms.CharField(required=True, widget=TailwindInput())
+class UserRegistrationForm(SignupForm):
+    first_name = forms.CharField(max_length=30, required=True)
+    last_name = forms.CharField(max_length=30, required=True)
     is_teacher = forms.BooleanField(required=False, label="Register as a teacher", widget=TailwindCheckboxInput())
     captcha = CaptchaField(widget=TailwindCaptchaTextInput)
 
-    class Meta:
-        model = User
-        fields = (
-            "username",
-            "email",
-            "first_name",
-            "last_name",
-            "password1",
-            "password2",
-            "is_teacher",
-            "captcha",
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["captcha"].widget.attrs.update(
+            {
+                "class": (
+                    "mt-1 block w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm "
+                    "focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white sm:text-sm"
+                )
+            }
         )
-        widgets = {
-            "username": TailwindInput(),
-            "password1": TailwindInput(attrs={"type": "password"}),
-            "password2": TailwindInput(attrs={"type": "password"}),
-        }
+
+    def clean_password2(self):
+        password1 = self.cleaned_data.get("password1")
+        password2 = self.cleaned_data.get("password2")
+        if password1 and password2:
+            if password1 != password2:
+                raise forms.ValidationError("The two password fields didn't match.")
+        return password2
+
+    def save(self, request):
+        user = super().save(request)
+        user.first_name = self.cleaned_data["first_name"]
+        user.last_name = self.cleaned_data["last_name"]
+        user.save()
+
+        # Update the user's profile
+        if self.cleaned_data.get("is_teacher"):
+            user.profile.is_teacher = True
+            user.profile.save()
+
+        return user
 
 
 class ProfileForm(forms.ModelForm):
