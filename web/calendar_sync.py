@@ -29,11 +29,14 @@ def generate_ical_feed(user):
         bytes: iCal feed content
     """
     cal = Calendar()
-    cal.add("prodid", f"-//{settings.SITE_NAME}//Course Calendar//EN")
+    site_name = getattr(settings, "SITE_NAME", "Education Website")
+    site_domain = getattr(settings, "SITE_DOMAIN", "example.com")
+
+    cal.add("prodid", f"-//{site_name}//Course Calendar//EN")
     cal.add("version", "2.0")
     cal.add("calscale", "GREGORIAN")
     cal.add("method", "PUBLISH")
-    cal.add("x-wr-calname", f"{settings.SITE_NAME} - Course Schedule")
+    cal.add("x-wr-calname", f"{site_name} - Course Schedule")
     cal.add("x-wr-timezone", "UTC")
 
     # Get all sessions for the user
@@ -61,7 +64,7 @@ def generate_ical_feed(user):
         event.add("organizer", vText(f"mailto:{session.course.teacher.email}"))
 
         # Add unique identifier
-        event["uid"] = f"session-{session.id}@{settings.SITE_DOMAIN}"
+        event["uid"] = f"session-{session.id}@{site_domain}"
 
         # Add reminder alerts
         event.add("begin", "valarm")

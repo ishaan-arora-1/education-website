@@ -127,6 +127,8 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 SITE_ID = 1
+SITE_NAME = "AlphaOne Labs"
+SITE_DOMAIN = "alphaonelabs.com"
 
 # Allauth settings
 ACCOUNT_EMAIL_REQUIRED = True
@@ -181,16 +183,16 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
     print("Using console email backend for development")
+    DEFAULT_FROM_EMAIL = "noreply@example.com"  # Default for development
 else:
     EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
     SENDGRID_API_KEY = env("SENDGRID_API_KEY")
-
-EMAIL_HOST = "smtp.sendgrid.net"
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "apikey"
-EMAIL_HOST_PASSWORD = env("SENDGRID_PASSWORD")
-DEFAULT_FROM_EMAIL = env("EMAIL_FROM")
+    EMAIL_HOST = "smtp.sendgrid.net"
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_HOST_USER = "apikey"
+    EMAIL_HOST_PASSWORD = env("SENDGRID_PASSWORD")
+    DEFAULT_FROM_EMAIL = env("EMAIL_FROM", default="noreply@alphaonelabs.com")
 
 STRIPE_PUBLISHABLE_KEY = env("STRIPE_PUBLISHABLE_KEY", default="")
 STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default="")
