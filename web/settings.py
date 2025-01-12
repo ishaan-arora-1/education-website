@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "web",
     "captcha",
+    "storages",
 ]
 
 MIDDLEWARE = [
@@ -155,6 +156,8 @@ STATIC_URL = "/static/"
 
 
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATICFILES_DIRS = [BASE_DIR / "static"]
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.sendgrid.net"
@@ -182,8 +185,6 @@ LOCALE_PATHS = [
 
 USE_L10N = True
 
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
 if os.environ.get("DATABASE_URL"):
     DEBUG = False
     DATABASES = {"default": env.db()}
@@ -199,6 +200,16 @@ if os.environ.get("DATABASE_URL"):
                 "NO_ENGINE_SUBSTITUTION"
             ),
         }
+
+    # Google Cloud Storage settings for media files in production
+    if os.environ.get("GS_BUCKET_NAME"):
+        GS_BUCKET_NAME = os.environ.get("GS_BUCKET_NAME")
+        GS_DEFAULT_ACL = "publicRead"
+        GS_QUERYSTRING_AUTH = False
+        GS_LOCATION = "media"  # Store files in a media directory in the bucket
+
+        # Use default Google Cloud Storage backend
+        DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
 
     SENDGRID_API_KEY = os.getenv("SENDGRID_PASSWORD", "blank")
     EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
