@@ -34,7 +34,13 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 
-ALLOWED_HOSTS = ["alphaonelabs99282llkb.pythonanywhere.com", "127.0.0.1", "localhost"]
+ALLOWED_HOSTS = [
+    "alphaonelabs99282llkb.pythonanywhere.com",
+    "127.0.0.1",
+    "localhost",
+    "alphaonelabs.com",
+    "www.alphaonelabs.com",
+]
 CSRF_TRUSTED_ORIGINS = ["https://alphaonelabs.com", "https://www.alphaonelabs.com"]
 
 # Error handling
@@ -107,9 +113,6 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
-if not DEBUG:
-    SECURE_SSL_REDIRECT = True
-
 
 AUTH_PASSWORD_VALIDATORS = [
     {
