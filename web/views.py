@@ -12,13 +12,17 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
-from django.db import models
+from django.db import IntegrityError, models
 from django.db.models import Avg, Count, Q
 from django.http import FileResponse, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 from django.views.decorators.csrf import csrf_exempt
 
 from .calendar_sync import generate_google_calendar_link, generate_ical_feed, generate_outlook_calendar_link
@@ -34,6 +38,8 @@ from .models import (
     Achievement,
     BlogComment,
     BlogPost,
+    Cart,
+    CartItem,
     Course,
     CourseMaterial,
     CourseProgress,
@@ -41,6 +47,7 @@ from .models import (
     ForumCategory,
     ForumReply,
     ForumTopic,
+    Payment,
     PeerConnection,
     PeerMessage,
     Review,
@@ -1453,3 +1460,209 @@ def custom_500(request):
 def custom_429(request, exception=None):
     """Custom 429 error page."""
     return render(request, "429.html", status=429)
+
+
+def get_or_create_cart(request):
+    """Helper function to get or create a cart for both logged in and guest users."""
+    if request.user.is_authenticated:
+        cart, created = Cart.objects.get_or_create(user=request.user)
+    else:
+        session_key = request.session.session_key
+        if not session_key:
+            request.session.create()
+            session_key = request.session.session_key
+        cart, created = Cart.objects.get_or_create(session_key=session_key)
+    return cart
+
+
+def cart_view(request):
+    """View the shopping cart."""
+    cart = get_or_create_cart(request)
+    return render(request, "cart/cart.html", {"cart": cart, "stripe_public_key": settings.STRIPE_PUBLIC_KEY})
+
+
+def add_course_to_cart(request, course_id):
+    """Add a course to the shopping cart."""
+    course = get_object_or_404(Course, id=course_id)
+    cart = get_or_create_cart(request)
+
+    try:
+        CartItem.objects.create(cart=cart, course=course)
+        messages.success(request, f"{course.title} added to cart.")
+    except ValidationError as e:
+        messages.error(request, str(e))
+    except IntegrityError:
+        messages.warning(request, "This item is already in your cart.")
+
+    return redirect("cart_view")
+
+
+def add_session_to_cart(request, session_id):
+    """Add an individual session to the shopping cart."""
+    session = get_object_or_404(Session, id=session_id)
+    cart = get_or_create_cart(request)
+
+    try:
+        CartItem.objects.create(cart=cart, session=session)
+        messages.success(request, f"Session '{session.title}' added to cart.")
+    except ValidationError as e:
+        messages.error(request, str(e))
+    except IntegrityError:
+        messages.warning(request, "This session is already in your cart.")
+
+    return redirect("cart_view")
+
+
+def remove_from_cart(request, item_id):
+    """Remove an item from the shopping cart."""
+    cart = get_or_create_cart(request)
+    item = get_object_or_404(CartItem, id=item_id, cart=cart)
+    item.delete()
+    messages.success(request, "Item removed from cart.")
+    return redirect("cart_view")
+
+
+def create_cart_payment_intent(request):
+    """Create a payment intent for the entire cart."""
+    cart = get_or_create_cart(request)
+
+    if not cart.items.exists():
+        return JsonResponse({"error": "Cart is empty"}, status=400)
+
+    try:
+        # Create a PaymentIntent with the cart total
+        intent = stripe.PaymentIntent.create(
+            amount=int(cart.total * 100),  # Convert to cents
+            currency="usd",
+            metadata={
+                "cart_id": cart.id,
+                "user_id": request.user.id if request.user.is_authenticated else None,
+                "session_key": request.session.session_key if not request.user.is_authenticated else None,
+            },
+        )
+        return JsonResponse({"clientSecret": intent.client_secret})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=403)
+
+
+def checkout_success(request):
+    """Handle successful checkout."""
+    cart = get_or_create_cart(request)
+
+    # If user is not logged in, get their email from the payment intent
+    if not request.user.is_authenticated:
+        payment_intent_id = request.GET.get("payment_intent")
+        try:
+            payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+            email = payment_intent.receipt_email
+
+            # Create a new user account
+            username = email.split("@")[0]
+            base_username = username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}{counter}"
+                counter += 1
+
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=get_random_string(length=32),  # Random password for reset
+            )
+
+            # Associate the cart with the new user
+            cart.user = user
+            cart.session_key = None
+            cart.save()
+
+            # Send welcome email with password reset link
+            send_welcome_email(user)
+
+        except Exception:
+            msg = "Failed to process checkout. Please try again."
+            messages.error(request, msg)
+            return redirect("cart_view")
+    else:
+        user = request.user
+
+    # Track enrollments to avoid duplicates
+    processed_enrollments = {}
+    payment_intent_id = request.GET.get("payment_intent")
+
+    # Process each cart item
+    for item in cart.items.all():
+        if item.course:
+            # Create enrollment for full course
+            enrollment = Enrollment.objects.create(student=user, course=item.course, status="approved")
+            # Create progress tracker
+            CourseProgress.objects.create(enrollment=enrollment)
+            processed_enrollments[item.course.id] = enrollment
+
+            # Create payment record with unique payment intent ID
+            Payment.objects.create(
+                enrollment=enrollment,
+                amount=item.course.price,
+                status="completed",
+                stripe_payment_intent_id=f"{payment_intent_id}_course_{item.course.id}",
+            )
+
+            # Send notifications
+            send_enrollment_confirmation(enrollment)
+            notify_teacher_new_enrollment(enrollment)
+
+        elif item.session:
+            # Get or create enrollment for the session's course
+            if item.session.course.id in processed_enrollments:
+                enrollment = processed_enrollments[item.session.course.id]
+            else:
+                enrollment, created = Enrollment.objects.get_or_create(
+                    student=user,
+                    course=item.session.course,
+                    defaults={"status": "approved"},
+                )
+                processed_enrollments[item.session.course.id] = enrollment
+
+            # Add session to completed sessions if it's in the past
+            if item.session.start_time < timezone.now():
+                progress, created = CourseProgress.objects.get_or_create(enrollment=enrollment)
+                progress.completed_sessions.add(item.session)
+
+            # Create payment record for the session with unique payment intent ID
+            Payment.objects.create(
+                enrollment=enrollment,
+                amount=item.session.price,
+                status="completed",
+                stripe_payment_intent_id=f"{payment_intent_id}_session_{item.session.id}",
+                session=item.session,  # Track which session this payment is for
+            )
+
+    # Clear the cart
+    cart.items.all().delete()
+
+    if not request.user.is_authenticated:
+        msg = "Payment successful! We've created an account for you " "and sent the details to your email."
+        messages.success(request, msg)
+        return redirect("account_login")
+    else:
+        messages.success(request, "Payment successful! You are now enrolled.")
+        return redirect("student_dashboard")
+
+
+def send_welcome_email(user):
+    """Send welcome email to newly created users after guest checkout."""
+    reset_url = reverse("password_reset")
+    context = {
+        "user": user,
+        "reset_url": reset_url,
+    }
+
+    html_message = render_to_string("emails/welcome_guest.html", context)
+    text_message = render_to_string("emails/welcome_guest.txt", context)
+
+    send_mail(
+        subject="Welcome to Your New Learning Account",
+        message=text_message,
+        html_message=html_message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+    )

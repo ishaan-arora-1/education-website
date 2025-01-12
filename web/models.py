@@ -2,6 +2,7 @@ import os
 
 from allauth.account.signals import user_signed_up
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models.signals import post_save
@@ -35,8 +36,8 @@ class Notification(models.Model):
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    bio = models.TextField(max_length=500, blank=True)
-    expertise = models.CharField(max_length=200, blank=True)
+    bio = models.TextField(blank=True, default="")
+    expertise = models.CharField(max_length=200, blank=True, default="")
     is_teacher = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -79,15 +80,19 @@ class Course(models.Model):
         upload_to="course_images/%Y/%m/%d/",
         help_text="Course image (300x150 pixels)",
         blank=True,
+        null=True,
     )
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name="courses_teaching")
-    description = models.TextField()
+    description = models.TextField(blank=True, default="")
     learning_objectives = models.TextField()
     prerequisites = models.TextField(blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    allow_individual_sessions = models.BooleanField(
+        default=False, help_text="Allow students to register for individual sessions"
+    )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="draft")
     max_students = models.IntegerField(validators=[MinValueValidator(1)])
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     subject = models.ForeignKey(
@@ -158,6 +163,9 @@ class Session(models.Model):
     meeting_link = models.URLField(blank=True)
     meeting_id = models.CharField(max_length=100, blank=True)  # For storing Google meeting ID
     location = models.CharField(max_length=200, blank=True)
+    price = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True, help_text="Price for individual session registration"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -360,7 +368,20 @@ class Payment(models.Model):
         ("refunded", "Refunded"),
     ]
 
-    enrollment = models.OneToOneField(Enrollment, on_delete=models.CASCADE, related_name="payment")
+    enrollment = models.ForeignKey(
+        Enrollment,
+        on_delete=models.CASCADE,
+        related_name="payments",
+        help_text="The enrollment this payment is associated with",
+    )
+    session = models.ForeignKey(
+        Session,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="payments",
+        help_text="Specific session this payment is for, if any",
+    )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     currency = models.CharField(max_length=3, default="USD")
     stripe_payment_intent_id = models.CharField(max_length=100, unique=True)
@@ -369,6 +390,8 @@ class Payment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
+        if self.session:
+            return f"Payment for {self.enrollment} - {self.session.title}"
         return f"Payment for {self.enrollment}"
 
 
@@ -557,3 +580,71 @@ def set_user_type(sender, request, user, **kwargs):
     profile = user.profile
     profile.is_teacher = is_teacher
     profile.save()
+
+
+class Cart(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="cart", null=True, blank=True)
+    session_key = models.CharField(max_length=40, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        if self.user:
+            return f"Cart for {self.user.username}"
+        return f"Guest Cart ({self.session_key})"
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(user__isnull=False, session_key__isnull=True)
+                    | models.Q(user__isnull=True, session_key__isnull=False)
+                ),
+                name="cart_user_or_session_key",
+            )
+        ]
+
+    @property
+    def total(self):
+        return sum(item.total for item in self.items.all())
+
+    @property
+    def item_count(self):
+        return self.items.count()
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True, blank=True, related_name="cart_items")
+    session = models.ForeignKey(Session, on_delete=models.CASCADE, null=True, blank=True, related_name="cart_items")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [
+            ("cart", "course"),
+            ("cart", "session"),
+        ]
+
+    def clean(self):
+        if not self.course and not self.session:
+            raise ValidationError("Either a course or a session must be selected")
+        if self.course and self.session:
+            raise ValidationError("Cannot select both course and session")
+        if self.session and not self.session.course.allow_individual_sessions:
+            raise ValidationError("This course does not allow individual session registration")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    @property
+    def total(self):
+        if self.course:
+            return self.course.price
+        return self.session.price or 0
+
+    def __str__(self):
+        if self.course:
+            return f"{self.course.title} (Full Course)"
+        return f"{self.session.title} (Individual Session)"

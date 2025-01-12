@@ -1,0 +1,17 @@
+Welcome to Your Learning Journey!
+
+Hello {{ user.username }},
+
+Thank you for your purchase! We've created an account for you to access your courses and track your progress.
+
+Your account details:
+- Username: {{ user.username }}
+- Email: {{ user.email }}
+
+To set your password and access your account, please visit:
+{{ reset_url }}
+
+We're excited to have you join our learning community!
+
+Best regards,
+The Education Team

@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Shopping Cart
+{% endblock title %}
+{% block content %}
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+      <h1 class="text-3xl font-bold mb-8">Shopping Cart</h1>
+      {% if cart.items.all %}
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+          <!-- Cart Items -->
+          <div class="divide-y divide-gray-200 dark:divide-gray-700">
+            {% for item in cart.items.all %}
+              <div class="p-6">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    {% if item.course %}
+                      <!-- Course Item -->
+                      <h3 class="text-xl font-semibold mb-2">{{ item.course.title }}</h3>
+                      <p class="text-gray-600 dark:text-gray-400 mb-2">Full Course</p>
+                      <div class="text-sm text-gray-500 dark:text-gray-400">
+                        <p>Teacher: {{ item.course.teacher.get_full_name|default:item.course.teacher.username }}</p>
+                      </div>
+                      <p class="text-lg font-semibold mt-2">${{ item.course.price }}</p>
+                    {% else %}
+                      <!-- Individual Session Item -->
+                      <h3 class="text-xl font-semibold mb-2">{{ item.session.title }}</h3>
+                      <p class="text-gray-600 dark:text-gray-400 mb-2">Individual Session from {{ item.session.course.title }}</p>
+                      <div class="text-sm text-gray-500 dark:text-gray-400">
+                        <p>Date: {{ item.session.start_time|date:"F j, Y" }}</p>
+                        <p>Time: {{ item.session.start_time|time:"g:i A" }} - {{ item.session.end_time|time:"g:i A" }}</p>
+                        <p>Teacher: {{ item.session.course.teacher.get_full_name|default:item.session.course.teacher.username }}</p>
+                      </div>
+                      <p class="text-lg font-semibold mt-2">${{ item.session.price }}</p>
+                    {% endif %}
+                  </div>
+                  <form method="post"
+                        action="{% url 'remove_from_cart' item.id %}"
+                        class="ml-4">
+                    {% csrf_token %}
+                    <button type="submit" class="text-red-500 hover:text-red-600">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          <!-- Cart Summary -->
+          <div class="p-6 bg-gray-50 dark:bg-gray-700 rounded-b-lg">
+            <div class="flex justify-between items-center mb-4">
+              <span class="text-lg font-semibold">Total:</span>
+              <span class="text-2xl font-bold">${{ cart.total }}</span>
+            </div>
+            <div class="flex justify-end">
+              <form id="checkout-form" class="w-full">
+                {% if not request.user.is_authenticated %}
+                  <div class="mb-4">
+                    <label for="email"
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Email Address
+                    </label>
+                    <input type="email"
+                           id="email"
+                           name="email"
+                           required
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800"
+                           placeholder="Enter your email address" />
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">We'll create an account for you to access your courses.</p>
+                  </div>
+                {% endif %}
+                <div id="payment-element" class="mb-4">
+                  <!-- Stripe Elements will be inserted here -->
+                </div>
+                <button type="submit"
+                        id="submit-button"
+                        class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center">
+                  <i class="fas fa-credit-card mr-2"></i>
+                  <span id="button-text">Checkout</span>
+                  <span id="spinner" class="hidden ml-2">
+                    <i class="fas fa-spinner fa-spin"></i>
+                  </span>
+                </button>
+                <div id="payment-message" class="mt-4 text-sm text-center"></div>
+              </form>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="text-center py-12">
+          <div class="text-gray-500 dark:text-gray-400 mb-4">Your cart is empty</div>
+          <a href="{% url 'course_search' %}"
+             class="inline-block bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200">
+            Browse Courses
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock content %}
+{% block extra_js %}
+  {% if cart.items.all %}
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        const stripe = Stripe('{{ stripe_public_key }}');
+        let elements;
+
+        initialize();
+        checkStatus();
+
+        document
+            .querySelector("#checkout-form")
+            .addEventListener("submit", handleSubmit);
+
+        async function initialize() {
+            const response = await fetch("{% url 'create_cart_payment_intent' %}");
+            const {
+                clientSecret
+            } = await response.json();
+
+            const appearance = {
+                theme: document.documentElement.classList.contains('dark') ? 'night' : 'stripe',
+            };
+
+            elements = stripe.elements({
+                appearance,
+                clientSecret
+            });
+            const paymentElement = elements.create("payment");
+            paymentElement.mount("#payment-element");
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+            setLoading(true);
+
+            {
+                %
+                if not request.user.is_authenticated %
+            }
+            const email = document.getElementById('email').value;
+            if (!email) {
+                const messageDiv = document.querySelector("#payment-message");
+                messageDiv.textContent = "Please enter your email address.";
+                messageDiv.classList.add("text-red-500");
+                setLoading(false);
+                return;
+            } {
+                %
+                endif %
+            }
+
+            const {
+                error
+            } = await stripe.confirmPayment({
+                elements,
+                confirmParams: {
+                    return_url: window.location.origin + "{% url 'checkout_success' %}",
+                    {
+                        %
+                        if not request.user.is_authenticated %
+                    }
+                    receipt_email: document.getElementById('email').value,
+                    {
+                        %
+                        endif %
+                    }
+                },
+            });
+
+            if (error) {
+                const messageDiv = document.querySelector("#payment-message");
+                messageDiv.textContent = error.message;
+                messageDiv.classList.add("text-red-500");
+            }
+
+            setLoading(false);
+        }
+
+        function setLoading(isLoading) {
+            const submitButton = document.querySelector("#submit-button");
+            const spinner = document.querySelector("#spinner");
+            const buttonText = document.querySelector("#button-text");
+
+            if (isLoading) {
+                submitButton.disabled = true;
+                spinner.classList.remove("hidden");
+                buttonText.classList.add("opacity-0");
+            } else {
+                submitButton.disabled = false;
+                spinner.classList.add("hidden");
+                buttonText.classList.remove("opacity-0");
+            }
+        }
+
+        async function checkStatus() {
+            const clientSecret = new URLSearchParams(window.location.search).get(
+                "payment_intent_client_secret"
+            );
+
+            if (!clientSecret) return;
+
+            const {
+                paymentIntent
+            } = await stripe.retrievePaymentIntent(clientSecret);
+            const messageDiv = document.querySelector("#payment-message");
+
+            switch (paymentIntent.status) {
+                case "succeeded":
+                    messageDiv.textContent = "Payment successful!";
+                    messageDiv.classList.add("text-green-500");
+                    setTimeout(() => window.location.reload(), 2000);
+                    break;
+                case "processing":
+                    messageDiv.textContent = "Payment processing. Please wait...";
+                    messageDiv.classList.add("text-blue-500");
+                    break;
+                case "requires_payment_method":
+                    messageDiv.textContent = "Payment failed. Please try another payment method.";
+                    messageDiv.classList.add("text-red-500");
+                    break;
+                default:
+                    messageDiv.textContent = "Something went wrong.";
+                    messageDiv.classList.add("text-red-500");
+                    break;
+            }
+        }
+    </script>
+  {% endif %}
+{% endblock extra_js %}

@@ -126,6 +126,13 @@ urlpatterns += i18n_patterns(
     path("groups/<int:group_id>/", views.study_group_detail, name="study_group_detail"),
     path("sessions/<int:session_id>/", views.session_detail, name="session_detail"),
     path("sitemap/", views.sitemap, name="sitemap"),
+    # Cart URLs
+    path("cart/", views.cart_view, name="cart_view"),
+    path("cart/add/course/<int:course_id>/", views.add_course_to_cart, name="add_course_to_cart"),
+    path("cart/add/session/<int:session_id>/", views.add_session_to_cart, name="add_session_to_cart"),
+    path("cart/remove/<int:item_id>/", views.remove_from_cart, name="remove_from_cart"),
+    path("cart/payment-intent/", views.create_cart_payment_intent, name="create_cart_payment_intent"),
+    path("cart/checkout/success/", views.checkout_success, name="checkout_success"),
     prefix_default_language=True,
 )
 

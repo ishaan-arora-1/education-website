@@ -48,8 +48,10 @@ class UserRegistrationForm(SignupForm):
         self.fields["captcha"].widget.attrs.update(
             {
                 "class": (
-                    "mt-1 block w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm "
-                    "focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white sm:text-sm"
+                    "mt-1 block w-full px-3 py-1.5 border "
+                    "border-gray-300 dark:border-gray-600 rounded-md "
+                    "shadow-sm focus:ring-orange-500 focus:border-orange-500 "
+                    "dark:bg-gray-700 dark:text-white sm:text-sm"
                 )
             }
         )
@@ -88,6 +90,7 @@ class CourseCreationForm(forms.ModelForm):
             "learning_objectives",
             "prerequisites",
             "price",
+            "allow_individual_sessions",
             "max_students",
             "subject",
             "level",
@@ -103,6 +106,9 @@ class CourseCreationForm(forms.ModelForm):
             ),
             "learning_objectives": forms.Textarea(attrs={"rows": 4}),
             "prerequisites": forms.Textarea(attrs={"rows": 4}),
+            "allow_individual_sessions": TailwindCheckboxInput(
+                attrs={"help_text": ("Allow students to register for individual sessions")}
+            ),
             "tags": forms.TextInput(attrs={"placeholder": "Enter comma-separated tags"}),
         }
 
@@ -115,7 +121,8 @@ class CourseCreationForm(forms.ModelForm):
     def clean_max_students(self):
         max_students = self.cleaned_data.get("max_students")
         if max_students <= 0:
-            raise forms.ValidationError("Maximum number of students must be greater than zero")
+            msg = "Maximum number of students must be greater than zero"
+            raise forms.ValidationError(msg)
         return max_students
 
 
@@ -129,6 +136,7 @@ class CourseForm(forms.ModelForm):
             "learning_objectives",
             "prerequisites",
             "price",
+            "allow_individual_sessions",
             "max_students",
             "subject",
             "level",
@@ -146,6 +154,9 @@ class CourseForm(forms.ModelForm):
             "learning_objectives": TailwindTextarea(attrs={"rows": 4}),
             "prerequisites": TailwindTextarea(attrs={"rows": 4}),
             "price": TailwindNumberInput(attrs={"min": "0", "step": "0.01"}),
+            "allow_individual_sessions": TailwindCheckboxInput(
+                attrs={"help_text": ("Allow students to register for individual sessions")}
+            ),
             "max_students": TailwindNumberInput(attrs={"min": "1"}),
             "subject": TailwindSelect(),
             "level": TailwindSelect(),
@@ -155,7 +166,8 @@ class CourseForm(forms.ModelForm):
     def clean_max_students(self):
         max_students = self.cleaned_data.get("max_students")
         if max_students <= 0:
-            raise forms.ValidationError("Maximum number of students must be greater than zero")
+            msg = "Maximum number of students must be greater than zero"
+            raise forms.ValidationError(msg)
         return max_students
 
 
@@ -170,6 +182,7 @@ class SessionForm(forms.ModelForm):
             "is_virtual",
             "meeting_link",
             "location",
+            "price",
         ]
         widgets = {
             "title": TailwindInput(),
@@ -179,6 +192,13 @@ class SessionForm(forms.ModelForm):
             "is_virtual": TailwindCheckboxInput(),
             "meeting_link": TailwindInput(attrs={"type": "url"}),
             "location": TailwindInput(),
+            "price": TailwindNumberInput(
+                attrs={
+                    "min": "0",
+                    "step": "0.01",
+                    "help_text": ("Price for individual session registration"),
+                }
+            ),
         }
 
     def clean(self):
@@ -188,14 +208,20 @@ class SessionForm(forms.ModelForm):
         location = cleaned_data.get("location")
         start_time = cleaned_data.get("start_time")
         end_time = cleaned_data.get("end_time")
+        price = cleaned_data.get("price")
 
         if start_time and end_time and end_time <= start_time:
             self.add_error("end_time", "End time must be after start time.")
 
         if is_virtual and not meeting_link:
-            self.add_error("meeting_link", "Meeting link is required for virtual sessions.")
+            msg = "Meeting link is required for virtual sessions."
+            self.add_error("meeting_link", msg)
         elif not is_virtual and not location:
-            self.add_error("location", "Location is required for in-person sessions.")
+            msg = "Location is required for in-person sessions."
+            self.add_error("location", msg)
+
+        if price is not None and price < 0:
+            self.add_error("price", "Price cannot be negative.")
 
         return cleaned_data
 
@@ -361,6 +387,8 @@ class CustomLoginForm(LoginForm):
             try:
                 User.objects.get(email=email)
             except User.DoesNotExist:
-                print("User not found")
+                raise forms.ValidationError(
+                    "No account found with this email address. Please check the email or sign up."
+                )
 
         return cleaned_data
