@@ -24,6 +24,7 @@ jobs:
 
     - name: Run tests
       run: |
+        cp .env.sample .env
         python -m pip install --upgrade pip wheel setuptools
         # Install main requirements with verbosity
         pip install -v -r requirements.txt
