@@ -109,213 +109,215 @@
               </a>
             </div>
           {% empty %}
-            <!-- Course Card 2 -->
-            <div class="rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-              <img src="https://via.placeholder.com/300x150"
-                   alt="Course Image"
-                   class="w-full h-32 object-cover rounded mb-3" />
-              <div class="flex items-center justify-between mb-1 text-sm">
-                <span class="font-semibold text-teal-600 dark:text-teal-400">Subject</span>
-                <span class="text-orange-600 dark:text-orange-500">$99</span>
-              </div>
-              <div class="mb-2 text-xs text-gray-700 dark:text-gray-300">#TagA #TagB</div>
-              <p class="mb-2 text-sm">
-                An in-depth exploration of advanced concepts ...
-                <a href="#" class="text-gray-400 ml-1 hover:underline">more</a>
-              </p>
-              <div class="mb-3 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
-                <span>Level: Intermediate</span>
-                <span>
-                  <i class="fa-solid fa-star text-yellow-400"></i> 4.8
-                </span>
-              </div>
-              <div class="flex items-center mb-3">
-                <img src="https://via.placeholder.com/24"
-                     alt="Teacher Avatar"
-                     class="h-6 w-6 rounded-full mr-2" />
-                <span class="text-sm">John Smith</span>
-              </div>
-              <button class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-3 py-1 rounded-full flex items-center">
-                <i class="fa-solid fa-cart-plus mr-2"></i> Enroll
-              </button>
+            <p>No featured courses available.</p>
+          {% endfor %}
+          <!-- Course Card 2 -->
+          <div class="rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <img src="https://via.placeholder.com/300x150"
+                 alt="Course Image"
+                 class="w-full h-32 object-cover rounded mb-3" />
+            <div class="flex items-center justify-between mb-1 text-sm">
+              <span class="font-semibold text-teal-600 dark:text-teal-400">Subject</span>
+              <span class="text-orange-600 dark:text-orange-500">$99</span>
             </div>
-            <!-- Course Card 3 -->
-            <div class="rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-              <img src="https://via.placeholder.com/300x150"
-                   alt="Course Image"
-                   class="w-full h-32 object-cover rounded mb-3" />
-              <div class="flex items-center justify-between mb-1 text-sm">
-                <span class="font-semibold text-teal-600 dark:text-teal-400">Subject</span>
-                <span class="text-orange-600 dark:text-orange-500">Free</span>
-              </div>
-              <div class="mb-2 text-xs text-gray-700 dark:text-gray-300">#Science #Math</div>
-              <p class="mb-2 text-sm">
-                Dive into fascinating discoveries and research ...
-                <a href="#" class="text-gray-400 ml-1 hover:underline">more</a>
-              </p>
-              <div class="mb-3 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
-                <span>Level: Advanced</span>
-                <span>
-                  <i class="fa-solid fa-star text-yellow-400"></i> 4.9
-                </span>
-              </div>
-              <div class="flex items-center mb-3">
-                <img src="https://via.placeholder.com/24"
-                     alt="Teacher Avatar"
-                     class="h-6 w-6 rounded-full mr-2" />
-                <span class="text-sm">Dr. Alice</span>
-              </div>
-              <button class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-3 py-1 rounded-full flex items-center">
-                <i class="fa-solid fa-cart-plus mr-2"></i> Enroll
-              </button>
+            <div class="mb-2 text-xs text-gray-700 dark:text-gray-300">#TagA #TagB</div>
+            <p class="mb-2 text-sm">
+              An in-depth exploration of advanced concepts ...
+              <a href="#" class="text-gray-400 ml-1 hover:underline">more</a>
+            </p>
+            <div class="mb-3 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
+              <span>Level: Intermediate</span>
+              <span>
+                <i class="fa-solid fa-star text-yellow-400"></i> 4.8
+              </span>
             </div>
-          </div>
-          <!-- Add view more link -->
-          <div class="text-right mt-4">
-            <a href="{% url 'course_search' %}"
-               class="text-orange-500 hover:text-orange-600 underline transition-colors duration-200"></a>
-            <span>View More Courses</span>
-            <i class="fas fa-arrow-right ml-2"></i>
-          </a>
-        </div>
-        <!-- Two cards next to each other: For Learners & For Teachers -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- For Learners -->
-          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <h3 class="text-lg font-semibold mb-2 flex items-center">
-              <i class="fa-solid fa-user-graduate text-teal-600 dark:text-teal-400 mr-2"></i>
-              For Learners
-            </h3>
-            <ul class="list-disc list-inside space-y-2 text-sm text-gray-800 dark:text-gray-200">
-              <li>
-                <i class="fa-solid fa-robot text-gray-600 dark:text-gray-300 mr-2"></i>
-                Advanced search with AI-powered recommendations
-              </li>
-              <li>
-                <i class="fa-solid fa-calendar-check text-gray-600 dark:text-gray-300 mr-2"></i>
-                Flexible scheduling with calendar integration
-              </li>
-              <li>
-                <i class="fa-solid fa-trophy text-gray-600 dark:text-gray-300 mr-2"></i>
-                Track your progress and earn achievements
-              </li>
-              <li>
-                <i class="fa-solid fa-users text-gray-600 dark:text-gray-300 mr-2"></i>
-                Join study groups and connect with peers
-              </li>
-              <li>
-                <i class="fa-solid fa-chalkboard-teacher text-gray-600 dark:text-gray-300 mr-2"></i>
-                Access both virtual and in-person classes
-              </li>
-            </ul>
-          </div>
-          <!-- For Teachers -->
-          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <h3 class="text-lg font-semibold mb-2 flex items-center">
-              <i class="fa-solid fa-chalkboard-user text-teal-600 dark:text-teal-400 mr-2"></i>
-              For Teachers
-            </h3>
-            <ul class="list-disc list-inside space-y-2 text-sm text-gray-800 dark:text-gray-200">
-              <li>
-                <i class="fa-solid fa-clipboard-list text-gray-600 dark:text-gray-300 mr-2"></i>
-                Comprehensive course management tools
-              </li>
-              <li>
-                <i class="fa-solid fa-chart-line text-gray-600 dark:text-gray-300 mr-2"></i>
-                Analytics and student progress tracking
-              </li>
-              <li>
-                <i class="fa-solid fa-credit-card text-gray-600 dark:text-gray-300 mr-2"></i>
-                Secure payment processing and earnings management
-              </li>
-              <li>
-                <i class="fa-solid fa-bullhorn text-gray-600 dark:text-gray-300 mr-2"></i>
-                Marketing tools to promote your courses
-              </li>
-              <li>
-                <i class="fa-solid fa-comments text-gray-600 dark:text-gray-300 mr-2"></i>
-                Direct communication with students
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-      <div class="md:w-1/3 space-y-6">
-        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-          <h2 class="text-xl font-semibold mb-4">
-            <i class="fa-solid fa-chalkboard-user mr-2"></i>
-            Teach a Course
-          </h2>
-          <form method="post" class="space-y-4">
-            {% csrf_token %}
-            <div>
-              <label for="email" class="block text-sm font-medium mb-1">Email</label>
-              <input type="email"
-                     id="email"
-                     name="email"
-                     class="block w-full border {% if form.email.errors %}border-red-500 dark:border-red-500{% else %}border-gray-300 dark:border-gray-600{% endif %} rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800"
-                     placeholder="your.email@example.com"
-                     value="{{ form.email.value|default:'' }}"
-                     required />
-              {% if form.email.errors %}
-                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.email.errors|join:", " }}</p>
-              {% endif %}
+            <div class="flex items-center mb-3">
+              <img src="https://via.placeholder.com/24"
+                   alt="Teacher Avatar"
+                   class="h-6 w-6 rounded-full mr-2" />
+              <span class="text-sm">John Smith</span>
             </div>
-            <div>
-              <label for="subject" class="block text-sm font-medium mb-1">Subject</label>
-              <input type="text"
-                     id="subject"
-                     name="subject"
-                     class="block w-full border {% if form.subject.errors %}border-red-500 dark:border-red-500{% else %}border-gray-300 dark:border-gray-600{% endif %} rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800"
-                     placeholder="Your subject to teach"
-                     value="{{ form.subject.value|default:'' }}"
-                     required />
-              {% if form.subject.errors %}
-                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.subject.errors|join:", " }}</p>
-              {% endif %}
-            </div>
-            <div>
-              <label for="captcha" class="block text-sm font-medium mb-1">Verification</label>
-              <div class="{% if form.captcha.errors %}border border-red-500 dark:border-red-500 rounded p-2{% endif %}">
-                {{ form.captcha }}
-              </div>
-              {% if form.captcha.errors %}
-                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.captcha.errors|join:", " }}</p>
-              {% endif %}
-            </div>
-            <button type="submit"
-                    class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-full flex items-center">
-              <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> Continue
+            <button class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-3 py-1 rounded-full flex items-center">
+              <i class="fa-solid fa-cart-plus mr-2"></i> Enroll
             </button>
-          </form>
+          </div>
+          <!-- Course Card 3 -->
+          <div class="rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <img src="https://via.placeholder.com/300x150"
+                 alt="Course Image"
+                 class="w-full h-32 object-cover rounded mb-3" />
+            <div class="flex items-center justify-between mb-1 text-sm">
+              <span class="font-semibold text-teal-600 dark:text-teal-400">Subject</span>
+              <span class="text-orange-600 dark:text-orange-500">Free</span>
+            </div>
+            <div class="mb-2 text-xs text-gray-700 dark:text-gray-300">#Science #Math</div>
+            <p class="mb-2 text-sm">
+              Dive into fascinating discoveries and research ...
+              <a href="#" class="text-gray-400 ml-1 hover:underline">more</a>
+            </p>
+            <div class="mb-3 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
+              <span>Level: Advanced</span>
+              <span>
+                <i class="fa-solid fa-star text-yellow-400"></i> 4.9
+              </span>
+            </div>
+            <div class="flex items-center mb-3">
+              <img src="https://via.placeholder.com/24"
+                   alt="Teacher Avatar"
+                   class="h-6 w-6 rounded-full mr-2" />
+              <span class="text-sm">Dr. Alice</span>
+            </div>
+            <button class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-3 py-1 rounded-full flex items-center">
+              <i class="fa-solid fa-cart-plus mr-2"></i> Enroll
+            </button>
+          </div>
         </div>
-        <!-- Recent Forum Post -->
+        <!-- Add view more link -->
+        <div class="text-right mt-4">
+          <a href="{% url 'course_search' %}"
+             class="text-orange-500 hover:text-orange-600 underline transition-colors duration-200"></a>
+          <span>View More Courses</span>
+          <i class="fas fa-arrow-right ml-2"></i>
+        </a>
+      </div>
+      <!-- Two cards next to each other: For Learners & For Teachers -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- For Learners -->
         <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-          <h2 class="text-lg font-semibold mb-2 flex items-center">
-            <i class="fa-solid fa-comments text-purple-600 dark:text-purple-400 mr-2"></i>
-            Recent Forum Post
-          </h2>
-          <p class="text-sm">
-            <strong class="block text-gray-900 dark:text-gray-200 mb-1">{{ latest_topic.title|default:"How to get started with advanced mathematics?" }}</strong>
-            "{{ latest_topic.content|default:"I'm looking for resources on group theory and number theory. Any recommendations?" }}" — <em>posted by {{ latest_topic.author.username|default:"user123" }}</em>
-          </p>
-          <a href="{% if latest_topic %}{% url 'forum_topic' latest_topic.category.slug latest_topic.id %}{% else %}{% url 'forum_categories' %}{% endif %}"
-             class="text-orange-500 dark:text-orange-400 text-sm hover:underline inline-block mt-2">View Discussion &rarr;</a>
+          <h3 class="text-lg font-semibold mb-2 flex items-center">
+            <i class="fa-solid fa-user-graduate text-teal-600 dark:text-teal-400 mr-2"></i>
+            For Learners
+          </h3>
+          <ul class="list-disc list-inside space-y-2 text-sm text-gray-800 dark:text-gray-200">
+            <li>
+              <i class="fa-solid fa-robot text-gray-600 dark:text-gray-300 mr-2"></i>
+              Advanced search with AI-powered recommendations
+            </li>
+            <li>
+              <i class="fa-solid fa-calendar-check text-gray-600 dark:text-gray-300 mr-2"></i>
+              Flexible scheduling with calendar integration
+            </li>
+            <li>
+              <i class="fa-solid fa-trophy text-gray-600 dark:text-gray-300 mr-2"></i>
+              Track your progress and earn achievements
+            </li>
+            <li>
+              <i class="fa-solid fa-users text-gray-600 dark:text-gray-300 mr-2"></i>
+              Join study groups and connect with peers
+            </li>
+            <li>
+              <i class="fa-solid fa-chalkboard-teacher text-gray-600 dark:text-gray-300 mr-2"></i>
+              Access both virtual and in-person classes
+            </li>
+          </ul>
         </div>
-        <!-- Recent Blog Post -->
+        <!-- For Teachers -->
         <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-          <h2 class="text-lg font-semibold mb-2 flex items-center">
-            <i class="fa-solid fa-blog text-red-600 dark:text-red-400 mr-2"></i>
-            Recent Blog Post
-          </h2>
-          <p class="text-sm">
-            <strong class="block text-gray-900 dark:text-gray-200 mb-1">{{ latest_post.title|default:"The Future of Online Education" }}</strong>
-            {{ latest_post.excerpt|default:"Learn how new technologies are shaping the way we teach and learn, including AI-driven insights and personalized curriculum..." }}
-          </p>
-          <a href="{% if latest_post %}{% url 'blog_detail' latest_post.slug %}{% else %}{% url 'blog' %}{% endif %}"
-             class="text-orange-500 dark:text-orange-400 text-sm hover:underline inline-block mt-2">Read More &rarr;</a>
+          <h3 class="text-lg font-semibold mb-2 flex items-center">
+            <i class="fa-solid fa-chalkboard-user text-teal-600 dark:text-teal-400 mr-2"></i>
+            For Teachers
+          </h3>
+          <ul class="list-disc list-inside space-y-2 text-sm text-gray-800 dark:text-gray-200">
+            <li>
+              <i class="fa-solid fa-clipboard-list text-gray-600 dark:text-gray-300 mr-2"></i>
+              Comprehensive course management tools
+            </li>
+            <li>
+              <i class="fa-solid fa-chart-line text-gray-600 dark:text-gray-300 mr-2"></i>
+              Analytics and student progress tracking
+            </li>
+            <li>
+              <i class="fa-solid fa-credit-card text-gray-600 dark:text-gray-300 mr-2"></i>
+              Secure payment processing and earnings management
+            </li>
+            <li>
+              <i class="fa-solid fa-bullhorn text-gray-600 dark:text-gray-300 mr-2"></i>
+              Marketing tools to promote your courses
+            </li>
+            <li>
+              <i class="fa-solid fa-comments text-gray-600 dark:text-gray-300 mr-2"></i>
+              Direct communication with students
+            </li>
+          </ul>
         </div>
       </div>
     </div>
-  </main>
+    <div class="md:w-1/3 space-y-6">
+      <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <h2 class="text-xl font-semibold mb-4">
+          <i class="fa-solid fa-chalkboard-user mr-2"></i>
+          Teach a Course
+        </h2>
+        <form method="post" class="space-y-4">
+          {% csrf_token %}
+          <div>
+            <label for="email" class="block text-sm font-medium mb-1">Email</label>
+            <input type="email"
+                   id="email"
+                   name="email"
+                   class="block w-full border {% if form.email.errors %}border-red-500 dark:border-red-500{% else %}border-gray-300 dark:border-gray-600{% endif %} rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800"
+                   placeholder="your.email@example.com"
+                   value="{{ form.email.value|default:'' }}"
+                   required />
+            {% if form.email.errors %}
+              <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.email.errors|join:", " }}</p>
+            {% endif %}
+          </div>
+          <div>
+            <label for="subject" class="block text-sm font-medium mb-1">Subject</label>
+            <input type="text"
+                   id="subject"
+                   name="subject"
+                   class="block w-full border {% if form.subject.errors %}border-red-500 dark:border-red-500{% else %}border-gray-300 dark:border-gray-600{% endif %} rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800"
+                   placeholder="Your subject to teach"
+                   value="{{ form.subject.value|default:'' }}"
+                   required />
+            {% if form.subject.errors %}
+              <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.subject.errors|join:", " }}</p>
+            {% endif %}
+          </div>
+          <div>
+            <label for="captcha" class="block text-sm font-medium mb-1">Verification</label>
+            <div class="{% if form.captcha.errors %}border border-red-500 dark:border-red-500 rounded p-2{% endif %}">
+              {{ form.captcha }}
+            </div>
+            {% if form.captcha.errors %}
+              <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.captcha.errors|join:", " }}</p>
+            {% endif %}
+          </div>
+          <button type="submit"
+                  class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-full flex items-center">
+            <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> Continue
+          </button>
+        </form>
+      </div>
+      <!-- Recent Forum Post -->
+      <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <h2 class="text-lg font-semibold mb-2 flex items-center">
+          <i class="fa-solid fa-comments text-purple-600 dark:text-purple-400 mr-2"></i>
+          Recent Forum Post
+        </h2>
+        <p class="text-sm">
+          <strong class="block text-gray-900 dark:text-gray-200 mb-1">{{ latest_topic.title|default:"How to get started with advanced mathematics?" }}</strong>
+          "{{ latest_topic.content|default:"I'm looking for resources on group theory and number theory. Any recommendations?" }}" — <em>posted by {{ latest_topic.author.username|default:"user123" }}</em>
+        </p>
+        <a href="{% if latest_topic %}{% url 'forum_topic' latest_topic.category.slug latest_topic.id %}{% else %}{% url 'forum_categories' %}{% endif %}"
+           class="text-orange-500 dark:text-orange-400 text-sm hover:underline inline-block mt-2">View Discussion &rarr;</a>
+      </div>
+      <!-- Recent Blog Post -->
+      <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <h2 class="text-lg font-semibold mb-2 flex items-center">
+          <i class="fa-solid fa-blog text-red-600 dark:text-red-400 mr-2"></i>
+          Recent Blog Post
+        </h2>
+        <p class="text-sm">
+          <strong class="block text-gray-900 dark:text-gray-200 mb-1">{{ latest_post.title|default:"The Future of Online Education" }}</strong>
+          {{ latest_post.excerpt|default:"Learn how new technologies are shaping the way we teach and learn, including AI-driven insights and personalized curriculum..." }}
+        </p>
+        <a href="{% if latest_post %}{% url 'blog_detail' latest_post.slug %}{% else %}{% url 'blog' %}{% endif %}"
+           class="text-orange-500 dark:text-orange-400 text-sm hover:underline inline-block mt-2">Read More &rarr;</a>
+      </div>
+    </div>
+  </div>
+</main>
 {% endblock content %}
