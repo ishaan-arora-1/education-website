@@ -724,6 +724,9 @@ def student_progress(request, enrollment_id):
         "achievements": achievements,
         "past_sessions": past_sessions,
         "upcoming_sessions": upcoming_sessions,
+        "stripe_public_key": settings.STRIPE_PUBLISHABLE_KEY
+        if enrollment.status == "pending" and enrollment.course.price > 0
+        else None,
     }
     return render(request, "courses/student_progress.html", context)
 
