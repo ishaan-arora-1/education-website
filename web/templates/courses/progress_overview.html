@@ -25,12 +25,13 @@
                 <tr>
                   <td>{{ data.enrollment.student.get_full_name }}</td>
                   <td>
-                    <div class="progress" style="height: 20px;">
+                    <div class="progress progress-tall">
                       <div class="progress-bar"
                            role="progressbar"
-                           style="width: {{ data.progress.completion_percentage }}%">
-                        {{ data.progress.completion_percentage }}%
-                      </div>
+                           data-width="{{ data.progress.completion_percentage }}"
+                           aria-valuenow="{{ data.progress.completion_percentage }}"
+                           aria-valuemin="0"
+                           aria-valuemax="100">{{ data.progress.completion_percentage }}%</div>
                     </div>
                   </td>
                   <td>
