@@ -7,6 +7,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 
 from .models import Enrollment, Notification, Session
+from .slack import send_slack_notification
 
 logger = logging.getLogger(__name__)
 
@@ -178,7 +179,7 @@ def send_weekly_progress_updates():
 
 def send_email(subject, message, recipient_list):
     """
-    Send an email to the specified recipients.
+    Send an email to the specified recipients and notify Slack.
 
     Args:
         subject (str): The email subject
@@ -196,7 +197,18 @@ def send_email(subject, message, recipient_list):
             recipient_list=recipient_list,
             fail_silently=False,
         )
+
+        # Send Slack notification
+        slack_message = f"📧 Email sent\nSubject: {subject}\nTo: {', '.join(recipient_list)}"
+        send_slack_notification(slack_message)
+
         return True
     except Exception as e:
-        logger.error(f"Failed to send email: {str(e)}")
+        error_msg = f"Failed to send email: {str(e)}"
+        logger.error(error_msg)
+
+        # Notify Slack about the failure
+        slack_message = f"❌ Email sending failed\nSubject: {subject}\nTo: {', '.join(recipient_list)}\nError: {str(e)}"
+        send_slack_notification(slack_message)
+
         return False

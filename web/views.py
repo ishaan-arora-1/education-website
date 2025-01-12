@@ -72,7 +72,7 @@ def index(request):
                     "you can continue to create your course"
                 ),
             )
-            # log teh user in
+
             user = User.objects.get(email=user.email)
             user.backend = "django.contrib.auth.backends.ModelBackend"
             login(request, user)
