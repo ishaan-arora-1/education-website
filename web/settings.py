@@ -184,15 +184,17 @@ if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
     print("Using console email backend for development")
     DEFAULT_FROM_EMAIL = "noreply@example.com"  # Default for development
+    SENDGRID_API_KEY = None  # Not needed in development
 else:
+    # Production email settings
     EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
-    SENDGRID_API_KEY = env("SENDGRID_API_KEY")
+    SENDGRID_API_KEY = env.str("SENDGRID_API_KEY", default=env.str("SENDGRID_PASSWORD", default=""))
     EMAIL_HOST = "smtp.sendgrid.net"
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
     EMAIL_HOST_USER = "apikey"
-    EMAIL_HOST_PASSWORD = env("SENDGRID_PASSWORD")
-    DEFAULT_FROM_EMAIL = env("EMAIL_FROM", default="noreply@alphaonelabs.com")
+    EMAIL_HOST_PASSWORD = env.str("SENDGRID_PASSWORD", default="")
+    DEFAULT_FROM_EMAIL = env.str("EMAIL_FROM", default="noreply@alphaonelabs.com")
 
 STRIPE_PUBLISHABLE_KEY = env("STRIPE_PUBLISHABLE_KEY", default="")
 STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default="")
