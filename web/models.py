@@ -1,5 +1,6 @@
 import os
 
+from allauth.account.signals import user_signed_up
 from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -547,3 +548,12 @@ class BlogComment(models.Model):
 
     def __str__(self):
         return f"Comment by {self.author.username} on {self.post.title}"
+
+
+@receiver(user_signed_up)
+def set_user_type(sender, request, user, **kwargs):
+    """Set the user type (teacher/student) when they sign up."""
+    is_teacher = request.POST.get("is_teacher") == "on"
+    profile = user.profile
+    profile.is_teacher = is_teacher
+    profile.save()
