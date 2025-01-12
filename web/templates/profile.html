@@ -2,95 +2,221 @@
 
 {% load static %}
 
+{% block title %}
+  Profile - {{ user.get_full_name|default:user.username }}
+{% endblock title %}
 {% block content %}
-  <div class="container mt-5">
-    <div class="row">
+  <div class="container mx-auto px-4 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Profile Information -->
-      <div class="col-md-4">
-        <div class="card shadow mb-4">
-          <div class="card-body">
-            <h3 class="card-title">Profile</h3>
-            <form method="post">
-              {% csrf_token %}
-              {% for field in form %}
-                <div class="mb-3">
-                  <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
-                  {{ field|add_class:"block w-full border
-                  {% if field.errors %}
-                    border-red-500 dark:border-red-500
-                  {% else %}
-                    border-gray-300 dark:border-gray-600
-                  {% endif %}
-                  rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800" }}
-                  {% if field.help_text %}
-                    <small class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</small>
-                  {% endif %}
-                  {% if field.errors %}<div class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors }}</div>{% endif %}
-                </div>
-              {% endfor %}
-              <button type="submit" class="btn btn-primary">Update Profile</button>
-            </form>
+      <div class="lg:col-span-1">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold">Profile</h2>
+            {% if user.profile.is_teacher %}
+              <span class="bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200 text-sm font-medium px-3 py-1 rounded-full">Teacher</span>
+            {% endif %}
           </div>
+          <form method="post" class="space-y-6">
+            {% csrf_token %}
+            {% for field in form %}
+              <div>
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
+                {{ field|add_class:"block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800
+                {% if field.errors %}
+                  border-red-500 dark:border-red-500
+                {% else %}
+                  border-gray-300 dark:border-gray-600
+                {% endif %}
+                " }}
+                {% if field.help_text %}
+                  <small class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</small>
+                {% endif %}
+                {% if field.errors %}<div class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors }}</div>{% endif %}
+              </div>
+            {% endfor %}
+            <button type="submit"
+                    class="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+              Update Profile
+            </button>
+          </form>
         </div>
       </div>
-      <!-- Courses/Enrollments -->
-      <div class="col-md-8">
+      <!-- Stats and Activity -->
+      <div class="lg:col-span-2">
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {% if user.profile.is_teacher %}
+            <!-- Total Courses -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Total Courses</p>
+                  <h3 class="text-2xl font-bold">{{ courses.count }}</h3>
+                </div>
+                <div class="bg-teal-100 dark:bg-teal-900 rounded-full p-3">
+                  <i class="fas fa-book text-teal-500 dark:text-teal-300 text-xl"></i>
+                </div>
+              </div>
+            </div>
+            <!-- Total Students -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Total Students</p>
+                  <h3 class="text-2xl font-bold">{{ total_students }}</h3>
+                </div>
+                <div class="bg-blue-100 dark:bg-blue-900 rounded-full p-3">
+                  <i class="fas fa-users text-blue-500 dark:text-blue-300 text-xl"></i>
+                </div>
+              </div>
+            </div>
+            <!-- Average Rating -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Average Rating</p>
+                  <h3 class="text-2xl font-bold">{{ avg_rating|floatformat:1 }}/5.0</h3>
+                </div>
+                <div class="bg-yellow-100 dark:bg-yellow-900 rounded-full p-3">
+                  <i class="fas fa-star text-yellow-500 dark:text-yellow-300 text-xl"></i>
+                </div>
+              </div>
+            </div>
+          {% else %}
+            <!-- Total Enrollments -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Total Enrollments</p>
+                  <h3 class="text-2xl font-bold">{{ enrollments.count }}</h3>
+                </div>
+                <div class="bg-teal-100 dark:bg-teal-900 rounded-full p-3">
+                  <i class="fas fa-graduation-cap text-teal-500 dark:text-teal-300 text-xl"></i>
+                </div>
+              </div>
+            </div>
+            <!-- Completed Courses -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Completed Courses</p>
+                  <h3 class="text-2xl font-bold">{{ completed_courses }}</h3>
+                </div>
+                <div class="bg-green-100 dark:bg-green-900 rounded-full p-3">
+                  <i class="fas fa-check-circle text-green-500 dark:text-green-300 text-xl"></i>
+                </div>
+              </div>
+            </div>
+            <!-- Average Progress -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Average Progress</p>
+                  <h3 class="text-2xl font-bold">{{ avg_progress|floatformat:0 }}%</h3>
+                </div>
+                <div class="bg-blue-100 dark:bg-blue-900 rounded-full p-3">
+                  <i class="fas fa-chart-line text-blue-500 dark:text-blue-300 text-xl"></i>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        </div>
         {% if user.profile.is_teacher %}
           <!-- Teacher's Courses -->
-          <div class="card shadow mb-4">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center mb-4">
-                <h3 class="card-title mb-0">My Courses</h3>
-                <a href="{% url 'create_course' %}" class="btn btn-success">
-                  <i class="fas fa-plus"></i> Create Course
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div class="p-6">
+              <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-semibold">My Courses</h2>
+                <a href="{% url 'create_course' %}"
+                   class="inline-flex items-center bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded">
+                  <i class="fas fa-plus mr-2"></i> Create Course
                 </a>
               </div>
               {% if courses %}
-                <div class="list-group">
+                <div class="space-y-4">
                   {% for course in courses %}
                     <a href="{% url 'course_detail' course.slug %}"
-                       class="list-group-item list-group-item-action">
-                      <div class="d-flex w-100 justify-content-between">
-                        <h5 class="mb-1">{{ course.title }}</h5>
-                        <small class="text-muted">{{ course.status }}</small>
+                       class="block bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg p-4 transition duration-150">
+                      <div class="flex justify-between items-center">
+                        <h3 class="font-medium">{{ course.title }}</h3>
+                        <span class="text-sm px-2 py-1 rounded {% if course.status == 'published' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200{% else %}bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200{% endif %}">
+                          {{ course.status|title }}
+                        </span>
                       </div>
-                      <p class="mb-1">{{ course.description|truncatewords:30 }}</p>
-                      <small class="text-muted">
-                        {{ course.enrollments.count }} student{{ course.enrollments.count|pluralize }}
-                        enrolled
-                      </small>
+                      <p class="text-sm text-gray-600 dark:text-gray-300 mt-2">{{ course.description|truncatewords:30 }}</p>
+                      <div class="flex items-center mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        <span class="flex items-center">
+                          <i class="fas fa-users mr-1"></i>
+                          {{ course.enrollments.count }} student{{ course.enrollments.count|pluralize }}
+                        </span>
+                        <span class="mx-2">•</span>
+                        <span class="flex items-center">
+                          <i class="fas fa-star mr-1"></i>
+                          {{ course.average_rating|floatformat:1 }}
+                        </span>
+                      </div>
                     </a>
                   {% endfor %}
                 </div>
               {% else %}
-                <p class="text-muted">You haven't created any courses yet.</p>
+                <div class="text-center py-8">
+                  <div class="text-gray-400 dark:text-gray-500 mb-4">
+                    <i class="fas fa-book-open text-4xl"></i>
+                  </div>
+                  <p class="text-gray-600 dark:text-gray-300 mb-4">You haven't created any courses yet.</p>
+                  <a href="{% url 'create_course' %}"
+                     class="inline-flex items-center bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded">
+                    <i class="fas fa-plus mr-2"></i> Create Your First Course
+                  </a>
+                </div>
               {% endif %}
             </div>
           </div>
         {% else %}
           <!-- Student's Enrollments -->
-          <div class="card shadow mb-4">
-            <div class="card-body">
-              <h3 class="card-title mb-4">My Enrollments</h3>
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div class="p-6">
+              <h2 class="text-xl font-semibold mb-6">My Enrollments</h2>
               {% if enrollments %}
-                <div class="list-group">
+                <div class="space-y-4">
                   {% for enrollment in enrollments %}
                     <a href="{% url 'course_detail' enrollment.course.slug %}"
-                       class="list-group-item list-group-item-action">
-                      <div class="d-flex w-100 justify-content-between">
-                        <h5 class="mb-1">{{ enrollment.course.title }}</h5>
-                        <small class="text-muted">{{ enrollment.status }}</small>
+                       class="block bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg p-4 transition duration-150">
+                      <div class="flex justify-between items-center">
+                        <h3 class="font-medium">{{ enrollment.course.title }}</h3>
+                        <span class="text-sm px-2 py-1 rounded {% if enrollment.status == 'completed' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200{% else %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200{% endif %}">
+                          {{ enrollment.status|title }}
+                        </span>
                       </div>
-                      <p class="mb-1">{{ enrollment.course.description|truncatewords:30 }}</p>
-                      <small class="text-muted">
-                        Teacher: {{ enrollment.course.teacher.get_full_name|default:enrollment.course.teacher.username }}
-                      </small>
+                      <p class="text-sm text-gray-600 dark:text-gray-300 mt-2">{{ enrollment.course.description|truncatewords:30 }}</p>
+                      <div class="flex items-center mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        <span class="flex items-center">
+                          <i class="fas fa-user-tie mr-1"></i>
+                          {{ enrollment.course.teacher.get_full_name|default:enrollment.course.teacher.username }}
+                        </span>
+                        <span class="mx-2">•</span>
+                        <span class="flex items-center">
+                          <i class="fas fa-chart-line mr-1"></i>
+                          {% with progress=enrollment.progress %}
+                            {{ progress.completion_percentage|default:0 }}% Complete
+                          {% endwith %}
+                        </span>
+                      </div>
                     </a>
                   {% endfor %}
                 </div>
               {% else %}
-                <p class="text-muted">You haven't enrolled in any courses yet.</p>
-                <a href="{% url 'learn' %}" class="btn btn-primary">Browse Courses</a>
+                <div class="text-center py-8">
+                  <div class="text-gray-400 dark:text-gray-500 mb-4">
+                    <i class="fas fa-graduation-cap text-4xl"></i>
+                  </div>
+                  <p class="text-gray-600 dark:text-gray-300 mb-4">You haven't enrolled in any courses yet.</p>
+                  <a href="{% url 'learn' %}"
+                     class="inline-flex items-center bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded">
+                    <i class="fas fa-search mr-2"></i> Browse Courses
+                  </a>
+                </div>
               {% endif %}
             </div>
           </div>

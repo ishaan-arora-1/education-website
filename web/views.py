@@ -23,7 +23,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .calendar_sync import generate_google_calendar_link, generate_outlook_calendar_link
 from .decorators import teacher_required
-from .forms import CourseForm, CourseMaterialForm, ProfileForm, ReviewForm, SessionForm, TeacherSignupForm
+from .forms import CourseForm, CourseMaterialForm, ProfileUpdateForm, ReviewForm, SessionForm, TeacherSignupForm
 from .marketing import (
     generate_social_share_content,
     get_course_analytics,
@@ -44,7 +44,6 @@ from .models import (
     Payment,
     PeerConnection,
     PeerMessage,
-    Profile,
     Review,
     Session,
     SessionAttendance,
@@ -128,23 +127,65 @@ def index(request):
 
 @login_required
 def profile(request):
-    # Get or create the user's profile
-    profile, created = Profile.objects.get_or_create(user=request.user)
-
     if request.method == "POST":
-        form = ProfileForm(request.POST, instance=profile)
+        form = ProfileUpdateForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, "Profile updated successfully!")
             return redirect("profile")
     else:
-        form = ProfileForm(instance=profile)
+        form = ProfileUpdateForm(instance=request.user)
 
     context = {
         "form": form,
-        "courses": (Course.objects.filter(teacher=request.user) if profile.is_teacher else None),
-        "enrollments": (Enrollment.objects.filter(student=request.user) if not profile.is_teacher else None),
     }
+
+    # Add teacher-specific stats
+    if request.user.profile.is_teacher:
+        courses = Course.objects.filter(teacher=request.user)
+        total_students = sum(course.enrollments.filter(status="approved").count() for course in courses)
+        avg_rating = 0
+        total_ratings = 0
+        for course in courses:
+            course_ratings = course.reviews.all()
+            if course_ratings:
+                avg_rating += sum(review.rating for review in course_ratings)
+                total_ratings += len(course_ratings)
+
+        avg_rating = round(avg_rating / total_ratings, 1) if total_ratings > 0 else 0
+
+        context.update(
+            {
+                "courses": courses,
+                "total_students": total_students,
+                "avg_rating": avg_rating,
+            }
+        )
+
+    # Add student-specific stats
+    else:
+        enrollments = Enrollment.objects.filter(student=request.user).select_related("course")
+        completed_courses = enrollments.filter(status="completed").count()
+
+        # Calculate average progress
+        total_progress = 0
+        progress_count = 0
+        for enrollment in enrollments:
+            progress, _ = CourseProgress.objects.get_or_create(enrollment=enrollment)
+            if progress.completion_percentage is not None:
+                total_progress += progress.completion_percentage
+                progress_count += 1
+
+        avg_progress = round(total_progress / progress_count) if progress_count > 0 else 0
+
+        context.update(
+            {
+                "enrollments": enrollments,
+                "completed_courses": completed_courses,
+                "avg_progress": avg_progress,
+            }
+        )
+
     return render(request, "profile.html", context)
 
 

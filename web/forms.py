@@ -13,7 +13,6 @@ from .forms_additional import (
     LearningInquiryForm,
     MaterialUploadForm,
     MessageForm,
-    ProfileUpdateForm,
     StudyGroupForm,
     TeachingInquiryForm,
     TopicCreationForm,
@@ -252,3 +251,43 @@ class TeacherSignupForm(forms.Form):
         )
 
         return user, subject
+
+
+class ProfileUpdateForm(forms.ModelForm):
+    first_name = forms.CharField(max_length=30, required=False)
+    last_name = forms.CharField(max_length=30, required=False)
+    email = forms.EmailField(required=True)
+    bio = forms.CharField(
+        widget=forms.Textarea(attrs={"rows": 4}),
+        required=False,
+        help_text="Tell us about yourself",
+    )
+    expertise = forms.CharField(
+        max_length=200,
+        required=False,
+        help_text="List your areas of expertise (e.g. Python, Machine Learning, Web Development)",
+    )
+
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name", "email"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance:
+            try:
+                profile = self.instance.profile
+                self.fields["bio"].initial = profile.bio
+                self.fields["expertise"].initial = profile.expertise
+            except Profile.DoesNotExist:
+                pass
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        if commit:
+            user.save()
+            profile, created = Profile.objects.get_or_create(user=user)
+            profile.bio = self.cleaned_data["bio"]
+            profile.expertise = self.cleaned_data["expertise"]
+            profile.save()
+        return user
