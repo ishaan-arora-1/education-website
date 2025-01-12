@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib.auth.models import User
 
-from .forms import (
+from .models import BlogComment, Course, CourseMaterial, Review, StudyGroup
+from .widgets import (
     TailwindCheckboxInput,
     TailwindEmailInput,
     TailwindFileInput,
@@ -10,7 +11,6 @@ from .forms import (
     TailwindSelect,
     TailwindTextarea,
 )
-from .models import BlogComment, Course, CourseMaterial, Review, StudyGroup
 
 
 class BlogCommentForm(forms.ModelForm):
@@ -29,7 +29,7 @@ class MessageForm(forms.Form):
 class LearningInquiryForm(forms.Form):
     name = forms.CharField(max_length=100, widget=TailwindInput())
     email = forms.EmailField(widget=TailwindEmailInput())
-    interests = forms.CharField(
+    subject_interest = forms.CharField(
         widget=TailwindTextarea(
             attrs={
                 "rows": 4,
@@ -37,13 +37,24 @@ class LearningInquiryForm(forms.Form):
             }
         )
     )
-    experience = forms.CharField(
+    learning_goals = forms.CharField(
         widget=TailwindTextarea(
             attrs={
                 "rows": 4,
-                "placeholder": "Tell us about your learning experience and goals",
+                "placeholder": "Tell us about your learning goals",
             }
         )
+    )
+    preferred_schedule = forms.CharField(
+        widget=TailwindInput(attrs={"placeholder": "What days/times work best for you?"})
+    )
+    experience_level = forms.ChoiceField(
+        choices=[
+            ("beginner", "Beginner"),
+            ("intermediate", "Intermediate"),
+            ("advanced", "Advanced"),
+        ],
+        widget=TailwindSelect(),
     )
 
 
@@ -86,11 +97,23 @@ class CourseSearchForm(forms.Form):
     price_min = forms.DecimalField(
         required=False,
         widget=TailwindNumberInput(attrs={"min": "0", "step": "0.01", "placeholder": "Min price"}),
+        min_value=0,
     )
     price_max = forms.DecimalField(
         required=False,
         widget=TailwindNumberInput(attrs={"min": "0", "step": "0.01", "placeholder": "Max price"}),
+        min_value=0,
     )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        price_min = cleaned_data.get("price_min")
+        price_max = cleaned_data.get("price_max")
+
+        if price_min and price_max and price_min > price_max:
+            raise forms.ValidationError("Minimum price cannot be greater than maximum price")
+
+        return cleaned_data
 
 
 class CourseUpdateForm(forms.ModelForm):

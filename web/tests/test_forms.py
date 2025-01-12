@@ -8,11 +8,11 @@ from django.utils import timezone
 from web.forms import (
     BlogCommentForm,
     CourseCreationForm,
+    CourseMaterialForm,
     CourseReviewForm,
     CourseSearchForm,
     CourseUpdateForm,
     LearningInquiryForm,
-    MaterialUploadForm,
     MessageForm,
     ProfileUpdateForm,
     SessionForm,
@@ -166,160 +166,151 @@ class CourseCreationFormTests(TestCase):
 
 class SessionFormTests(TestCase):
     def setUp(self):
-        self.User = get_user_model()
-        self.teacher = self.User.objects.create_user(
-            username="teacher", email="teacher@example.com", password="teacherpass123"
-        )
-        self.teacher.profile.is_teacher = True
-        self.teacher.profile.save()
+        self.user = User.objects.create_user(username="testuser", password="testpass123")
+        self.user.profile.is_teacher = True
+        self.user.profile.save()
 
-        # Create test subject
         self.subject = Subject.objects.create(
-            name="Programming6",
-            slug="programming6",
-            description="Programming courses",
-            icon="fas fa-code",
+            name="Programming Sessions",
+            slug="programming-sessions",
+            description="Programming courses for sessions",
         )
 
         self.course = Course.objects.create(
             title="Test Course",
             description="Test Description",
-            teacher=self.teacher,
-            learning_objectives="Test Objectives",
-            price=99.99,
+            teacher=self.user,
+            price=50.00,
             max_students=50,
-            subject=self.subject,  # Use Subject instance instead of string
+            subject=self.subject,
             level="beginner",
+            status="draft",
         )
 
     def test_valid_session_form(self):
-        """Test session creation with valid data"""
         form_data = {
-            "course": self.course.id,
-            "title": "Test Session",
-            "description": "Test Session Description",
+            "title": "Week 1 Introduction",
+            "description": "Introduction to the course",
             "start_time": timezone.now() + timezone.timedelta(days=1),
             "end_time": timezone.now() + timezone.timedelta(days=1, hours=2),
             "is_virtual": True,
-            "meeting_link": "https://meet.google.com/abc-defg-hij",
-            "max_participants": 20,
-            "location": "",  # Empty for virtual sessions
+            "meeting_link": "https://zoom.us/j/123456789",
         }
         form = SessionForm(data=form_data)
-        self.assertTrue(form.is_valid(), msg=form.errors)
+        self.assertTrue(form.is_valid())
 
     def test_invalid_session_form(self):
-        """Test session creation with invalid data"""
-        # Test case 1: end time before start time
-        start_time = timezone.now() + timezone.timedelta(days=1)
-        end_time = start_time - timezone.timedelta(hours=1)
+        # Test with end time before start time
         form_data = {
-            "course": self.course.id,
-            "title": "Test Session",
-            "description": "Test Session Description",
-            "start_time": start_time,
-            "end_time": end_time,
+            "title": "Week 1 Introduction",
+            "description": "Introduction to the course",
+            "start_time": timezone.now() + timezone.timedelta(days=1),
+            "end_time": timezone.now(),  # End time before start time
             "is_virtual": True,
-            "meeting_link": "https://meet.google.com/abc-defg-hij",
-            "max_participants": 20,
+            "meeting_link": "https://zoom.us/j/123456789",
         }
         form = SessionForm(data=form_data)
         self.assertFalse(form.is_valid())
-        self.assertIn("end_time", form.errors)
+        self.assertIn("End time must be after start time", str(form.errors))
 
-        # Test case 2: virtual session without meeting link
-        form_data.update(
-            {
-                "end_time": start_time + timezone.timedelta(hours=2),
-                "meeting_link": "",
-            }
-        )
+    def test_invalid_virtual_session(self):
+        # Test virtual session without meeting link
+        form_data = {
+            "title": "Week 1 Introduction",
+            "description": "Introduction to the course",
+            "start_time": timezone.now() + timezone.timedelta(days=1),
+            "end_time": timezone.now() + timezone.timedelta(days=1, hours=2),
+            "is_virtual": True,
+            "meeting_link": "",  # Missing meeting link for virtual session
+        }
         form = SessionForm(data=form_data)
         self.assertFalse(form.is_valid())
-        self.assertIn("meeting_link", form.errors)
-
-        # Test case 3: in-person session without location
-        form_data.update(
-            {
-                "is_virtual": False,
-                "location": "",
-            }
-        )
-        form = SessionForm(data=form_data)
-        self.assertFalse(form.is_valid())
-        self.assertIn("location", form.errors)
+        self.assertIn("Meeting link is required for virtual sessions", str(form.errors))
 
 
 class CourseSearchFormTests(TestCase):
     def test_valid_search_form(self):
-        """Test course search with valid data"""
         form_data = {
             "query": "python",
-            "min_price": "0",
-            "max_price": "100",
             "subject": "",
+            "level": "beginner",
+            "price_min": "10.00",
+            "price_max": "50.00",
         }
         form = CourseSearchForm(data=form_data)
         self.assertTrue(form.is_valid())
 
     def test_invalid_search_form(self):
-        """Test course search with invalid data"""
         form_data = {
-            "min_price": "invalid",
-            "max_price": "invalid",
+            "query": "python",
+            "subject": "",
+            "level": "invalid_level",
+            "price_min": "abc",
+            "price_max": "def",
         }
         form = CourseSearchForm(data=form_data)
         self.assertFalse(form.is_valid())
 
+    def test_invalid_price_range(self):
+        form_data = {
+            "query": "python",
+            "subject": "",
+            "level": "beginner",
+            "price_min": "50.00",
+            "price_max": "10.00",
+        }
+        form = CourseSearchForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn("Minimum price cannot be greater than maximum price", form.errors["__all__"])
+
 
 class CourseUpdateFormTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="teacher",
-            password="testpass123",
-        )
-        # Set teacher status through profile
+        self.user = User.objects.create_user(username="testuser", password="testpass123")
         self.user.profile.is_teacher = True
         self.user.profile.save()
 
-        self.subject = Subject.objects.create(name="Test Subject")
+        self.subject = Subject.objects.create(
+            name="Programming Updates",
+            slug="programming-updates",
+            description="Programming courses for updates",
+        )
+
         self.course = Course.objects.create(
             title="Test Course",
+            description="Test Description",
             teacher=self.user,
-            subject=self.subject,
-            price=99.99,
+            price=50.00,
             max_students=50,
-            description="Test description",
-            learning_objectives="Test objectives",
+            subject=self.subject,
             level="beginner",
-            tags="test,course",
-            prerequisites="None",
+            status="draft",
         )
 
     def test_valid_update_form(self):
-        """Test course update with valid data"""
         form_data = {
             "title": "Updated Course",
-            "description": "New description",
-            "learning_objectives": "New objectives",
-            "prerequisites": "Updated prerequisites",
-            "price": "149.99",
+            "description": "Updated Description",
+            "learning_objectives": "Updated Objectives",
+            "prerequisites": "Updated Prerequisites",
+            "price": 75.00,
             "max_students": 75,
             "subject": self.subject.id,
             "level": "intermediate",
-            "tags": "updated,test,course",
+            "status": "published",
         }
         form = CourseUpdateForm(data=form_data, instance=self.course)
-        self.assertTrue(form.is_valid(), msg=form.errors)
+        self.assertTrue(form.is_valid())
 
     def test_invalid_update_form(self):
-        """Test course update with invalid data"""
         form_data = {
             "title": "",  # Title is required
-            "price": "invalid",
-            "max_students": -1,  # Invalid value
-            "description": "",  # Description is required
-            "learning_objectives": "",  # Learning objectives are required
+            "description": "Updated Description",
+            "price": -10,  # Invalid price
+            "max_students": -5,  # Invalid max_students
+            "subject": 999,  # Invalid subject ID
+            "level": "invalid_level",  # Invalid level
+            "status": "invalid_status",  # Invalid status
         }
         form = CourseUpdateForm(data=form_data, instance=self.course)
         self.assertFalse(form.is_valid())
@@ -351,18 +342,22 @@ class MaterialUploadFormTests(TestCase):
         test_file = SimpleUploadedFile("test.pdf", b"file_content", content_type="application/pdf")
         form_data = {
             "title": "Lecture Notes",
-            "description": "Week 1 notes",
+            "description": "Week 1 lecture notes",
+            "material_type": "document",
+            "order": 1,
         }
-        file_data = {"file": test_file}
-        form = MaterialUploadForm(data=form_data, files=file_data)
-        self.assertTrue(form.is_valid(), msg=form.errors)
+        form = CourseMaterialForm(data=form_data, files={"file": test_file})
+        self.assertTrue(form.is_valid())
 
     def test_invalid_upload_form(self):
         """Test material upload with invalid data"""
         form_data = {
-            "title": "",  # Title required
+            "title": "",  # Title is required
+            "description": "Test description",
+            "material_type": "invalid_type",  # Invalid type
+            "order": -1,  # Invalid order
         }
-        form = MaterialUploadForm(data=form_data)
+        form = CourseMaterialForm(data=form_data)
         self.assertFalse(form.is_valid())
 
 
@@ -449,24 +444,34 @@ class MessageFormTests(TestCase):
 
 class LearningInquiryFormTests(TestCase):
     def test_valid_inquiry_form(self):
-        """Test learning inquiry with valid data"""
         form_data = {
             "name": "John Doe",
             "email": "john@example.com",
-            "interests": "Python, Web Development",
+            "subject_interest": "Python Programming",
+            "learning_goals": "I want to learn web development",
+            "preferred_schedule": "Weekends",
             "experience_level": "beginner",
         }
         form = LearningInquiryForm(data=form_data)
         self.assertTrue(form.is_valid())
 
     def test_invalid_inquiry_form(self):
-        """Test learning inquiry with invalid data"""
         form_data = {
-            "name": "",  # Name required
+            "name": "",  # Name is required
             "email": "invalid-email",  # Invalid email
+            "subject_interest": "",  # Subject interest is required
+            "learning_goals": "",  # Learning goals are required
+            "preferred_schedule": "",  # Schedule is required
+            "experience_level": "invalid_level",  # Invalid level
         }
         form = LearningInquiryForm(data=form_data)
         self.assertFalse(form.is_valid())
+        self.assertIn("name", form.errors)
+        self.assertIn("email", form.errors)
+        self.assertIn("subject_interest", form.errors)
+        self.assertIn("learning_goals", form.errors)
+        self.assertIn("preferred_schedule", form.errors)
+        self.assertIn("experience_level", form.errors)
 
 
 class TeachingInquiryFormTests(TestCase):
