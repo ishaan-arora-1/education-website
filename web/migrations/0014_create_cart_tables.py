@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import migrations
-from django.db.utils import OperationalError
+from django.db.utils import OperationalError, ProgrammingError
 
 
 def create_cart_tables(apps, schema_editor):
@@ -9,19 +9,25 @@ def create_cart_tables(apps, schema_editor):
             # Check if Cart table exists
             cursor.execute(
                 """
-                SELECT name FROM sqlite_master
-                WHERE type='table' AND name='web_cart'
+                SELECT COUNT(*)
+                FROM information_schema.tables
+                WHERE table_schema = DATABASE()
+                AND table_name = 'web_cart'
             """
             )
-            if not cursor.fetchone():
+            if cursor.fetchone()[0] == 0:
                 cursor.execute(
                     """
                     CREATE TABLE web_cart (
-                        id integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        id bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
                         session_key varchar(40) NOT NULL DEFAULT '',
-                        created_at datetime NOT NULL,
-                        updated_at datetime NOT NULL,
-                        user_id integer REFERENCES auth_user(id) ON DELETE CASCADE
+                        created_at datetime(6) NOT NULL,
+                        updated_at datetime(6) NOT NULL,
+                        user_id bigint NULL,
+                        CONSTRAINT fk_cart_user
+                            FOREIGN KEY (user_id)
+                            REFERENCES auth_user(id)
+                            ON DELETE CASCADE
                     )
                 """
                 )
@@ -29,22 +35,36 @@ def create_cart_tables(apps, schema_editor):
             # Check if CartItem table exists
             cursor.execute(
                 """
-                SELECT name FROM sqlite_master
-                WHERE type='table' AND name='web_cartitem'
+                SELECT COUNT(*)
+                FROM information_schema.tables
+                WHERE table_schema = DATABASE()
+                AND table_name = 'web_cartitem'
             """
             )
-            if not cursor.fetchone():
+            if cursor.fetchone()[0] == 0:
                 cursor.execute(
                     """
                     CREATE TABLE web_cartitem (
-                        id integer NOT NULL PRIMARY KEY AUTOINCREMENT,
-                        created_at datetime NOT NULL,
-                        updated_at datetime NOT NULL,
-                        cart_id integer NOT NULL REFERENCES web_cart(id) ON DELETE CASCADE,
-                        course_id integer REFERENCES web_course(id) ON DELETE CASCADE,
-                        session_id integer REFERENCES web_session(id) ON DELETE CASCADE,
-                        UNIQUE(cart_id, course_id),
-                        UNIQUE(cart_id, session_id)
+                        id bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                        created_at datetime(6) NOT NULL,
+                        updated_at datetime(6) NOT NULL,
+                        cart_id bigint NOT NULL,
+                        course_id bigint NULL,
+                        session_id bigint NULL,
+                        CONSTRAINT fk_cartitem_cart
+                            FOREIGN KEY (cart_id)
+                            REFERENCES web_cart(id)
+                            ON DELETE CASCADE,
+                        CONSTRAINT fk_cartitem_course
+                            FOREIGN KEY (course_id)
+                            REFERENCES web_course(id)
+                            ON DELETE CASCADE,
+                        CONSTRAINT fk_cartitem_session
+                            FOREIGN KEY (session_id)
+                            REFERENCES web_session(id)
+                            ON DELETE CASCADE,
+                        UNIQUE KEY unique_cart_course (cart_id, course_id),
+                        UNIQUE KEY unique_cart_session (cart_id, session_id)
                     )
                 """
                 )
@@ -52,11 +72,14 @@ def create_cart_tables(apps, schema_editor):
             # Add constraint if it doesn't exist
             cursor.execute(
                 """
-                SELECT sql FROM sqlite_master
-                WHERE type='table' AND name='web_cart'
+                SELECT COUNT(*)
+                FROM information_schema.table_constraints
+                WHERE table_schema = DATABASE()
+                AND table_name = 'web_cart'
+                AND constraint_name = 'cart_user_or_session_key'
             """
             )
-            if "cart_user_or_session_key" not in (cursor.fetchone() or [""])[0]:
+            if cursor.fetchone()[0] == 0:
                 cursor.execute(
                     """
                     ALTER TABLE web_cart
@@ -64,7 +87,7 @@ def create_cart_tables(apps, schema_editor):
                     CHECK ((user_id IS NOT NULL) OR (session_key != ''))
                 """
                 )
-    except OperationalError:
+    except (OperationalError, ProgrammingError):
         # Table already exists or other error, skip
         pass
 
