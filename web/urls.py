@@ -15,7 +15,7 @@ urlpatterns += i18n_patterns(
     path("learn/", views.learn, name="learn"),
     path("teach/", views.teach, name="teach"),
     path("about/", views.about, name="about"),
-    path("blog/", views.blog_list, name="blog_list"),
+    path("blog/", views.blog_list, name="blog"),
     path("blog/<slug:slug>/", views.blog_detail, name="blog_detail"),
     # Authentication URLs
     # path("login/", auth_views.LoginView.as_view(), name="login"),
