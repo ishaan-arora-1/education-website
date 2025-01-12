@@ -227,6 +227,7 @@ def course_detail(request, slug):
         "completed_sessions": completed_sessions,
         "similar_courses": similar_courses,
         "now": timezone.now(),
+        "stripe_public_key": settings.STRIPE_PUBLISHABLE_KEY,
     }
     return render(request, "courses/detail.html", context)
 
@@ -245,7 +246,12 @@ def enroll_course(request, course_slug):
         messages.error(request, "This course is full.")
         return redirect("course_detail", slug=course_slug)
 
-    # Create enrollment
+    # For paid courses, enrollment is handled through Stripe webhook
+    if course.price > 0:
+        messages.error(request, "Please complete the payment process to enroll in this course.")
+        return redirect("course_detail", slug=course_slug)
+
+    # Create enrollment for free courses
     enrollment = Enrollment.objects.create(
         student=request.user,
         course=course,

@@ -85,14 +85,120 @@
               </div>
               <!-- Enrollment Button -->
               {% if not is_teacher and not is_enrolled %}
-                <form method="post" action="{% url 'enroll' course.slug %}" class="mb-6">
-                  {% csrf_token %}
-                  <button type="submit"
-                          class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
-                    <i class="fas fa-graduation-cap mr-2"></i>
-                    Enroll Now
-                  </button>
-                </form>
+                {% if course.price > 0 %}
+                  <!-- Stripe Payment Form -->
+                  <div class="mb-6">
+                    <form id="payment-form" class="space-y-4">
+                      {% csrf_token %}
+                      <div id="payment-element" class="bg-white dark:bg-gray-700 rounded-lg p-4"></div>
+                      <button id="submit-button"
+                              class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center">
+                        <i class="fas fa-credit-card mr-2"></i>
+                        Pay {{ course.price|floatformat:2 }} USD and Enroll
+                      </button>
+                      <div id="payment-message" class="text-sm text-center mt-2"></div>
+                    </form>
+                  </div>
+                  <!-- Stripe JS -->
+                  <script src="https://js.stripe.com/v3/"></script>
+                  <script>
+                      const stripe = Stripe('{{ stripe_public_key }}');
+                      let elements;
+
+                      initialize();
+                      checkStatus();
+
+                      document.querySelector("#payment-form").addEventListener("submit", handleSubmit);
+
+                      async function initialize() {
+                          const response = await fetch("{% url 'create_payment_intent' course.slug %}");
+                          const {
+                              clientSecret
+                          } = await response.json();
+
+                          const appearance = {
+                              theme: document.documentElement.classList.contains('dark') ? 'night' : 'stripe',
+                          };
+
+                          elements = stripe.elements({
+                              appearance,
+                              clientSecret
+                          });
+                          const paymentElement = elements.create("payment");
+                          paymentElement.mount("#payment-element");
+                      }
+
+                      async function handleSubmit(e) {
+                          e.preventDefault();
+                          setLoading(true);
+
+                          const {
+                              error
+                          } = await stripe.confirmPayment({
+                              elements,
+                              confirmParams: {
+                                  return_url: window.location.origin + "{% url 'course_detail' course.slug %}",
+                              },
+                          });
+
+                          if (error) {
+                              const messageDiv = document.querySelector("#payment-message");
+                              messageDiv.textContent = error.message;
+                          }
+
+                          setLoading(false);
+                      }
+
+                      function setLoading(isLoading) {
+                          const button = document.querySelector("#submit-button");
+                          button.disabled = isLoading;
+                          button.innerHTML = isLoading ?
+                              '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...' :
+                              '<i class="fas fa-credit-card mr-2"></i>Pay {{ course.price|floatformat:2 }} USD and Enroll';
+                      }
+
+                      async function checkStatus() {
+                          const clientSecret = new URLSearchParams(window.location.search).get(
+                              "payment_intent_client_secret"
+                          );
+
+                          if (!clientSecret) return;
+
+                          const {
+                              paymentIntent
+                          } = await stripe.retrievePaymentIntent(clientSecret);
+
+                          const messageDiv = document.querySelector("#payment-message");
+
+                          switch (paymentIntent.status) {
+                              case "succeeded":
+                                  messageDiv.textContent = "Payment successful! You are now enrolled.";
+                                  // Refresh the page after successful payment
+                                  setTimeout(() => window.location.reload(), 2000);
+                                  break;
+                              case "processing":
+                                  messageDiv.textContent = "Payment processing. Please wait...";
+                                  break;
+                              case "requires_payment_method":
+                                  messageDiv.textContent = "Payment failed. Please try another payment method.";
+                                  break;
+                              default:
+                                  messageDiv.textContent = "Something went wrong.";
+                                  break;
+                          }
+                      }
+                  </script>
+                {% else %}
+                  <!-- Free Course Enrollment -->
+                  <form method="post" action="{% url 'enroll' course.slug %}" class="mb-6">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
+                      <i class="fas fa-graduation-cap mr-2"></i>
+                      Enroll Now (Free)
+                    </button>
+                  </form>
+                {% endif %}
               {% elif is_enrolled %}
                 <div class="mb-6">
                   <a href="{% url 'student_progress' enrollment.id %}"
