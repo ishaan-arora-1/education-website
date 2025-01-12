@@ -5,116 +5,8 @@
 {% block title %}
   Progress - {{ enrollment.course.title }}
 {% endblock title %}
-{% block extra_js %}
-  {% if enrollment.status == 'pending' and enrollment.course.price > 0 %}
-    <script src="https://js.stripe.com/v3/"></script>
-    <script>
-        // Define the payment functions in global scope
-        window.initializePayment = async function() {
-            console.log('Initialize payment called');
-            const paymentButton = document.getElementById("payment-button");
-            const formContainer = document.getElementById("payment-form-container");
-            const messageDiv = document.querySelector("#payment-message");
-
-            if (!paymentButton || !formContainer) {
-                showError('Payment elements not found');
-                return;
-            }
-
-            try {
-                // Show loading state
-                paymentButton.disabled = true;
-                paymentButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Initializing...';
-
-                console.log('Fetching payment intent...');
-                const response = await fetch("{% url 'create_payment_intent' enrollment.course.slug %}");
-                console.log('Payment intent response:', response);
-
-                if (!response.ok) {
-                    throw new Error('Failed to create payment intent');
-                }
-
-                const data = await response.json();
-                console.log('Payment intent data:', data);
-
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                // Initialize Stripe Elements
-                console.log('Creating Stripe elements...');
-                window.elements = window.stripe.elements({
-                    appearance: {
-                        theme: document.documentElement.classList.contains('dark') ? 'night' : 'stripe',
-                    },
-                    clientSecret: data.clientSecret
-                });
-
-                // Create and mount the payment element
-                console.log('Creating payment element...');
-                window.paymentElement = window.elements.create("payment");
-
-                // Show the form container
-                paymentButton.classList.add('hidden');
-                formContainer.classList.remove('hidden');
-
-                console.log('Mounting payment element...');
-                await window.paymentElement.mount("#payment-element");
-                console.log('Payment element mounted successfully');
-
-                // Clear any previous error messages
-                if (messageDiv) {
-                    messageDiv.textContent = '';
-                }
-
-            } catch (error) {
-                console.error('Payment initialization error:', error);
-                showError(error.message || 'Failed to initialize payment');
-
-                // Reset the button state
-                paymentButton.disabled = false;
-                paymentButton.innerHTML = '<i class="fas fa-credit-card mr-2"></i>Pay {{ enrollment.course.price|floatformat:2 }} USD and Complete Enrollment';
-
-                // Hide the form container if visible
-                formContainer.classList.add('hidden');
-                paymentButton.classList.remove('hidden');
-            }
-        };
-
-        window.cancelPayment = function() {
-            console.log('Canceling payment...');
-            document.getElementById("payment-form-container").classList.add('hidden');
-            document.getElementById("payment-button").classList.remove('hidden');
-            const messageDiv = document.querySelector("#payment-message");
-            if (messageDiv) {
-                messageDiv.textContent = '';
-            }
-        };
-
-        function showError(message) {
-            const messageDiv = document.querySelector("#payment-message");
-            if (messageDiv) {
-                messageDiv.textContent = message;
-                messageDiv.classList.add('text-red-600');
-            }
-            console.error(message);
-        }
-
-        // Initialize Stripe
-        console.log('Payment script loading...');
-        window.stripe = Stripe('{{ stripe_public_key }}');
-    </script>
-  {% endif %}
-{% endblock extra_js %}
 {% block content %}
   <div class="container mx-auto px-4 py-8">
-    <!-- Breadcrumbs -->
-    <nav class="text-sm mb-6">
-      <a href="{% url 'course_detail' enrollment.course.slug %}"
-         class="text-blue-600 hover:text-blue-800">{{ enrollment.course.title }}</a>
-      <span class="mx-2">/</span>
-      <span class="text-gray-600">Progress</span>
-    </nav>
     <!-- Header -->
     <div class="mb-8">
       <h1 class="text-3xl font-bold mb-2">Course Progress</h1>
@@ -125,63 +17,174 @@
             <i class="fas fa-exclamation-circle text-yellow-500 mr-3"></i>
             <div class="w-full">
               <h3 class="font-medium text-yellow-800 dark:text-yellow-200">Payment Required</h3>
-              <p class="text-sm text-yellow-700 dark:text-yellow-300">Please complete the payment to access the full course.</p>
-              <div class="mt-3 relative">
-                <!-- Initial Payment Button -->
-                <button type="button"
-                        onclick="initializePayment()"
-                        id="payment-button"
-                        class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center">
-                  <i class="fas fa-credit-card mr-2"></i>
-                  Pay {{ enrollment.course.price|floatformat:2 }} USD and Complete Enrollment
-                </button>
-                <!-- Payment Form Container -->
-                <div id="payment-form-container"
-                     class="hidden absolute top-0 left-0 w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 z-50">
-                  <form id="payment-form" class="space-y-4">
-                    {% csrf_token %}
-                    <div id="payment-element"
-                         class="min-h-[100px] bg-white dark:bg-gray-700 rounded-lg p-4"></div>
-                    <button type="submit"
-                            id="submit-button"
-                            class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center">
-                      <i class="fas fa-credit-card mr-2"></i>
-                      Complete Payment
-                    </button>
-                    <button type="button"
-                            onclick="cancelPayment()"
-                            class="w-full mt-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center">
-                      <i class="fas fa-times mr-2"></i>
-                      Cancel
-                    </button>
-                  </form>
-                </div>
-                <!-- Payment Message -->
-                <div id="payment-message" class="text-sm text-center mt-2"></div>
+              <div class="mt-3">
+                <form id="payment-form" class="space-y-4">
+                  <div id="payment-element">
+                    <!-- Stripe Elements will be inserted here -->
+                  </div>
+                  <button id="submit-button"
+                          type="submit"
+                          class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center">
+                    <i class="fas fa-credit-card mr-2"></i>
+                    <span id="button-text">Pay {{ enrollment.course.price|floatformat:2 }} USD and Complete Enrollment</span>
+                    <span id="spinner"
+                          class="spinner-border spinner-border-sm d-none"
+                          role="status"></span>
+                  </button>
+                  <div id="payment-message" class="text-sm text-center mt-2"></div>
+                </form>
               </div>
             </div>
           </div>
         </div>
       {% endif %}
-    </div>
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- Left Column - Stats -->
-      <div class="space-y-6">
-        <!-- Enrollment Status Card -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 class="text-xl font-semibold mb-4">Enrollment Status</h2>
-          <div class="space-y-3">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Left Column - Stats -->
+        <div class="space-y-6">
+          <!-- Enrollment Status Card -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Enrollment Status</h2>
+            {% if enrollment.status == 'pending' and enrollment.course.price > 0 %}
+              <!-- Stripe JS -->
+              <script src="https://js.stripe.com/v3/"></script>
+              <script>
+                  const stripe = Stripe('{{ stripe_public_key }}');
+                  let elements;
+
+                  initialize();
+                  checkStatus();
+
+                  document
+                      .querySelector("#payment-form")
+                      .addEventListener("submit", handleSubmit);
+
+                  async function initialize() {
+                      try {
+                          console.log('Fetching payment intent...');
+                          const response = await fetch("{% url 'create_payment_intent' enrollment.course.slug %}");
+
+                          if (!response.ok) {
+                              throw new Error('Failed to create payment intent');
+                          }
+
+                          const {
+                              clientSecret
+                          } = await response.json();
+
+                          const appearance = {
+                              theme: document.documentElement.classList.contains('dark') ? 'night' : 'stripe',
+                          };
+
+                          elements = stripe.elements({
+                              appearance,
+                              clientSecret
+                          });
+
+                          const paymentElement = elements.create("payment");
+                          paymentElement.mount("#payment-element");
+                          console.log('Payment element mounted successfully');
+                      } catch (error) {
+                          console.error('Error initializing payment:', error);
+                          showError('Failed to initialize payment. Please try again.');
+                      }
+                  }
+
+                  async function handleSubmit(e) {
+                      e.preventDefault();
+                      setLoading(true);
+
+                      try {
+                          const {
+                              error
+                          } = await stripe.confirmPayment({
+                              elements,
+                              confirmParams: {
+                                  return_url: window.location.origin + "{% url 'course_detail' enrollment.course.slug %}",
+                              },
+                          });
+
+                          if (error) {
+                              showError(error.message);
+                          }
+                      } catch (error) {
+                          console.error('Payment error:', error);
+                          showError('An unexpected error occurred. Please try again.');
+                      }
+
+                      setLoading(false);
+                  }
+
+                  async function checkStatus() {
+                      const clientSecret = new URLSearchParams(window.location.search).get(
+                          "payment_intent_client_secret"
+                      );
+
+                      if (!clientSecret) return;
+
+                      try {
+                          const {
+                              paymentIntent
+                          } = await stripe.retrievePaymentIntent(clientSecret);
+
+                          switch (paymentIntent.status) {
+                              case "succeeded":
+                                  showMessage("Payment successful! You are now enrolled.");
+                                  setTimeout(() => window.location.reload(), 2000);
+                                  break;
+                              case "processing":
+                                  showMessage("Payment processing. Please wait...");
+                                  break;
+                              case "requires_payment_method":
+                                  showMessage("Payment failed. Please try another payment method.");
+                                  break;
+                              default:
+                                  showMessage("Something went wrong.");
+                                  break;
+                          }
+                      } catch (error) {
+                          console.error('Error checking payment status:', error);
+                          showError('Failed to check payment status');
+                      }
+                  }
+
+                  function showMessage(messageText) {
+                      const messageContainer = document.querySelector("#payment-message");
+                      messageContainer.textContent = messageText;
+                      messageContainer.style.display = "block";
+                  }
+
+                  function showError(messageText) {
+                      showMessage(messageText);
+                  }
+
+                  function setLoading(isLoading) {
+                      const submitButton = document.querySelector("#submit-button");
+                      const spinner = document.querySelector("#spinner");
+                      const buttonText = document.querySelector("#button-text");
+
+                      if (isLoading) {
+                          submitButton.disabled = true;
+                          spinner.classList.remove("d-none");
+                          buttonText.classList.add("d-none");
+                      } else {
+                          submitButton.disabled = false;
+                          spinner.classList.add("d-none");
+                          buttonText.classList.remove("d-none");
+                      }
+                  }
+              </script>
+            {% endif %}
             <div class="flex justify-between items-center">
               <span class="text-sm text-gray-600 dark:text-gray-400">Status</span>
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if enrollment.status == 'approved' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% elif enrollment.status == 'pending' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% else %}bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200{% endif %}">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if enrollment.status == 'approved' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200{% elif enrollment.status == 'pending' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200{% else %}bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200{% endif %}">
                 {{ enrollment.status|title }}
               </span>
             </div>
-            <div class="flex justify-between items-center">
+            <div class="flex justify-between items-center mt-4">
               <span class="text-sm text-gray-600 dark:text-gray-400">Enrolled On</span>
               <span class="text-sm font-medium">{{ enrollment.enrollment_date|date:"M j, Y" }}</span>
             </div>
-            <div class="flex justify-between items-center">
+            <div class="flex justify-between items-center mt-4">
               <span class="text-sm text-gray-600 dark:text-gray-400">Course Price</span>
               <span class="text-sm font-medium">
                 {% if enrollment.course.price == 0 %}
@@ -192,137 +195,89 @@
               </span>
             </div>
           </div>
-        </div>
-        <!-- Overall Progress Card -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 class="text-xl font-semibold mb-4">Overall Progress</h2>
-          <div class="mb-4">
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-sm text-gray-600 dark:text-gray-400">Completion</span>
-              <span class="text-sm font-medium">{{ progress.completion_percentage }}%</span>
-            </div>
-            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-              <div class="bg-teal-500 h-2.5 rounded-full transition-all duration-500"
-                   style="width: {{ progress.completion_percentage }}%"></div>
-            </div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-gray-600 dark:text-gray-400">Sessions Completed</span>
+            <span class="text-sm font-medium">{{ progress.completed_sessions.count }}/{{ enrollment.course.sessions.count }}</span>
           </div>
-          <div class="space-y-3">
-            <div class="flex justify-between items-center">
-              <span class="text-sm text-gray-600 dark:text-gray-400">Sessions Completed</span>
-              <span class="text-sm font-medium">{{ progress.completed_sessions.count }}/{{ enrollment.course.sessions.count }}</span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-sm text-gray-600 dark:text-gray-400">Attendance Rate</span>
-              <span class="text-sm font-medium">{{ progress.attendance_rate }}%</span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-sm text-gray-600 dark:text-gray-400">Last Accessed</span>
-              <span class="text-sm font-medium">{{ progress.last_accessed|date:"M j, Y" }}</span>
-            </div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-gray-600 dark:text-gray-400">Attendance Rate</span>
+            <span class="text-sm font-medium">{{ progress.attendance_rate }}%</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-gray-600 dark:text-gray-400">Last Accessed</span>
+            <span class="text-sm font-medium">{{ progress.last_accessed|date:"M j, Y" }}</span>
           </div>
         </div>
-        <!-- Achievements Card -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 class="text-xl font-semibold mb-4">Achievements</h2>
-          {% if achievements %}
-            <div class="space-y-4">
-              {% for achievement in achievements %}
-                <div class="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div class="flex-shrink-0">
-                    {% if achievement.achievement_type == "completion" %}
-                      <i class="fas fa-trophy text-yellow-500 text-xl"></i>
-                    {% elif achievement.achievement_type == "attendance" %}
-                      <i class="fas fa-calendar-check text-green-500 text-xl"></i>
-                    {% else %}
-                      <i class="fas fa-star text-blue-500 text-xl"></i>
-                    {% endif %}
-                  </div>
-                  <div>
-                    <h3 class="font-medium">{{ achievement.title }}</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ achievement.description }}</p>
-                  </div>
-                </div>
-              {% endfor %}
-            </div>
-          {% else %}
-            <div class="text-center py-4">
-              <div class="text-gray-400 dark:text-gray-500 mb-2">
-                <i class="fas fa-trophy text-4xl"></i>
-              </div>
-              <p class="text-gray-600 dark:text-gray-400">Complete course milestones to earn achievements!</p>
-            </div>
-          {% endif %}
-        </div>
-      </div>
-      <!-- Right Column - Sessions -->
-      <div class="lg:col-span-2 space-y-6">
-        <!-- Past Sessions -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
-          <div class="p-6">
-            <h2 class="text-xl font-semibold mb-4">Past Sessions</h2>
-            {% if past_sessions %}
-              <div class="space-y-4">
-                {% for session in past_sessions %}
-                  <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <div class="flex-1">
-                      <div class="flex items-center space-x-3">
-                        {% if session in progress.completed_sessions.all %}
-                          <i class="fas fa-check-circle text-green-500"></i>
-                        {% else %}
-                          <i class="fas fa-circle text-gray-300"></i>
+        <!-- Right Column - Sessions -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- Past Sessions -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div class="p-6">
+              <h2 class="text-xl font-semibold mb-4">Past Sessions</h2>
+              {% if past_sessions %}
+                <div class="space-y-4">
+                  {% for session in past_sessions %}
+                    <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <div class="flex-1">
+                        <div class="flex items-center space-x-3">
+                          {% if session in progress.completed_sessions.all %}
+                            <i class="fas fa-check-circle text-green-500"></i>
+                          {% else %}
+                            <i class="fas fa-circle text-gray-300"></i>
+                          {% endif %}
+                          <div>
+                            <h3 class="font-medium">{{ session.title }}</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ session.start_time|date:"F j, Y, g:i a" }}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        {% if session not in progress.completed_sessions.all %}
+                          <form method="post"
+                                action="{% url 'mark_session_completed' session.id %}"
+                                class="inline">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="bg-teal-500 hover:bg-teal-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition duration-200">
+                              Mark Complete
+                            </button>
+                          </form>
                         {% endif %}
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <p class="text-gray-600 dark:text-gray-400">No past sessions.</p>
+              {% endif %}
+            </div>
+          </div>
+          <!-- Upcoming Sessions -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div class="p-6">
+              <h2 class="text-xl font-semibold mb-4">Upcoming Sessions</h2>
+              {% if upcoming_sessions %}
+                <div class="space-y-4">
+                  {% for session in upcoming_sessions %}
+                    <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <div class="flex items-center justify-between">
                         <div>
                           <h3 class="font-medium">{{ session.title }}</h3>
                           <p class="text-sm text-gray-600 dark:text-gray-400">{{ session.start_time|date:"F j, Y, g:i a" }}</p>
                         </div>
+                        <a href="{{ session.meeting_link }}"
+                           target="_blank"
+                           class="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition duration-200">
+                          <i class="fas fa-video mr-2"></i>Join Session
+                        </a>
                       </div>
                     </div>
-                    <div>
-                      {% if session not in progress.completed_sessions.all %}
-                        <form method="post"
-                              action="{% url 'mark_session_completed' session.id %}"
-                              class="inline">
-                          {% csrf_token %}
-                          <button type="submit"
-                                  class="bg-teal-500 hover:bg-teal-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition duration-200">
-                            Mark Complete
-                          </button>
-                        </form>
-                      {% endif %}
-                    </div>
-                  </div>
-                {% endfor %}
-              </div>
-            {% else %}
-              <p class="text-gray-600 dark:text-gray-400">No past sessions.</p>
-            {% endif %}
-          </div>
-        </div>
-        <!-- Upcoming Sessions -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
-          <div class="p-6">
-            <h2 class="text-xl font-semibold mb-4">Upcoming Sessions</h2>
-            {% if upcoming_sessions %}
-              <div class="space-y-4">
-                {% for session in upcoming_sessions %}
-                  <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <div class="flex items-center justify-between">
-                      <div>
-                        <h3 class="font-medium">{{ session.title }}</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">{{ session.start_time|date:"F j, Y, g:i a" }}</p>
-                      </div>
-                      <a href="{{ session.meeting_link }}"
-                         target="_blank"
-                         class="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition duration-200">
-                        <i class="fas fa-video mr-2"></i>Join Session
-                      </a>
-                    </div>
-                  </div>
-                {% endfor %}
-              </div>
-            {% else %}
-              <p class="text-gray-600 dark:text-gray-400">No upcoming sessions scheduled.</p>
-            {% endif %}
+                  {% endfor %}
+                </div>
+              {% else %}
+                <p class="text-gray-600 dark:text-gray-400">No upcoming sessions scheduled.</p>
+              {% endif %}
+            </div>
           </div>
         </div>
       </div>
@@ -331,74 +286,11 @@
 {% endblock content %}
 {% block extra_js_bottom %}
   {% if enrollment.status == 'pending' and enrollment.course.price > 0 %}
-    <script>
-        // Add submit handler to the form when DOM is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Setting up payment form handler');
-            const form = document.getElementById("payment-form");
-            if (form) {
-                form.addEventListener("submit", async function(e) {
-                    e.preventDefault();
-                    console.log('Payment form submitted');
-
-                    const submitButton = document.getElementById("submit-button");
-                    submitButton.disabled = true;
-                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
-
-                    try {
-                        const {
-                            error
-                        } = await window.stripe.confirmPayment({
-                            elements: window.elements,
-                            confirmParams: {
-                                return_url: window.location.origin + "{% url 'course_detail' enrollment.course.slug %}",
-                            },
-                        });
-
-                        if (error) {
-                            console.error('Payment confirmation error:', error);
-                            showError(error.message);
-                            submitButton.disabled = false;
-                            submitButton.innerHTML = '<i class="fas fa-credit-card mr-2"></i>Complete Payment';
-                        }
-                    } catch (error) {
-                        console.error('Payment submission error:', error);
-                        showError(error.message || 'An error occurred during payment');
-                        submitButton.disabled = false;
-                        submitButton.innerHTML = '<i class="fas fa-credit-card mr-2"></i>Complete Payment';
-                    }
-                });
-            }
-
-            // Check payment status on page load
-            const clientSecret = new URLSearchParams(window.location.search).get("payment_intent_client_secret");
-            if (clientSecret) {
-                console.log('Checking payment status...');
-                window.stripe.retrievePaymentIntent(clientSecret).then(({
-                    paymentIntent
-                }) => {
-                    console.log('Payment intent status:', paymentIntent.status);
-                    switch (paymentIntent.status) {
-                        case "succeeded":
-                            showError("Payment successful! You are now enrolled.");
-                            setTimeout(() => window.location.reload(), 2000);
-                            break;
-                        case "processing":
-                            showError("Payment processing. Please wait...");
-                            break;
-                        case "requires_payment_method":
-                            showError("Payment failed. Please try another payment method.");
-                            break;
-                        default:
-                            showError("Something went wrong.");
-                            break;
-                    }
-                }).catch(error => {
-                    console.error('Error checking payment status:', error);
-                    showError("Error checking payment status");
-                });
-            }
-        });
-    </script>
-  {% endif %}
-{% endblock extra_js_bottom %}
+    // Add submit handler to the form when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+    console.log('Payment script loading...');
+    const stripe = Stripe('{{ stripe_public_key }}');
+    const stripe = Stripe('{{ stripe_public_key }}');
+    let elements;
+    const stripe = Stripe('{{ stripe_public_key }}');
+    document.getElementById("payment-button").addEventListener("click", initializePayment);
