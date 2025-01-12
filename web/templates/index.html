@@ -48,112 +48,104 @@
         </div>
         <!-- Featured Courses (3 across) -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          {% for course in featured_courses %}
-            <!-- Course Card -->
-            <div class="rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-              {% if course.image %}
-                <img src="{{ course.image.url }}"
-                     alt="{{ course.title }}"
-                     class="w-full h-32 object-cover rounded mb-3"
-                     width="300"
-                     height="150" />
-              {% else %}
-                <img src="{% static 'images/default-course.jpg' %}"
-                     alt="{{ course.title }}"
-                     class="w-full h-32 object-cover rounded mb-3"
-                     width="300"
-                     height="150" />
-              {% endif %}
-              <div class="flex items-center justify-between mb-1 text-sm">
-                <span class="font-semibold text-teal-600 dark:text-teal-400">{{ course.subject }}</span>
-                <span class="text-orange-600 dark:text-orange-500">
-                  {% if course.price == 0 %}
-                    Free
-                  {% else %}
-                    ${{ course.price }}
-                  {% endif %}
-                </span>
-              </div>
-              <div class="mb-2 text-xs text-gray-700 dark:text-gray-300">{{ course.tags }}</div>
-              <p class="mb-2 text-sm">
-                {{ course.description|truncatechars:100 }}
-                <a href="{% url 'course_detail' course.slug %}"
-                   class="text-gray-400 ml-1 hover:underline">more</a>
-              </p>
-              <div class="mb-3 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
-                <span>Level: {{ course.level }}</span>
-                <span>
-                  <i class="fa-solid fa-star text-yellow-400"></i> {{ course.average_rating|default:"N/A" }}
-                </span>
-              </div>
-              <div class="flex items-center mb-3">
-                {% if course.teacher.profile.avatar %}
-                  <img src="{{ course.teacher.profile.avatar.url }}"
-                       alt="{{ course.teacher.get_full_name|default:course.teacher.username }}"
-                       class="h-6 w-6 rounded-full mr-2"
-                       width="24"
-                       height="24" />
-                {% else %}
-                  <img src="{% static 'images/default-avatar.jpg' %}"
-                       alt="{{ course.teacher.get_full_name|default:course.teacher.username }}"
-                       class="h-6 w-6 rounded-full mr-2"
-                       width="24"
-                       height="24" />
-                {% endif %}
-                <span class="text-sm">{{ course.teacher.get_full_name|default:course.teacher.username }}</span>
-              </div>
-              <a href="{% url 'course_detail' course.slug %}"
-                 class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-3 py-1 rounded-full flex items-center">
-                <i class="fa-solid fa-cart-plus mr-2"></i> Enroll
-              </a>
+          <!-- Course Card 1 -->
+          <div class="rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <img src="https://via.placeholder.com/300x150"
+                 alt="Course Image"
+                 class="w-full h-32 object-cover rounded mb-3" />
+            <div class="flex items-center justify-between mb-1 text-sm">
+              <span class="font-semibold text-teal-600 dark:text-teal-400">Subject</span>
+              <span class="text-orange-600 dark:text-orange-500">$49</span>
             </div>
-          {% empty %}
-            <!-- Placeholder Course Cards -->
-            {% for i in "123"|make_list %}
-              <div class="rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                <img src="https://via.placeholder.com/300x150"
-                     alt="Course Image"
-                     class="w-full h-32 object-cover rounded mb-3"
-                     width="300"
-                     height="150" />
-                <div class="flex items-center justify-between mb-1 text-sm">
-                  <span class="font-semibold text-teal-600 dark:text-teal-400">Subject</span>
-                  <span class="text-orange-600 dark:text-orange-500">$49</span>
-                </div>
-                <div class="mb-2 text-xs text-gray-700 dark:text-gray-300">#Tag1 #Tag2 #Tag3</div>
-                <p class="mb-2 text-sm">
-                  Introductory course covering fundamental concepts ...
-                  <a href="#" class="text-gray-400 ml-1 hover:underline">more</a>
-                </p>
-                <div class="mb-3 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
-                  <span>Level: Beginner</span>
-                  <span>
-                    <i class="fa-solid fa-star text-yellow-400"></i> 4.5
-                  </span>
-                </div>
-                <div class="flex items-center mb-3">
-                  <img src="https://via.placeholder.com/24"
-                       alt="Teacher Avatar"
-                       class="h-6 w-6 rounded-full mr-2"
-                       width="24"
-                       height="24" />
-                  <span class="text-sm">Jane Doe</span>
-                </div>
-                <button class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-3 py-1 rounded-full flex items-center">
-                  <i class="fa-solid fa-cart-plus mr-2"></i> Enroll
-                </button>
-              </div>
-            {% endfor %}
-          {% endfor %}
+            <div class="mb-2 text-xs text-gray-700 dark:text-gray-300">#Tag1 #Tag2 #Tag3</div>
+            <p class="mb-2 text-sm">
+              Introductory course covering fundamental concepts of ...
+              <a href="#" class="text-gray-400 ml-1 hover:underline">more</a>
+            </p>
+            <div class="mb-3 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
+              <span>Level: Beginner</span>
+              <span>
+                <i class="fa-solid fa-star text-yellow-400"></i> 4.5
+              </span>
+            </div>
+            <div class="flex items-center mb-3">
+              <img src="https://via.placeholder.com/24"
+                   alt="Teacher Avatar"
+                   class="h-6 w-6 rounded-full mr-2" />
+              <span class="text-sm">Jane Doe</span>
+            </div>
+            <button class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-3 py-1 rounded-full flex items-center">
+              <i class="fa-solid fa-cart-plus mr-2"></i> Enroll
+            </button>
+          </div>
+          <!-- Course Card 2 -->
+          <div class="rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <img src="https://via.placeholder.com/300x150"
+                 alt="Course Image"
+                 class="w-full h-32 object-cover rounded mb-3" />
+            <div class="flex items-center justify-between mb-1 text-sm">
+              <span class="font-semibold text-teal-600 dark:text-teal-400">Subject</span>
+              <span class="text-orange-600 dark:text-orange-500">$99</span>
+            </div>
+            <div class="mb-2 text-xs text-gray-700 dark:text-gray-300">#TagA #TagB</div>
+            <p class="mb-2 text-sm">
+              An in-depth exploration of advanced concepts ...
+              <a href="#" class="text-gray-400 ml-1 hover:underline">more</a>
+            </p>
+            <div class="mb-3 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
+              <span>Level: Intermediate</span>
+              <span>
+                <i class="fa-solid fa-star text-yellow-400"></i> 4.8
+              </span>
+            </div>
+            <div class="flex items-center mb-3">
+              <img src="https://via.placeholder.com/24"
+                   alt="Teacher Avatar"
+                   class="h-6 w-6 rounded-full mr-2" />
+              <span class="text-sm">John Smith</span>
+            </div>
+            <button class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-3 py-1 rounded-full flex items-center">
+              <i class="fa-solid fa-cart-plus mr-2"></i> Enroll
+            </button>
+          </div>
+          <!-- Course Card 3 -->
+          <div class="rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <img src="https://via.placeholder.com/300x150"
+                 alt="Course Image"
+                 class="w-full h-32 object-cover rounded mb-3" />
+            <div class="flex items-center justify-between mb-1 text-sm">
+              <span class="font-semibold text-teal-600 dark:text-teal-400">Subject</span>
+              <span class="text-orange-600 dark:text-orange-500">Free</span>
+            </div>
+            <div class="mb-2 text-xs text-gray-700 dark:text-gray-300">#Science #Math</div>
+            <p class="mb-2 text-sm">
+              Dive into fascinating discoveries and research ...
+              <a href="#" class="text-gray-400 ml-1 hover:underline">more</a>
+            </p>
+            <div class="mb-3 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
+              <span>Level: Advanced</span>
+              <span>
+                <i class="fa-solid fa-star text-yellow-400"></i> 4.9
+              </span>
+            </div>
+            <div class="flex items-center mb-3">
+              <img src="https://via.placeholder.com/24"
+                   alt="Teacher Avatar"
+                   class="h-6 w-6 rounded-full mr-2" />
+              <span class="text-sm">Dr. Alice</span>
+            </div>
+            <button class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-3 py-1 rounded-full flex items-center">
+              <i class="fa-solid fa-cart-plus mr-2"></i> Enroll
+            </button>
+          </div>
         </div>
         <!-- Add view more link -->
         <div class="text-right mt-4">
           <a href="{% url 'course_search' %}"
-             class="text-orange-500 hover:text-orange-600 underline transition-colors duration-200">
-            <span>View More Courses</span>
-            <i class="fas fa-arrow-right ml-2"></i>
-          </a>
-        </div>
+             class="text-orange-500 hover:text-orange-600 underline transition-colors duration-200"></a>
+          <span>View More Courses</span>
+          <i class="fas fa-arrow-right ml-2"></i>
+        </a>
       </div>
       <!-- Two cards next to each other: For Learners & For Teachers -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
