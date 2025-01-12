@@ -27,6 +27,25 @@
         function toggleLanguageDropdown() {
             document.getElementById('language-dropdown').classList.toggle('hidden');
         }
+        // Toggle the user dropdown
+        function toggleUserDropdown() {
+            document.getElementById('user-dropdown').classList.toggle('hidden');
+        }
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            const languageDropdown = document.getElementById('language-dropdown');
+            const userDropdown = document.getElementById('user-dropdown');
+            const languageButton = event.target.closest('[onclick="toggleLanguageDropdown()"]');
+            const userButton = event.target.closest('[onclick="toggleUserDropdown()"]');
+
+            if (!languageButton && !languageDropdown.contains(event.target)) {
+                languageDropdown.classList.add('hidden');
+            }
+
+            if (userDropdown && !userButton && !userDropdown.contains(event.target)) {
+                userDropdown.classList.add('hidden');
+            }
+        });
     </script>
     <style>
         /* Force Tailwind to respect dark mode classes */
@@ -126,16 +145,71 @@
                   onclick="toggleDarkMode()">
             <i class="fas fa-adjust"></i>
           </button>
-          <!-- Login Link -->
-          <a href="{% url 'account_login' %}"
-             class="hover:underline flex items-center">
-            <i class="fa-solid fa-right-to-bracket mr-1"></i> Login
-          </a>
-          <!-- Signup Button -->
-          <a href="{% url 'account_signup' %}"
-             class="px-3 py-1 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-semibold flex items-center">
-            <i class="fa-solid fa-user-plus mr-2"></i> Signup
-          </a>
+          {% if user.is_authenticated %}
+            <!-- User Avatar and Dropdown -->
+            <div class="relative">
+              <button onclick="toggleUserDropdown()"
+                      class="flex items-center space-x-2 focus:outline-none">
+                {% if user.profile.avatar %}
+                  <img src="{{ user.profile.avatar.url }}"
+                       alt="User Avatar"
+                       class="h-8 w-8 rounded-full object-cover"
+                       height="32"
+                       width="32" />
+                {% else %}
+                  <div class="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center text-white">
+                    {{ user.first_name|first|default:user.username|first|upper }}
+                  </div>
+                {% endif %}
+              </button>
+              <!-- User Dropdown Menu -->
+              <div id="user-dropdown"
+                   class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-50">
+                <div class="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
+                  <div class="font-semibold">{{ user.get_full_name|default:user.username }}</div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400">{{ user.email }}</div>
+                </div>
+                {% if user.profile.is_teacher %}
+                  <a href="{% url 'course_create' %}"
+                     class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="fas fa-plus-circle mr-2"></i> Create Course
+                  </a>
+                  <a href="{% url 'teacher_dashboard' %}"
+                     class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="fas fa-chalkboard-teacher mr-2"></i> Teacher Dashboard
+                  </a>
+                {% else %}
+                  <a href="{% url 'course_search' %}"
+                     class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="fas fa-search mr-2"></i> Browse Courses
+                  </a>
+                  <a href="{% url 'student_dashboard' %}"
+                     class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="fas fa-user-graduate mr-2"></i> Student Dashboard
+                  </a>
+                {% endif %}
+                <a href="{% url 'profile' %}"
+                   class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <i class="fas fa-user-circle mr-2"></i> Profile
+                </a>
+                <a href="{% url 'account_logout' %}"
+                   class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                </a>
+              </div>
+            </div>
+          {% else %}
+            <!-- Login Link -->
+            <a href="{% url 'account_login' %}"
+               class="hover:underline flex items-center">
+              <i class="fa-solid fa-right-to-bracket mr-1"></i> Login
+            </a>
+            <!-- Signup Button -->
+            <a href="{% url 'account_signup' %}"
+               class="px-3 py-1 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-semibold flex items-center">
+              <i class="fa-solid fa-user-plus mr-2"></i> Signup
+            </a>
+          {% endif %}
         </nav>
       </div>
     </header>
