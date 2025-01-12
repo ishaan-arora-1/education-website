@@ -22,9 +22,34 @@
     <!-- jQuery (required for captcha refresh) -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
-        function toggleDarkMode() {
-            document.documentElement.classList.toggle('dark');
+        // Initialize dark mode from localStorage or system preference
+        function initializeDarkMode() {
+            const darkModeEnabled = localStorage.getItem('darkMode') === 'true';
+            if (darkModeEnabled) {
+                document.documentElement.classList.add('dark');
+            } else if (localStorage.getItem('darkMode') === null && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                // If no preference is set, use system preference
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('darkMode', 'true');
+            }
+            updateDarkModeIcon();
         }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('darkMode', isDark.toString());
+            updateDarkModeIcon();
+        }
+
+        function updateDarkModeIcon() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const icon = document.getElementById('darkModeIcon');
+            if (icon) {
+                icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+                icon.title = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+            }
+        }
+
         // Toggle the language dropdown
         function toggleLanguageDropdown() {
             document.getElementById('language-dropdown').classList.toggle('hidden');
@@ -48,11 +73,19 @@
                 userDropdown.classList.add('hidden');
             }
         });
+
+        // Initialize dark mode on page load
+        document.addEventListener('DOMContentLoaded', initializeDarkMode);
     </script>
     <style>
-        /* Force Tailwind to respect dark mode classes */
+        /* Force dark mode styles */
+        .dark {
+            color-scheme: dark;
+        }
+
+        /* Light mode defaults */
         :root {
-            color-scheme: light dark;
+            color-scheme: light;
         }
     </style>
     {% block extra_head %}
@@ -142,10 +175,10 @@
             </div>
           </div>
           <!-- Dark / Light Mode Toggle -->
-          <button class="focus:outline-none flex items-center hover:underline"
+          <button class="focus:outline-none flex items-center hover:underline p-2 rounded-full hover:bg-teal-700 transition-colors"
                   title="Toggle Dark / Light Mode"
                   onclick="toggleDarkMode()">
-            <i class="fas fa-adjust"></i>
+            <i id="darkModeIcon" class="fas fa-moon"></i>
           </button>
           {% if user.is_authenticated %}
             <!-- User Avatar and Dropdown -->
