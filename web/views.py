@@ -1314,6 +1314,7 @@ def student_dashboard(request):
 
     # Get progress for each enrollment
     progress_data = []
+    total_progress = 0
     for enrollment in enrollments:
         progress, _ = CourseProgress.objects.get_or_create(enrollment=enrollment)
         progress_data.append(
@@ -1322,11 +1323,16 @@ def student_dashboard(request):
                 "progress": progress,
             }
         )
+        total_progress += progress.completion_percentage
+
+    # Calculate average progress
+    avg_progress = round(total_progress / len(progress_data)) if progress_data else 0
 
     context = {
         "enrollments": enrollments,
         "upcoming_sessions": upcoming_sessions,
         "progress_data": progress_data,
+        "avg_progress": avg_progress,
     }
     return render(request, "dashboard/student.html", context)
 
