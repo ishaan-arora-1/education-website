@@ -19,7 +19,7 @@
             {% for field in form %}
               <div>
                 <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
-                {{ field|add_class:"w-full rounded-lg border border-gray-300 dark:border-gray-600 p-3 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700 bg-white dark:bg-gray-800" }}
+                {{ field.as_widget|default:field }}
                 {% if field.help_text %}<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</p>{% endif %}
                 {% if field.errors %}<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors }}</p>{% endif %}
               </div>
