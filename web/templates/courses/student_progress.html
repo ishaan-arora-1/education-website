@@ -55,7 +55,7 @@
                 async function initialize() {
                     try {
                         console.log('Fetching payment intent...');
-                        const response = await fetch("{% url 'create_payment_intent' enrollment.course.slug %}");
+                        const response = await fetch("{% url 'create_payment_intent' course_slug=enrollment.course.slug %}");
 
                         if (!response.ok) {
                             throw new Error('Failed to create payment intent');
@@ -93,7 +93,7 @@
                         } = await stripe.confirmPayment({
                             elements,
                             confirmParams: {
-                                return_url: window.location.origin + "{% url 'course_detail' enrollment.course.slug %}",
+                                return_url: window.location.origin + "{% url 'course_detail' slug=enrollment.course.slug %}",
                             },
                         });
 
@@ -192,7 +192,7 @@
                   async function initialize() {
                       try {
                           console.log('Fetching payment intent...');
-                          const response = await fetch("{% url 'create_payment_intent' enrollment.course.slug %}");
+                          const response = await fetch("{% url 'create_payment_intent' course_slug=enrollment.course.slug %}");
 
                           if (!response.ok) {
                               throw new Error('Failed to create payment intent');
@@ -230,7 +230,7 @@
                           } = await stripe.confirmPayment({
                               elements,
                               confirmParams: {
-                                  return_url: window.location.origin + "{% url 'course_detail' enrollment.course.slug %}",
+                                  return_url: window.location.origin + "{% url 'course_detail' slug=enrollment.course.slug %}",
                               },
                           });
 

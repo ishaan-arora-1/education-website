@@ -1,6 +1,6 @@
 import traceback
 
-from django.http import HttpResponse
+from django.shortcuts import render
 
 from .views import send_slack_message
 
@@ -19,7 +19,9 @@ class GlobalExceptionMiddleware:
         if not settings.DEBUG:
             error_message = f"ERROR: {str(exception)}\n\nTraceback:\n{traceback.format_exc()}\n\nPath: {request.path}"
             send_slack_message(error_message)
-            return HttpResponse("An error occurred. Our team has been notified.", status=500)
+            return render(request, "500.html", status=500)
 
+        # In debug mode, let Django handle the exception normally
+        return None
         # In debug mode, let Django handle the exception normally
         return None

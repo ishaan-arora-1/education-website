@@ -19,14 +19,22 @@ else:
     print("No .env file found.")
 
 
-DEBUG = True
-PA_USER = "alphaonelabs99282llkb"
-PA_HOST = PA_USER + ".pythonanywhere.com"
-PA_WSGI = "/var/www/" + PA_USER + "_pythonanywhere_com_wsgi.py"
-PA_SOURCE_DIR = "/home/" + PA_USER + "/web"
+# Debug settings
+DEBUG = env.bool("DJANGO_DEBUG", default=False)
 
-ALLOWED_HOSTS = ["alphaonelabs99282llkb.pythonanywhere.com", "127.0.0.1"]
+# Production settings
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+ALLOWED_HOSTS = ["alphaonelabs99282llkb.pythonanywhere.com", "127.0.0.1", "localhost"]
 CSRF_TRUSTED_ORIGINS = ["https://alphaonelabs.com", "https://www.alphaonelabs.com"]
+
+# Error handling
+handler404 = "web.views.custom_404"
+handler500 = "web.views.custom_500"
 
 INSTALLED_APPS = [
     "django.contrib.admin",
