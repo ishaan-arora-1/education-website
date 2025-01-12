@@ -26,6 +26,7 @@ jobs:
 
     - name: Run pre-commit hooks
       run: |
+        pip install pre-commit black isort flake8 djlint
         pre-commit install
         pre-commit run --all-files
 
