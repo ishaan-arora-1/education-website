@@ -1666,3 +1666,25 @@ def send_welcome_email(user):
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[user.email],
     )
+
+
+@login_required
+def edit_session(request, session_id):
+    """Edit an existing session."""
+    session = get_object_or_404(Session, id=session_id)
+
+    # Check if user is the course teacher
+    if request.user != session.course.teacher:
+        messages.error(request, "Only the course teacher can edit sessions!")
+        return redirect("course_detail", slug=session.course.slug)
+
+    if request.method == "POST":
+        form = SessionForm(request.POST, instance=session)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Session updated successfully!")
+            return redirect("course_detail", slug=session.course.slug)
+    else:
+        form = SessionForm(instance=session)
+
+    return render(request, "courses/edit_session.html", {"form": form, "session": session, "course": session.course})
