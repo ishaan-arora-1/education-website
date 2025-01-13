@@ -267,3 +267,6 @@ if os.environ.get("DATABASE_URL"):
     SENDGRID_API_KEY = os.getenv("SENDGRID_PASSWORD", "blank")
     EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
     EMAIL_FROM = os.getenv("EMAIL_FROM")
+
+# Slack settings
+SLACK_WEBHOOK_URL = env.str("SLACK_WEBHOOK_URL", default="")

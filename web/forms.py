@@ -57,7 +57,10 @@ class UserRegistrationForm(SignupForm):
         )
 
     def save(self, request):
+        # First call parent's save to create the user and send verification email
         user = super().save(request)
+
+        # Then update the additional fields
         user.first_name = self.cleaned_data["first_name"]
         user.last_name = self.cleaned_data["last_name"]
         user.save()
@@ -67,6 +70,7 @@ class UserRegistrationForm(SignupForm):
             user.profile.is_teacher = True
             user.profile.save()
 
+        # Return the user object
         return user
 
 
