@@ -201,19 +201,19 @@ def create_course(request):
 
 def course_detail(request, slug):
     course = get_object_or_404(Course, slug=slug)
-    sessions = course.session_set.all().order_by("start_time")
-    reviews = course.review_set.all().order_by("-created_at")
+    sessions = course.sessions.all().order_by("start_time")
+    reviews = course.reviews.all().order_by("-created_at")
 
     # Default values for unauthenticated users
     is_enrolled = False
     is_teacher = False
 
     if request.user.is_authenticated:
-        is_enrolled = course.enrollment_set.filter(student=request.user).exists()
+        is_enrolled = course.enrollments.filter(student=request.user).exists()
         is_teacher = course.teacher == request.user
 
         if is_enrolled:
-            enrollment = course.enrollment_set.get(student=request.user)
+            enrollment = course.enrollments.get(student=request.user)
             completed_sessions = enrollment.completed_sessions.all()
         else:
             completed_sessions = []
