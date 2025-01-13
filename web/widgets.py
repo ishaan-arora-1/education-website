@@ -103,6 +103,7 @@ class TailwindFileInput(forms.FileInput):
 
 class TailwindDateTimeInput(forms.DateTimeInput):
     def __init__(self, *args, **kwargs):
+        kwargs["format"] = "%Y-%m-%dT%H:%M"  # HTML5 datetime-local format
         super().__init__(*args, **kwargs)
         self.attrs.update(
             {
@@ -113,8 +114,8 @@ class TailwindDateTimeInput(forms.DateTimeInput):
                 ),
                 "type": "datetime-local",
                 "placeholder": "Select date and time",
-                "pattern": "[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}",
-                "title": "Choose a date and time",
+                "required": True,
+                "autocomplete": "off",
             }
         )
 
