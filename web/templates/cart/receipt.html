@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Order Receipt
+{% endblock title %}
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-3xl mx-auto">
+            <!-- Success Message -->
+            <div class="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg p-4 mb-6">
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle text-green-500 dark:text-green-400 text-xl mr-3"></i>
+                    <div>
+                        <h2 class="text-green-800 dark:text-green-200 font-semibold">Payment Successful!</h2>
+                        <p class="text-green-700 dark:text-green-300 text-sm">Your order has been processed successfully.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Receipt Card -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+                <!-- Receipt Header -->
+                <div class="border-b border-gray-200 dark:border-gray-700 p-6">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h1 class="text-2xl font-bold mb-2">Order Receipt</h1>
+                            <p class="text-gray-600 dark:text-gray-400">Order Date: {{ order_date|date:"F j, Y, g:i a" }}</p>
+                            <p class="text-gray-600 dark:text-gray-400">Order ID: {{ payment_intent_id }}</p>
+                        </div>
+                        <a href="#"
+                           onclick="window.print()"
+                           class="text-blue-600 hover:text-blue-700 dark:text-blue-400">
+                            <i class="fas fa-print mr-1"></i> Print
+                        </a>
+                    </div>
+                </div>
+                <!-- Customer Info -->
+                <div class="border-b border-gray-200 dark:border-gray-700 p-6">
+                    <h2 class="text-lg font-semibold mb-3">Customer Information</h2>
+                    <p class="text-gray-700 dark:text-gray-300">{{ user.get_full_name|default:user.email }}</p>
+                    <p class="text-gray-600 dark:text-gray-400">{{ user.email }}</p>
+                </div>
+                <!-- Order Items -->
+                <div class="p-6">
+                    <h2 class="text-lg font-semibold mb-4">Order Details</h2>
+                    <div class="space-y-4">
+                        {% for enrollment in enrollments %}
+                            <div class="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
+                                <div class="flex justify-between">
+                                    <div>
+                                        <h3 class="font-medium">{{ enrollment.course.title }}</h3>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">Full Course</p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                            Instructor: {{ enrollment.course.teacher.get_full_name|default:enrollment.course.teacher.username }}
+                                        </p>
+                                    </div>
+                                    <p class="font-semibold">${{ enrollment.course.price }}</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        {% for session_enrollment in session_enrollments %}
+                            <div class="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
+                                <div class="flex justify-between">
+                                    <div>
+                                        <h3 class="font-medium">{{ session_enrollment.session.title }}</h3>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                            Individual Session from {{ session_enrollment.session.course.title }}
+                                        </p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                            {{ session_enrollment.session.start_time|date:"F j, Y" }} at {{ session_enrollment.session.start_time|time:"g:i A" }}
+                                        </p>
+                                    </div>
+                                    <p class="font-semibold">${{ session_enrollment.session.price }}</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <!-- Total -->
+                    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <div class="flex justify-between items-center">
+                            <span class="text-lg font-semibold">Total</span>
+                            <span class="text-2xl font-bold">${{ total|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Actions -->
+                <div class="bg-gray-50 dark:bg-gray-700 p-6">
+                    <div class="flex justify-between items-center">
+                        <a href="{% url 'student_dashboard' %}"
+                           class="text-blue-600 hover:text-blue-700 dark:text-blue-400">
+                            <i class="fas fa-arrow-left mr-1"></i> Go to Dashboard
+                        </a>
+                        <a href="{% url 'course_search' %}"
+                           class="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-lg">
+                            Browse More Courses
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

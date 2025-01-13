@@ -1608,6 +1608,11 @@ def checkout_success(request):
         else:
             user = request.user
 
+        # Lists to track enrollments for the receipt
+        enrollments = []
+        session_enrollments = []
+        total_amount = 0
+
         # Process enrollments
         for item in cart.items.all():
             if item.course:
@@ -1617,6 +1622,8 @@ def checkout_success(request):
                 )
                 # Create progress tracker
                 CourseProgress.objects.create(enrollment=enrollment)
+                enrollments.append(enrollment)
+                total_amount += item.course.price
 
                 # Send confirmation emails
                 send_enrollment_confirmation(enrollment)
@@ -1624,15 +1631,24 @@ def checkout_success(request):
 
             elif item.session:
                 # Create enrollment for individual session
-                SessionEnrollment.objects.create(
+                session_enrollment = SessionEnrollment.objects.create(
                     student=user, session=item.session, status="approved", payment_intent_id=payment_intent_id
                 )
+                session_enrollments.append(session_enrollment)
+                total_amount += item.session.price
 
         # Clear the cart
         cart.items.all().delete()
 
-        messages.success(request, "Payment successful! You have been enrolled in your courses.")
-        return redirect("student_dashboard")
+        # Render the receipt page
+        return render(request, "cart/receipt.html", {
+            "payment_intent_id": payment_intent_id,
+            "order_date": timezone.now(),
+            "user": user,
+            "enrollments": enrollments,
+            "session_enrollments": session_enrollments,
+            "total": total_amount,
+        })
 
     except stripe.error.StripeError as e:
         print(f"[checkout_success] Stripe error: {str(e)}")
@@ -1642,7 +1658,6 @@ def checkout_success(request):
         print(f"[checkout_success] Unexpected error: {str(e)}")
         print(f"[checkout_success] Error type: {type(e)}")
         import traceback
-
         print(f"[checkout_success] Traceback: {traceback.format_exc()}")
         messages.error(request, f"Failed to process checkout: {str(e)}")
         return redirect("cart_view")
