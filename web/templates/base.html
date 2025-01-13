@@ -122,12 +122,12 @@
       <div class="max-w-[90rem] mx-auto px-4 flex items-center justify-between h-[60px] relative">
         <!-- Logo and Title -->
         <a href="{% url 'index' %}" class="flex items-center space-x-2">
-          <img src="{% static 'logo.png' %}"
-               alt="Alpha One Labs"
-               height="40"
-               width="40"
-               class="h-10 w-10" />
-          <span class="font-bold text-xl tracking-wide hidden sm:inline">Alpha One Labs</span>
+          <img src="{% static 'images/logo.png' %}"
+               alt="Alpha One Labs Logo"
+               height="32"
+               width="32"
+               class="h-8 w-8" />
+          <span class="text-xl font-bold text-gray-900 dark:text-white">Alpha One Labs</span>
         </a>
         <!-- Mobile Menu Button -->
         <button class="md:hidden p-2 hover:bg-teal-700 rounded-lg"
@@ -379,7 +379,23 @@
               <i class="fa-solid fa-blog"></i>
               <span>Blog</span>
             </a>
+            <a href="https://x.com/alphaonelabs"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+              <i class="fa-brands fa-twitter"></i>
+              <span>Twitter</span>
+            </a>
+            <a href="https://www.facebook.com/alphaonelabs"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+              <i class="fa-brands fa-facebook"></i>
+              <span>Facebook</span>
+            </a>
             <a href="https://github.com/alphaonelabs"
+               target="_blank"
+               rel="noopener noreferrer"
                class="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
               <i class="fa-brands fa-github"></i>
               <span>GitHub</span>
@@ -440,7 +456,7 @@
         <!-- Last Updated -->
         <div class="text-center text-gray-500 dark:text-gray-400 text-sm">
           <i class="fa-regular fa-clock mr-1"></i>
-          Last updated: {{ last_modified }}
+          Updated: {{ last_modified|date:"Y/m/d h:ia" }} • © {% now "Y" %} Alpha One Labs
         </div>
       </div>
     </footer>
