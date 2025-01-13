@@ -12,17 +12,20 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
             # Forward SQL - Add unique constraint after removing duplicates
             """
-            -- First, update duplicate emails to make them unique by appending a counter
-            UPDATE auth_user a
+            SET @row_number = 0;
+            SET @current_email = '';
+
+            UPDATE auth_user
             JOIN (
-                SELECT email, id,
-                    @rn := IF(@prev = email, @rn + 1,
-                        IF(@prev := email, 1, 1)) AS rn
-                FROM auth_user, (SELECT @prev := NULL, @rn := 0) AS vars
+                SELECT id,
+                    email,
+                    @row_number := IF(@current_email = email, @row_number + 1, 1) as rn,
+                    @current_email := email
+                FROM auth_user
                 ORDER BY email, id
-            ) AS duplicates ON a.id = duplicates.id
-            SET a.email = CONCAT(a.email, '_', duplicates.rn)
-            WHERE duplicates.rn > 1;
+            ) as t ON auth_user.id = t.id
+            SET auth_user.email = CONCAT(auth_user.email, '_', t.rn)
+            WHERE t.rn > 1;
 
             -- Then add the unique constraint
             ALTER TABLE auth_user ADD CONSTRAINT auth_user_email_unique UNIQUE (email);
