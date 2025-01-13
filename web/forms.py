@@ -33,28 +33,50 @@ __all__ = [
 
 
 class UserRegistrationForm(SignupForm):
-    first_name = forms.CharField(max_length=30, required=True)
-    last_name = forms.CharField(max_length=30, required=True)
-    is_teacher = forms.BooleanField(required=False, label="Register as a teacher", widget=TailwindCheckboxInput())
+    first_name = forms.CharField(
+        max_length=30,
+        required=True,
+        widget=TailwindInput(attrs={"placeholder": "First Name"}),
+    )
+    last_name = forms.CharField(
+        max_length=30,
+        required=True,
+        widget=TailwindInput(attrs={"placeholder": "Last Name"}),
+    )
+    is_teacher = forms.BooleanField(
+        required=False,
+        label="Register as a teacher",
+        widget=TailwindCheckboxInput(),
+    )
     captcha = CaptchaField(widget=TailwindCaptchaTextInput)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["email"].widget.attrs["value"] = self.initial.get("email", "")
-
-        for field in self.fields.values():
-            field.widget.attrs["class"] = "form-control"
-
-        self.fields["captcha"].widget.attrs.update(
-            {
-                "class": (
-                    "mt-1 block w-full px-3 py-1.5 border "
-                    "border-gray-300 dark:border-gray-600 rounded-md "
-                    "shadow-sm focus:ring-orange-500 focus:border-orange-500 "
-                    "dark:bg-gray-700 dark:text-white sm:text-sm"
-                )
+        # Update email field
+        self.fields["email"].widget = TailwindEmailInput(
+            attrs={
+                "placeholder": "your.email@example.com",
+                "value": self.initial.get("email", ""),
             }
         )
+        # Update password field
+        self.fields["password1"].widget = TailwindInput(
+            attrs={
+                "type": "password",
+                "placeholder": "Choose a secure password",
+                "class": (
+                    "block w-full border rounded p-2 focus:outline-none focus:ring-2 "
+                    "focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800 "
+                    "border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+                ),
+            }
+        )
+
+        # Preserve values on form errors
+        if self.data:
+            for field_name in ["first_name", "last_name", "email"]:
+                if field_name in self.data:
+                    self.fields[field_name].widget.attrs["value"] = self.data[field_name]
 
     def save(self, request):
         # First call parent's save to create the user and send verification email
