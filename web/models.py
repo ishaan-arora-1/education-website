@@ -264,6 +264,7 @@ class Enrollment(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
     enrollment_date = models.DateTimeField(auto_now_add=True)
     completion_date = models.DateTimeField(null=True, blank=True)
+    payment_intent_id = models.CharField(max_length=100, blank=True, default="")
 
     class Meta:
         unique_together = ["student", "course"]
