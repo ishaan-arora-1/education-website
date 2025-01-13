@@ -5,12 +5,18 @@ from django.db.utils import OperationalError
 def add_price_column(apps, schema_editor):
     try:
         with schema_editor.connection.cursor() as cursor:
+            # Get current database name
+            cursor.execute("SELECT DATABASE()")
+            db_name = cursor.fetchone()[0]
+
             # Check if column exists
             cursor.execute(
-                """
+                f"""
                 SELECT COUNT(*)
-                FROM pragma_table_info('web_session')
-                WHERE name='price'
+                FROM information_schema.columns
+                WHERE table_schema = '{db_name}'
+                AND table_name = 'web_session'
+                AND column_name = 'price'
             """
             )
             if cursor.fetchone()[0] == 0:
