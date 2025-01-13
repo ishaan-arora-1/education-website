@@ -88,6 +88,11 @@
         :root {
             color-scheme: light;
         }
+
+        /* Hide elements with x-cloak until Alpine.js is ready */
+        [x-cloak] {
+            display: none !important;
+        }
     </style>
     {% block extra_head %}
     {% endblock extra_head %}
