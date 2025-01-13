@@ -342,8 +342,10 @@
         </div>
       </div>
     </header>
-    {% block content %}
-    {% endblock content %}
+    {% block extra_body %}
+      {% block content %}
+      {% endblock content %}
+    {% endblock extra_body %}
     <!-- FOOTER -->
     <footer class="w-full py-4 mt-auto border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
       <div class="max-w-[90rem] mx-auto px-4">
