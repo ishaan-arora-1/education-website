@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.models import User
+from django.contrib.auth.models import EmailAddress, User
 
 from .models import Course, Enrollment, Profile, Review, Session, Subject
 
@@ -37,7 +37,9 @@ class CustomUserAdmin(UserAdmin):
         "first_name",
         "last_name",
         "is_staff",
+        "is_active",
         "get_is_teacher",
+        "get_email_verified",
     )
 
     def get_is_teacher(self, obj):
@@ -45,6 +47,12 @@ class CustomUserAdmin(UserAdmin):
 
     get_is_teacher.short_description = "Is Teacher"
     get_is_teacher.boolean = True
+
+    def get_email_verified(self, obj):
+        return EmailAddress.objects.filter(user=obj, verified=True).exists()
+
+    get_email_verified.short_description = "Email Verified"
+    get_email_verified.boolean = True
 
 
 class SessionInline(admin.TabularInline):
