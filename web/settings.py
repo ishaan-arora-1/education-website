@@ -219,7 +219,8 @@ else:
     EMAIL_HOST_PASSWORD = env.str("SENDGRID_PASSWORD", default="")
     DEFAULT_FROM_EMAIL = env.str("EMAIL_FROM", default="noreply@alphaonelabs.com")
 
-STRIPE_PUBLISHABLE_KEY = env("STRIPE_PUBLISHABLE_KEY", default="")
+# Stripe settings
+STRIPE_PUBLIC_KEY = env("STRIPE_PUBLISHABLE_KEY", default="")
 STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default="")
 STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default="")
 
