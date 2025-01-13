@@ -26,11 +26,11 @@ def check_and_create_cart_table(apps, schema_editor):
                 cursor.execute(
                     """
                     CREATE TABLE web_cart (
-                        id bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                        id int NOT NULL AUTO_INCREMENT PRIMARY KEY,
                         session_key varchar(40) NOT NULL DEFAULT '',
                         created_at datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
                         updated_at datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
-                        user_id bigint NULL,
+                        user_id int NULL,
                         CONSTRAINT fk_cart_user
                             FOREIGN KEY (user_id)
                             REFERENCES auth_user(id)
