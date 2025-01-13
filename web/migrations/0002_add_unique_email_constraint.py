@@ -10,27 +10,25 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunSQL(
-            # Forward SQL - Add unique constraint after removing duplicates
+            # Forward SQL - Add unique constraint after handling duplicates
             """
-            SET @row_number = 0;
-            SET @current_email = '';
-
             UPDATE auth_user
-            JOIN (
-                SELECT id,
-                    email,
-                    @row_number := IF(@current_email = email, @row_number + 1, 1) as rn,
-                    @current_email := email
+            SET email = email || '_' || (
+                SELECT COUNT(*)
+                FROM auth_user AS t2
+                WHERE t2.email = auth_user.email
+                AND t2.id <= auth_user.id
+            )
+            WHERE email IN (
+                SELECT email
                 FROM auth_user
-                ORDER BY email, id
-            ) as t ON auth_user.id = t.id
-            SET auth_user.email = CONCAT(auth_user.email, '_', t.rn)
-            WHERE t.rn > 1;
+                GROUP BY email
+                HAVING COUNT(*) > 1
+            );
 
-            -- Then add the unique constraint
-            ALTER TABLE auth_user ADD CONSTRAINT auth_user_email_unique UNIQUE (email);
+            CREATE UNIQUE INDEX IF NOT EXISTS auth_user_email_unique ON auth_user(email);
             """,
             # Reverse SQL - Remove unique constraint
-            "ALTER TABLE auth_user DROP CONSTRAINT IF EXISTS auth_user_email_unique;",
+            "DROP INDEX IF EXISTS auth_user_email_unique;",
         )
     ]

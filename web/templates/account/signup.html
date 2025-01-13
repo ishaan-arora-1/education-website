@@ -1,190 +1,121 @@
 {% extends "allauth/layouts/base.html" %}
 
 {% load static %}
+{% load i18n %}
 
 {% block extra_head %}
   {{ block.super }}
-  <style>
-      .auth-container {
-          max-width: 800px;
-          margin: 1.5rem auto;
-          padding: 1.5rem;
-          background: white;
-          border-radius: 0.5rem;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      }
-
-      @media (prefers-color-scheme: dark) {
-          .auth-container {
-              background-color: #1f2937;
-          }
-      }
-  </style>
-  <!-- Add password toggle script -->
   <script src="{% static 'js/password-toggle.js' %}"></script>
 {% endblock extra_head %}
 {% block content %}
-  <div class="grid md:grid-cols-5 gap-4 items-center">
-    <!-- Left side illustration -->
-    <div class="md:col-span-2 text-center hidden md:block">
-      <div class="flex flex-col items-center space-y-3">
-        <i class="fas fa-graduation-cap text-7xl text-orange-500"></i>
-        <div class="text-lg font-medium text-gray-600 dark:text-gray-300">Join our community of learners and teachers</div>
-      </div>
-    </div>
-    <!-- Form section -->
-    <div class="md:col-span-3">
-      <div class="text-center mb-4">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center justify-center">
-          <i class="fas fa-user-plus text-orange-500 mr-2"></i>
-          Create Account
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 sm:px-6 lg:px-8">
+    <div class="max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8">
+      <!-- Header -->
+      <div class="text-center mb-8">
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+          <i class="fas fa-user-plus text-teal-500 mr-2"></i>
+          {% trans "Create Account" %}
         </h2>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">{% trans "Join our community of learners and teachers" %}</p>
       </div>
+      <!-- Form -->
       <form id="signup_form"
             method="post"
             action="{% url 'account_signup' %}"
-            class="space-y-3">
+            class="space-y-6">
         {% csrf_token %}
         {% if form.non_field_errors %}
-          <div class="bg-red-50 dark:bg-red-900 p-2 rounded text-sm">
-            {% for error in form.non_field_errors %}<p class="text-red-800 dark:text-red-200">{{ error }}</p>{% endfor %}
+          <div class="bg-red-50 dark:bg-red-900 p-4 rounded-md">
+            {% for error in form.non_field_errors %}<p class="text-sm text-red-800 dark:text-red-200">{{ error }}</p>{% endfor %}
           </div>
         {% endif %}
         <!-- Name Fields -->
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label for="id_first_name"
-                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">First Name</label>
-            <input type="text"
-                   name="first_name"
-                   id="id_first_name"
-                   required
-                   class="mt-1 block w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white sm:text-sm"
-                   placeholder="First name" />
+            <label for="{{ form.first_name.id_for_label }}"
+                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">{% trans "First Name" %}</label>
+            {{ form.first_name }}
             {% if form.first_name.errors %}
-              <p class="mt-1 text-xs text-red-600">{{ form.first_name.errors|join:", " }}</p>
+              <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                {% for error in form.first_name.errors %}{{ error }}{% endfor %}
+              </div>
             {% endif %}
           </div>
           <div>
-            <label for="id_last_name"
-                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">Last Name</label>
-            <input type="text"
-                   name="last_name"
-                   id="id_last_name"
-                   required
-                   class="mt-1 block w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white sm:text-sm"
-                   placeholder="Last name" />
+            <label for="{{ form.last_name.id_for_label }}"
+                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">{% trans "Last Name" %}</label>
+            {{ form.last_name }}
             {% if form.last_name.errors %}
-              <p class="mt-1 text-xs text-red-600">{{ form.last_name.errors|join:", " }}</p>
+              <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                {% for error in form.last_name.errors %}{{ error }}{% endfor %}
+              </div>
             {% endif %}
           </div>
         </div>
-        <!-- Username and Email -->
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label for="id_username"
-                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              <i class="fas fa-user text-gray-400 mr-1"></i> Username
-            </label>
-            <input type="text"
-                   name="username"
-                   id="id_username"
-                   required
-                   class="mt-1 block w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white sm:text-sm"
-                   placeholder="Choose a username" />
-            {% if form.username.errors %}<p class="mt-1 text-xs text-red-600">{{ form.username.errors|join:", " }}</p>{% endif %}
-          </div>
-          <div>
-            <label for="id_email"
-                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              <i class="fas fa-envelope text-gray-400 mr-1"></i> Email
-            </label>
-            <input type="email"
-                   name="email"
-                   id="id_email"
-                   required
-                   class="mt-1 block w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white sm:text-sm"
-                   placeholder="your@email.com" />
-            {% if form.email.errors %}<p class="mt-1 text-xs text-red-600">{{ form.email.errors|join:", " }}</p>{% endif %}
-          </div>
-        </div>
-        <!-- Password Fields -->
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label for="id_password1"
-                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              <i class="fas fa-lock text-gray-400 mr-1"></i> Password
-            </label>
-            <div class="relative">
-              <input type="password"
-                     name="password1"
-                     id="id_password1"
-                     required
-                     class="mt-1 block w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white sm:text-sm pr-10"
-                     placeholder="Choose a strong password" />
+        <!-- Email Field -->
+        <div>
+          <label for="{{ form.email.id_for_label }}"
+                 class="block text-sm font-medium text-gray-700 dark:text-gray-300">{% trans "Email Address" %}</label>
+          {{ form.email }}
+          {% if form.email.errors %}
+            <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+              {% for error in form.email.errors %}{{ error }}{% endfor %}
             </div>
-            {% if form.password1.errors %}
-              <p class="mt-1 text-xs text-red-600">{{ form.password1.errors|join:", " }}</p>
-            {% endif %}
-          </div>
-          <div>
-            <label for="id_password2"
-                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              <i class="fas fa-lock text-gray-400 mr-1"></i> Confirm Password
-            </label>
-            <div class="relative">
-              <input type="password"
-                     name="password2"
-                     id="id_password2"
-                     required
-                     class="mt-1 block w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white sm:text-sm pr-10"
-                     placeholder="Repeat your password" />
-            </div>
-            {% if form.password2.errors %}
-              <p class="mt-1 text-xs text-red-600">{{ form.password2.errors|join:", " }}</p>
-            {% endif %}
-          </div>
+          {% endif %}
         </div>
-        <!-- Teacher Option -->
+        <!-- Password Field -->
+        <div>
+          <label for="{{ form.password1.id_for_label }}"
+                 class="block text-sm font-medium text-gray-700 dark:text-gray-300">{% trans "Password" %}</label>
+          <div class="relative">
+            {{ form.password1 }}
+            <button type="button"
+                    onclick="togglePassword('{{ form.password1.id_for_label }}')"
+                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 dark:text-gray-400">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+          {% if form.password1.errors %}
+            <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+              {% for error in form.password1.errors %}{{ error }}{% endfor %}
+            </div>
+          {% endif %}
+        </div>
+        <!-- Teacher Checkbox -->
         <div class="flex items-center">
-          <input type="checkbox"
-                 name="is_teacher"
-                 id="id_is_teacher"
-                 class="h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300 dark:border-gray-600 rounded cursor-pointer" />
-          <label for="id_is_teacher"
-                 class="ml-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-            <i class="fas fa-chalkboard-teacher text-orange-500 mr-1"></i>
-            I want to teach courses
+          {{ form.is_teacher }}
+          <label for="{{ form.is_teacher.id_for_label }}"
+                 class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+            {% trans "Register as a teacher" %}
           </label>
         </div>
         <!-- Captcha -->
         <div>
-          <label for="{{ form.captcha.auto_id }}"
-                 class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            <i class="fas fa-shield-alt text-gray-400 mr-1"></i> Verification
-          </label>
-          <div class="mt-1">{{ form.captcha }}</div>
-          {% if form.captcha.errors %}<p class="mt-1 text-xs text-red-600">{{ form.captcha.errors|join:", " }}</p>{% endif %}
+          <label for="{{ form.captcha.id_for_label }}"
+                 class="block text-sm font-medium text-gray-700 dark:text-gray-300">{% trans "Verification" %}</label>
+          {{ form.captcha }}
+          {% if form.captcha.errors %}
+            <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+              {% for error in form.captcha.errors %}{{ error }}{% endfor %}
+            </div>
+          {% endif %}
         </div>
-        {% if redirect_field_value %}
-          <input type="hidden"
-                 name="{{ redirect_field_name }}"
-                 value="{{ redirect_field_value }}" />
-        {% endif %}
         <!-- Submit Button -->
-        <button type="submit"
-                class="w-full flex justify-center py-1.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
-          <i class="fas fa-user-plus mr-2"></i>
-          Create Account
-        </button>
-        <!-- Sign In Link -->
-        <p class="text-center text-sm text-gray-600 dark:text-gray-400">
-          Already have an account?
+        <div>
+          <button type="submit"
+                  class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:focus:ring-offset-gray-800">
+            <i class="fas fa-user-plus mr-2"></i>
+            {% trans "Sign Up" %}
+          </button>
+        </div>
+        <!-- Login Link -->
+        <div class="text-center text-sm">
+          <span class="text-gray-600 dark:text-gray-400">{% trans "Already have an account?" %}</span>
           <a href="{{ login_url }}"
-             class="font-medium text-orange-500 hover:text-orange-600">
-            Sign in <i class="fas fa-arrow-right text-xs ml-1"></i>
+             class="font-medium text-teal-600 hover:text-teal-500 dark:text-teal-400 dark:hover:text-teal-300">
+            {% trans "Log in" %}
           </a>
-        </p>
+        </div>
       </form>
     </div>
   </div>
