@@ -50,7 +50,6 @@ from .models import (
     Payment,
     PeerConnection,
     PeerMessage,
-    Review,
     Session,
     SessionAttendance,
     StudyGroup,
@@ -200,29 +199,26 @@ def create_course(request):
     return render(request, "courses/create.html", {"form": form})
 
 
-@login_required
 def course_detail(request, slug):
     course = get_object_or_404(Course, slug=slug)
-    sessions = Session.objects.filter(course=course).order_by("start_time")
-    reviews = Review.objects.filter(course=course).order_by("-created_at")
+    sessions = course.session_set.all().order_by("start_time")
+    reviews = course.review_set.all().order_by("-created_at")
 
-    # Check if user is enrolled or is the teacher
+    # Default values for unauthenticated users
     is_enrolled = False
     is_teacher = False
-    completed_sessions = []
-    enrollment = None
 
     if request.user.is_authenticated:
-        is_enrolled = request.user.enrollments.filter(course=course).exists()
-        is_teacher = request.user == course.teacher
+        is_enrolled = course.enrollment_set.filter(student=request.user).exists()
+        is_teacher = course.teacher == request.user
 
         if is_enrolled:
-            enrollment = request.user.enrollments.get(course=course)
-            progress = CourseProgress.objects.get_or_create(enrollment=enrollment)[0]
-            completed_sessions = progress.completed_sessions.all()
-
-    # Get similar courses based on subject and level
-    similar_courses = Course.objects.exclude(id=course.id).filter(Q(subject=course.subject) | Q(level=course.level))[:3]
+            enrollment = course.enrollment_set.get(student=request.user)
+            completed_sessions = enrollment.completed_sessions.all()
+        else:
+            completed_sessions = []
+    else:
+        completed_sessions = []
 
     context = {
         "course": course,
@@ -230,12 +226,9 @@ def course_detail(request, slug):
         "reviews": reviews,
         "is_enrolled": is_enrolled,
         "is_teacher": is_teacher,
-        "enrollment": enrollment,
         "completed_sessions": completed_sessions,
-        "similar_courses": similar_courses,
-        "now": timezone.now(),
-        "stripe_public_key": settings.STRIPE_PUBLISHABLE_KEY,
     }
+
     return render(request, "courses/detail.html", context)
 
 
