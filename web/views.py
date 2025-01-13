@@ -212,14 +212,10 @@ def course_detail(request, slug):
         try:
             enrollment = course.enrollments.get(student=request.user)
             is_enrolled = True
-            # Get completed sessions through CourseProgress
-            try:
-                progress = enrollment.progress
-                completed_sessions = progress.completed_sessions.all()
-            except CourseProgress.DoesNotExist:
-                # Create progress if it doesn't exist
-                progress = CourseProgress.objects.create(enrollment=enrollment)
-                completed_sessions = progress.completed_sessions.all()
+            # Get completed sessions through SessionAttendance
+            completed_sessions = SessionAttendance.objects.filter(
+                student=request.user, session__course=course, status="completed"
+            ).values_list("session", flat=True)
         except Enrollment.DoesNotExist:
             pass
 
