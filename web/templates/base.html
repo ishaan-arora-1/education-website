@@ -23,15 +23,14 @@
     <!-- jQuery (required for captcha refresh) -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
-        // Initialize dark mode from localStorage or system preference
+        // Initialize dark mode from localStorage only
         function initializeDarkMode() {
             const darkModeEnabled = localStorage.getItem('darkMode') === 'true';
             if (darkModeEnabled) {
                 document.documentElement.classList.add('dark');
-            } else if (localStorage.getItem('darkMode') === null && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                // If no preference is set, use system preference
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('darkMode', 'true');
+            } else if (localStorage.getItem('darkMode') === null) {
+                // Set default to light mode if no preference is set
+                localStorage.setItem('darkMode', 'false');
             }
             updateDarkModeIcon();
         }

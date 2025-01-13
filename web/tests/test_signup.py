@@ -36,7 +36,7 @@ class SignupFormTest(TestCase):
         self.assertContains(response, 'id="id_is_teacher"')
 
         # Check for the illustration and welcome text
-        self.assertContains(response, "fa-graduation-cap")
+        self.assertContains(response, "fa-user-plus")
         self.assertContains(response, "Join our community")
 
     def test_signup_form_validation(self):
