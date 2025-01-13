@@ -232,7 +232,7 @@
                   <div class="text-sm text-gray-500 dark:text-gray-400">{{ user.email }}</div>
                 </div>
                 {% if user.profile.is_teacher %}
-                  <a href="{% url 'course_create' %}"
+                  <a href="{% url 'create_course' %}"
                      class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
                     <i class="fas fa-plus-circle mr-2"></i> Create Course
                   </a>
