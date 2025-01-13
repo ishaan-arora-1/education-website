@@ -87,14 +87,16 @@
                     e.preventDefault();
                     setLoading(true);
 
+                    const confirmParams = {
+                        return_url: window.location.origin + "{% url 'course_detail' slug=enrollment.course.slug %}"
+                    };
+
                     try {
                         const {
                             error
                         } = await stripe.confirmPayment({
                             elements,
-                            confirmParams: {
-                                return_url: window.location.origin + "{% url 'course_detail' slug=enrollment.course.slug %}",
-                            },
+                            confirmParams
                         });
 
                         if (error) {

@@ -79,21 +79,30 @@
           e.preventDefault();
           setLoading(true);
 
-          const {
-              error
-          } = await stripe.confirmPayment({
-              elements,
-              confirmParams: {
-                  return_url: window.location.origin + "{% url 'course_detail' course.slug %}",
-              },
-          });
+          const confirmParams = {
+              return_url: window.location.origin + "{% url 'course_detail' course.slug %}"
+          };
 
-          if (error) {
+          try {
+              const {
+                  error
+              } = await stripe.confirmPayment({
+                  elements,
+                  confirmParams
+              });
+
+              if (error) {
+                  const messageContainer = document.querySelector("#payment-message");
+                  messageContainer.textContent = error.message;
+                  messageContainer.classList.remove("d-none");
+              }
+          } catch (e) {
               const messageContainer = document.querySelector("#payment-message");
-              messageContainer.textContent = error.message;
+              messageContainer.textContent = "An unexpected error occurred. Please try again.";
               messageContainer.classList.remove("d-none");
-              setLoading(false);
           }
+
+          setLoading(false);
       }
 
       async function checkStatus() {

@@ -47,11 +47,11 @@ from .models import (
     ForumCategory,
     ForumReply,
     ForumTopic,
-    Payment,
     PeerConnection,
     PeerMessage,
     Session,
     SessionAttendance,
+    SessionEnrollment,
     StudyGroup,
 )
 from .notifications import notify_session_reminder, notify_teacher_new_enrollment, send_enrollment_confirmation
@@ -1542,14 +1542,29 @@ def create_cart_payment_intent(request):
 
 def checkout_success(request):
     """Handle successful checkout."""
-    cart = get_or_create_cart(request)
+    payment_intent_id = request.GET.get("payment_intent")
+    if not payment_intent_id:
+        messages.error(request, "No payment information found.")
+        return redirect("cart_view")
 
-    # If user is not logged in, get their email from the payment intent
-    if not request.user.is_authenticated:
-        payment_intent_id = request.GET.get("payment_intent")
-        try:
-            payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+    try:
+        # Verify the payment intent
+        payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+        if payment_intent.status != "succeeded":
+            messages.error(request, "Payment was not successful.")
+            return redirect("cart_view")
+
+        cart = get_or_create_cart(request)
+        if not cart.items.exists():
+            messages.error(request, "Cart is empty.")
+            return redirect("cart_view")
+
+        # Handle guest checkout
+        if not request.user.is_authenticated:
             email = payment_intent.receipt_email
+            if not email:
+                messages.error(request, "No email provided for guest checkout.")
+                return redirect("cart_view")
 
             # Create a new user account with transaction and better username generation
             with transaction.atomic():
@@ -1561,6 +1576,7 @@ def checkout_success(request):
                 while User.objects.filter(username=username).exists():
                     username = f"{base_username}_{timestamp}_{get_random_string(4)}"
 
+                # Create the user
                 user = User.objects.create_user(
                     username=username,
                     email=email,
@@ -1569,82 +1585,50 @@ def checkout_success(request):
 
                 # Associate the cart with the new user
                 cart.user = user
-                cart.session_key = ""  # Use empty string instead of None
+                cart.session_key = None
                 cart.save()
 
-            # Send welcome email with password reset link
-            send_welcome_email(user)
+                # Send welcome email with password reset link
+                send_welcome_email(user)
+        else:
+            user = request.user
 
-        except stripe.error.StripeError as e:
-            messages.error(request, f"Payment verification failed: {str(e)}")
-            return redirect("cart_view")
-        except Exception as e:
-            messages.error(request, f"Failed to process checkout: {str(e)}")
-            return redirect("cart_view")
-    else:
-        user = request.user
-
-    # Track enrollments to avoid duplicates
-    processed_enrollments = {}
-    payment_intent_id = request.GET.get("payment_intent")
-
-    # Process each cart item
-    for item in cart.items.all():
-        if item.course:
-            # Create enrollment for full course
-            enrollment = Enrollment.objects.create(student=user, course=item.course, status="approved")
-            # Create progress tracker
-            CourseProgress.objects.create(enrollment=enrollment)
-            processed_enrollments[item.course.id] = enrollment
-
-            # Create payment record with unique payment intent ID
-            Payment.objects.create(
-                enrollment=enrollment,
-                amount=item.course.price,
-                status="completed",
-                stripe_payment_intent_id=f"{payment_intent_id}_course_{item.course.id}",
-            )
-
-            # Send notifications
-            send_enrollment_confirmation(enrollment)
-            notify_teacher_new_enrollment(enrollment)
-
-        elif item.session:
-            # Get or create enrollment for the session's course
-            if item.session.course.id in processed_enrollments:
-                enrollment = processed_enrollments[item.session.course.id]
-            else:
-                enrollment, created = Enrollment.objects.get_or_create(
-                    student=user,
-                    course=item.session.course,
-                    defaults={"status": "approved"},
+        # Process enrollments
+        for item in cart.items.all():
+            if item.course:
+                # Create enrollment for full course
+                enrollment = Enrollment.objects.create(
+                    student=user, course=item.course, status="approved", payment_intent_id=payment_intent_id
                 )
-                processed_enrollments[item.session.course.id] = enrollment
+                # Create progress tracker
+                CourseProgress.objects.create(enrollment=enrollment)
 
-            # Add session to completed sessions if it's in the past
-            if item.session.start_time < timezone.now():
-                progress, created = CourseProgress.objects.get_or_create(enrollment=enrollment)
-                progress.completed_sessions.add(item.session)
+                # Send confirmation emails
+                send_enrollment_confirmation(enrollment)
+                notify_teacher_new_enrollment(enrollment)
 
-            # Create payment record for the session with unique payment intent ID
-            Payment.objects.create(
-                enrollment=enrollment,
-                amount=item.session.price,
-                status="completed",
-                stripe_payment_intent_id=f"{payment_intent_id}_session_{item.session.id}",
-                session=item.session,  # Track which session this payment is for
-            )
+            elif item.session:
+                # Create enrollment for individual session
+                SessionEnrollment.objects.create(
+                    student=user, session=item.session, status="approved", payment_intent_id=payment_intent_id
+                )
 
-    # Clear the cart
-    cart.items.all().delete()
+        # Clear the cart
+        cart.items.all().delete()
 
-    if not request.user.is_authenticated:
-        msg = "Payment successful! We've created an account for you " "and sent the details to your email."
-        messages.success(request, msg)
-        return redirect("account_login")
-    else:
-        messages.success(request, "Payment successful! You are now enrolled.")
-        return redirect("student_dashboard")
+        if request.user.is_authenticated:
+            messages.success(request, "Payment successful! You have been enrolled in your courses.")
+            return redirect("student_dashboard")
+        else:
+            messages.success(request, "Payment successful! Please check your email for login instructions.")
+            return redirect("account_login")
+
+    except stripe.error.StripeError as e:
+        messages.error(request, f"Payment verification failed: {str(e)}")
+        return redirect("cart_view")
+    except Exception as e:
+        messages.error(request, f"Failed to process checkout: {str(e)}")
+        return redirect("cart_view")
 
 
 def send_welcome_email(user):

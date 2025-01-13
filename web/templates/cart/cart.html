@@ -54,7 +54,9 @@
               <span class="text-2xl font-bold">${{ cart.total }}</span>
             </div>
             <div class="flex justify-end">
-              <form id="checkout-form" class="w-full">
+              <form id="checkout-form"
+                    class="w-full"
+                    data-is-authenticated="{% if request.user.is_authenticated %}true{% else %}false{% endif %}">
                 {% if not request.user.is_authenticated %}
                   <div class="mb-4">
                     <label for="email"
@@ -135,43 +137,40 @@
             e.preventDefault();
             setLoading(true);
 
-            {
-                %
-                if not request.user.is_authenticated %
-            }
-            const email = document.getElementById('email').value;
-            if (!email) {
-                const messageDiv = document.querySelector("#payment-message");
-                messageDiv.textContent = "Please enter your email address.";
-                messageDiv.classList.add("text-red-500");
-                setLoading(false);
-                return;
-            } {
-                %
-                endif %
+            const form = document.getElementById('checkout-form');
+            const isAuthenticated = form.dataset.isAuthenticated === 'true';
+            const confirmParams = {
+                return_url: window.location.origin + "{% url 'checkout_success' %}"
+            };
+
+            if (!isAuthenticated) {
+                const email = document.getElementById('email').value;
+                if (!email) {
+                    const messageDiv = document.querySelector("#payment-message");
+                    messageDiv.textContent = "Please enter your email address.";
+                    messageDiv.classList.add("text-red-500");
+                    setLoading(false);
+                    return;
+                }
+                confirmParams.receipt_email = email;
             }
 
-            const {
-                error
-            } = await stripe.confirmPayment({
-                elements,
-                confirmParams: {
-                    return_url: window.location.origin + "{% url 'checkout_success' %}",
-                    {
-                        %
-                        if not request.user.is_authenticated %
-                    }
-                    receipt_email: document.getElementById('email').value,
-                    {
-                        %
-                        endif %
-                    }
-                },
-            });
+            try {
+                const {
+                    error
+                } = await stripe.confirmPayment({
+                    elements,
+                    confirmParams
+                });
 
-            if (error) {
+                if (error) {
+                    const messageDiv = document.querySelector("#payment-message");
+                    messageDiv.textContent = error.message;
+                    messageDiv.classList.add("text-red-500");
+                }
+            } catch (e) {
                 const messageDiv = document.querySelector("#payment-message");
-                messageDiv.textContent = error.message;
+                messageDiv.textContent = "An unexpected error occurred. Please try again.";
                 messageDiv.classList.add("text-red-500");
             }
 

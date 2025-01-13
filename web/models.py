@@ -649,3 +649,30 @@ class CartItem(models.Model):
         if self.course:
             return f"{self.course.title} in cart for {self.cart}"
         return f"{self.session.title} in cart for {self.cart}"
+
+
+# Constants
+ENROLLMENT_STATUS_CHOICES = [
+    ("pending", "Pending"),
+    ("approved", "Approved"),
+    ("rejected", "Rejected"),
+    ("cancelled", "Cancelled"),
+]
+
+
+class SessionEnrollment(models.Model):
+    """Model for tracking enrollments in individual sessions."""
+
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name="session_enrollments")
+    session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name="enrollments")
+    status = models.CharField(max_length=20, choices=ENROLLMENT_STATUS_CHOICES, default="pending")
+    payment_intent_id = models.CharField(max_length=100, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ["student", "session"]
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.student.email} - {self.session.title}"
