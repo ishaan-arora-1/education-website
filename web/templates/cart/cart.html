@@ -111,6 +111,7 @@
             stripeKeyValue: '{{ stripe_public_key }}'
         });
 
+        let stripe;
         try {
             console.log('[Page Load] Starting cart checkout initialization');
 
@@ -119,7 +120,8 @@
                 throw new Error('Stripe public key is missing');
             }
 
-            const stripe = Stripe('{{ stripe_public_key }}');
+            // Initialize Stripe object
+            stripe = Stripe('{{ stripe_public_key }}');
             let elements;
 
             initialize();
