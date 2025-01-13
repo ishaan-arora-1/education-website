@@ -3,6 +3,12 @@ from django.conf import settings
 from django.db import migrations, models
 
 
+def drop_tables_if_exist(apps, schema_editor):
+    with schema_editor.connection.cursor() as cursor:
+        cursor.execute("DROP TABLE IF EXISTS web_cartitem")
+        cursor.execute("DROP TABLE IF EXISTS web_cart")
+
+
 class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
@@ -10,6 +16,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(drop_tables_if_exist, migrations.RunPython.noop),
         migrations.CreateModel(
             name="Cart",
             fields=[
