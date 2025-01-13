@@ -57,7 +57,12 @@
                     {% with total=total|add:stat.completion_rate count=count|add:1 %}{% endwith %}
                   {% endif %}
                 {% endfor %}
-                {{ total|divisibleby:count|default:0 }}%
+                {% if count > 0 %}
+                  {% widthratio total count 1 %}
+                {% else %}
+                  0
+                {% endif %}
+                %
               {% endwith %}
             </h3>
           </div>
