@@ -91,10 +91,16 @@
                                   {{ session.location }}
                                 </div>
                               {% endif %}
+                              {% if course.allow_individual_sessions and session.price %}
+                                <div class="flex items-center text-orange-600 dark:text-orange-400 font-semibold">
+                                  <i class="fas fa-tag mr-2"></i>
+                                  ${{ session.price|floatformat:2 }}
+                                </div>
+                              {% endif %}
                             </div>
                           </div>
-                          {% if is_teacher or is_enrolled %}
-                            <div class="mt-2 flex flex-wrap gap-2 text-xs">
+                          <div class="mt-2 flex flex-wrap gap-2 text-xs">
+                            {% if is_teacher or is_enrolled %}
                               {% if is_teacher %}
                                 <a href="{% url 'mark_session_attendance' session.id %}"
                                    class="text-teal-600 hover:text-teal-700 dark:text-teal-400">
@@ -122,21 +128,32 @@
                                   {% endif %}
                                 {% endif %}
                               {% endif %}
-                              {% if session.is_virtual and session.meeting_link %}
-                                <a href="{{ session.meeting_link }}"
-                                   target="_blank"
-                                   class="text-blue-600 hover:text-blue-700 dark:text-blue-400">
-                                  <i class="fas fa-video mr-1"></i>
-                                  Join
-                                </a>
-                              {% endif %}
-                              <a href="{% url 'calendar_links' session.id %}"
-                                 class="text-gray-600 hover:text-gray-700 dark:text-gray-400">
-                                <i class="fas fa-calendar-plus mr-1"></i>
-                                Calendar
+                            {% elif course.allow_individual_sessions and session.price and not is_enrolled %}
+                              <form method="post"
+                                    action="{% url 'add_session_to_cart' session.id %}"
+                                    class="inline">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium w-full">
+                                  <i class="fas fa-cart-plus mr-1"></i>
+                                  Add to Cart
+                                </button>
+                              </form>
+                            {% endif %}
+                            {% if session.is_virtual and session.meeting_link %}
+                              <a href="{{ session.meeting_link }}"
+                                 target="_blank"
+                                 class="text-blue-600 hover:text-blue-700 dark:text-blue-400">
+                                <i class="fas fa-video mr-1"></i>
+                                Join
                               </a>
-                            </div>
-                          {% endif %}
+                            {% endif %}
+                            <a href="{% url 'calendar_links' session.id %}"
+                               class="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+                              <i class="fas fa-calendar-plus mr-1"></i>
+                              Calendar
+                            </a>
+                          </div>
                         </div>
                       {% endfor %}
                     </div>
@@ -268,45 +285,6 @@
           </div>
         </div>
       </div>
-    </div>
-    <!-- Session List -->
-    <div class="space-y-4">
-      {% for session in course.sessions.all %}
-        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="font-semibold">{{ session.title }}</h3>
-              <div class="text-sm text-gray-600 dark:text-gray-400">
-                <p>{{ session.start_time|date:"F j, Y" }}</p>
-                <p>{{ session.start_time|time:"g:i A" }} - {{ session.end_time|time:"g:i A" }}</p>
-                {% if session.is_virtual %}
-                  <p>
-                    <i class="fas fa-video mr-1"></i> Virtual Session
-                  </p>
-                {% else %}
-                  <p>
-                    <i class="fas fa-map-marker-alt mr-1"></i> {{ session.location }}
-                  </p>
-                {% endif %}
-              </div>
-            </div>
-            <div class="text-right">
-              {% if course.allow_individual_sessions and session.price %}
-                <p class="text-lg font-semibold mb-2">${{ session.price }}</p>
-                {% if not is_enrolled %}
-                  <form method="post" action="{% url 'add_session_to_cart' session.id %}">
-                    {% csrf_token %}
-                    <button type="submit"
-                            class="bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition duration-200">
-                      <i class="fas fa-cart-plus mr-1"></i> Add to Cart
-                    </button>
-                  </form>
-                {% endif %}
-              {% endif %}
-            </div>
-          </div>
-        </div>
-      {% endfor %}
     </div>
   </div>
 {% endblock content %}
