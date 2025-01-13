@@ -1478,7 +1478,7 @@ def get_or_create_cart(request):
 def cart_view(request):
     """View the shopping cart."""
     cart = get_or_create_cart(request)
-    return render(request, "cart/cart.html", {"cart": cart, "stripe_public_key": settings.STRIPE_PUBLIC_KEY})
+    return render(request, "cart/cart.html", {"cart": cart, "stripe_public_key": settings.STRIPE_PUBLISHABLE_KEY})
 
 
 def add_course_to_cart(request, course_id):
