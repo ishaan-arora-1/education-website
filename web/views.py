@@ -202,34 +202,40 @@ def create_course(request):
 def course_detail(request, slug):
     course = get_object_or_404(Course, slug=slug)
     sessions = course.sessions.all().order_by("start_time")
-    reviews = course.reviews.all().order_by("-created_at")
-
-    # Default values for unauthenticated users
+    now = timezone.now()
     is_enrolled = False
-    is_teacher = False
+    is_teacher = request.user == course.teacher
+    enrollment = None
+    completed_sessions = []
 
     if request.user.is_authenticated:
-        is_enrolled = course.enrollments.filter(student=request.user).exists()
-        is_teacher = course.teacher == request.user
-
-        if is_enrolled:
+        try:
             enrollment = course.enrollments.get(student=request.user)
-            completed_sessions = enrollment.completed_sessions.all()
-        else:
-            completed_sessions = []
-    else:
-        completed_sessions = []
+            is_enrolled = True
+            # Get completed sessions through CourseProgress
+            try:
+                progress = enrollment.progress
+                completed_sessions = progress.completed_sessions.all()
+            except CourseProgress.DoesNotExist:
+                # Create progress if it doesn't exist
+                progress = CourseProgress.objects.create(enrollment=enrollment)
+                completed_sessions = progress.completed_sessions.all()
+        except Enrollment.DoesNotExist:
+            pass
 
-    context = {
-        "course": course,
-        "sessions": sessions,
-        "reviews": reviews,
-        "is_enrolled": is_enrolled,
-        "is_teacher": is_teacher,
-        "completed_sessions": completed_sessions,
-    }
-
-    return render(request, "courses/detail.html", context)
+    return render(
+        request,
+        "courses/detail.html",
+        {
+            "course": course,
+            "sessions": sessions,
+            "now": now,
+            "is_enrolled": is_enrolled,
+            "is_teacher": is_teacher,
+            "enrollment": enrollment,
+            "completed_sessions": completed_sessions,
+        },
+    )
 
 
 @login_required
