@@ -15,7 +15,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
-from django.db import IntegrityError, models
+from django.db import IntegrityError, models, transaction
 from django.db.models import Avg, Count, Q
 from django.http import FileResponse, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -79,7 +79,7 @@ def index(request):
                 ),
             )
 
-            user = User.objects.get(email=user.email)
+            # Use the user object directly instead of querying again
             user.backend = "django.contrib.auth.backends.ModelBackend"
             login(request, user)
 
@@ -1551,31 +1551,35 @@ def checkout_success(request):
             payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
             email = payment_intent.receipt_email
 
-            # Create a new user account
-            username = email.split("@")[0]
-            base_username = username
-            counter = 1
-            while User.objects.filter(username=username).exists():
-                username = f"{base_username}{counter}"
-                counter += 1
+            # Create a new user account with transaction and better username generation
+            with transaction.atomic():
+                base_username = email.split("@")[0][:15]  # Limit length
+                timestamp = timezone.now().strftime("%Y%m%d%H%M%S")
+                username = f"{base_username}_{timestamp}"
 
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=get_random_string(length=32),  # Random password for reset
-            )
+                # In the unlikely case of a collision, append random string
+                while User.objects.filter(username=username).exists():
+                    username = f"{base_username}_{timestamp}_{get_random_string(4)}"
 
-            # Associate the cart with the new user
-            cart.user = user
-            cart.session_key = ""  # Use empty string instead of None
-            cart.save()
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=get_random_string(length=32),  # Random password for reset
+                )
+
+                # Associate the cart with the new user
+                cart.user = user
+                cart.session_key = ""  # Use empty string instead of None
+                cart.save()
 
             # Send welcome email with password reset link
             send_welcome_email(user)
 
-        except Exception:
-            msg = "Failed to process checkout. Please try again."
-            messages.error(request, msg)
+        except stripe.error.StripeError as e:
+            messages.error(request, f"Payment verification failed: {str(e)}")
+            return redirect("cart_view")
+        except Exception as e:
+            messages.error(request, f"Failed to process checkout: {str(e)}")
             return redirect("cart_view")
     else:
         user = request.user

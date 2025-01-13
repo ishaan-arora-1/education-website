@@ -190,16 +190,14 @@
             <div>
               <div class="flex justify-between items-start mb-4">
                 <h1 class="text-3xl font-bold">{{ course.title }}</h1>
-                <div class="relative" x-data="{ open: false }">
-                  <button @click="open = !open"
+                <div class="relative">
+                  <button id="shareButton"
                           class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 p-2 rounded-full">
                     <i class="fas fa-share-alt text-gray-600 dark:text-gray-300"></i>
                   </button>
                   <!-- Share Dropdown -->
-                  <div x-show="open"
-                       x-cloak
-                       @click.away="open = false"
-                       class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                  <div id="shareDropdown"
+                       class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
                     <div class="p-2 space-y-1">
                       <!-- Twitter -->
                       <a href="https://twitter.com/intent/tweet?text=Check%20out%20this%20course:%20{{ course.title|urlencode }}&url={{ request.build_absolute_uri|urlencode }}"
@@ -291,12 +289,27 @@
 {% endblock content %}
 <!-- Add this script at the bottom of the file -->
 <script>
+    $(document).ready(function() {
+        // Toggle dropdown when share button is clicked
+        $('#shareButton').click(function(e) {
+            e.stopPropagation();
+            $('#shareDropdown').toggleClass('hidden');
+        });
+
+        // Close dropdown when clicking outside
+        $(document).click(function(e) {
+            if (!$(e.target).closest('#shareDropdown').length) {
+                $('#shareDropdown').addClass('hidden');
+            }
+        });
+    });
+
     function copyLink() {
-        navigator.clipboard.writeText(window.location.href).then(() => {
-            const button = event.currentTarget;
+        navigator.clipboard.writeText(window.location.href).then(function() {
+            const button = document.querySelector('#shareDropdown button');
             const originalText = button.innerHTML;
-            button.innerHTML = `<i class="fas fa-check text-green-500 mr-2"></i><span class="text-sm">Link Copied!</span>`;
-            setTimeout(() => {
+            button.innerHTML = '<i class="fas fa-check text-green-600 dark:text-green-400 mr-2"></i><span class="text-sm">Copied!</span>';
+            setTimeout(function() {
                 button.innerHTML = originalText;
             }, 2000);
         });
