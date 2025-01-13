@@ -14,31 +14,29 @@
             <!-- Course Card -->
             <div class="rounded-lg p-4 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
               {% if course.image %}
-                <img src="{{ course.image.url }}"
-                     alt="{{ course.title }}"
-                     class="w-full h-32 object-cover rounded mb-3"
-                     width="300"
-                     height="150" />
+                <a href="{% url 'course_detail' course.slug %}">
+                  <img src="{{ course.image.url }}"
+                       alt="{{ course.title }}"
+                       class="w-full h-32 object-cover rounded mb-3"
+                       width="300"
+                       height="150" />
+                </a>
               {% else %}
-                <img src="{% static 'images/default-course.jpg' %}"
-                     alt="{{ course.title }}"
-                     class="w-full h-32 object-cover rounded mb-3"
-                     width="300"
-                     height="150" />
+                <a href="{% url 'course_detail' course.slug %}">
+                  <img src="{% static 'images/default-course.jpg' %}"
+                       alt="{{ course.title }}"
+                       class="w-full h-32 object-cover rounded mb-3"
+                       width="300"
+                       height="150" />
+                </a>
               {% endif %}
               <div class="flex items-center justify-between mb-1 text-sm">
-                <span class="font-semibold text-teal-600 dark:text-teal-400">{{ course.subject }}</span>
-                <span class="text-orange-600 dark:text-orange-500">
-                  {% if course.price == 0 %}
-                    Free
-                  {% else %}
-                    ${{ course.price }}
-                  {% endif %}
-                </span>
+                <span class="font-semibold text-teal-600 dark:text-teal-400">{{ course.subject.name }}</span>
+                <span class="text-orange-600 dark:text-orange-500">${{ course.price|floatformat:2 }}</span>
               </div>
               <div class="mb-2 text-xs text-gray-700 dark:text-gray-300">{{ course.tags }}</div>
               <p class="mb-2 text-sm">
-                {{ course.description|truncatechars:100 }}
+                {{ course.description|truncatewords:20 }}
                 <a href="{% url 'course_detail' course.slug %}"
                    class="text-gray-400 ml-1 hover:underline">more</a>
               </p>
