@@ -200,6 +200,10 @@ class SessionForm(forms.ModelForm):
                 }
             ),
         }
+        help_texts = {
+            "start_time": "Click to select the session start date and time",
+            "end_time": "Click to select the session end date and time",
+        }
 
     def clean(self):
         cleaned_data = super().clean()

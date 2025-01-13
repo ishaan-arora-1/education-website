@@ -109,9 +109,12 @@ class TailwindDateTimeInput(forms.DateTimeInput):
                 "class": (
                     "block w-full border rounded p-2 focus:outline-none focus:ring-2 "
                     "focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800 "
-                    "border-gray-300 dark:border-gray-600"
+                    "border-gray-300 dark:border-gray-600 cursor-pointer"
                 ),
                 "type": "datetime-local",
+                "placeholder": "Select date and time",
+                "pattern": "[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}",
+                "title": "Choose a date and time",
             }
         )
 
