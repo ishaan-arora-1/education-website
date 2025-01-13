@@ -144,15 +144,15 @@
             };
 
             if (!isAuthenticated) {
-                const email = document.getElementById('email').value;
-                if (!email) {
+                const emailInput = document.getElementById('email');
+                if (!emailInput || !emailInput.value) {
                     const messageDiv = document.querySelector("#payment-message");
                     messageDiv.textContent = "Please enter your email address.";
                     messageDiv.classList.add("text-red-500");
                     setLoading(false);
                     return;
                 }
-                confirmParams.receipt_email = email;
+                confirmParams.receipt_email = emailInput.value;
             }
 
             try {
@@ -167,8 +167,15 @@
                     const messageDiv = document.querySelector("#payment-message");
                     messageDiv.textContent = error.message;
                     messageDiv.classList.add("text-red-500");
+                } else {
+                    // If no immediate error, wait for redirect
+                    const messageDiv = document.querySelector("#payment-message");
+                    messageDiv.textContent = "Processing payment...";
+                    messageDiv.classList.remove("text-red-500");
+                    messageDiv.classList.add("text-blue-500");
                 }
             } catch (e) {
+                console.error('Payment error:', e);
                 const messageDiv = document.querySelector("#payment-message");
                 messageDiv.textContent = "An unexpected error occurred. Please try again.";
                 messageDiv.classList.add("text-red-500");
@@ -200,29 +207,43 @@
 
             if (!clientSecret) return;
 
-            const {
-                paymentIntent
-            } = await stripe.retrievePaymentIntent(clientSecret);
-            const messageDiv = document.querySelector("#payment-message");
+            try {
+                const {
+                    paymentIntent
+                } = await stripe.retrievePaymentIntent(clientSecret);
 
-            switch (paymentIntent.status) {
-                case "succeeded":
-                    messageDiv.textContent = "Payment successful!";
-                    messageDiv.classList.add("text-green-500");
-                    setTimeout(() => window.location.reload(), 2000);
-                    break;
-                case "processing":
-                    messageDiv.textContent = "Payment processing. Please wait...";
-                    messageDiv.classList.add("text-blue-500");
-                    break;
-                case "requires_payment_method":
-                    messageDiv.textContent = "Payment failed. Please try another payment method.";
-                    messageDiv.classList.add("text-red-500");
-                    break;
-                default:
-                    messageDiv.textContent = "Something went wrong.";
-                    messageDiv.classList.add("text-red-500");
-                    break;
+                switch (paymentIntent.status) {
+                    case "succeeded":
+                        showMessage("Payment successful! Redirecting...");
+                        setTimeout(() => window.location.reload(), 2000);
+                        break;
+                    case "processing":
+                        showMessage("Payment processing. Please wait...");
+                        break;
+                    case "requires_payment_method":
+                        showMessage("Payment failed. Please try another payment method.");
+                        break;
+                    default:
+                        showMessage("Something went wrong.");
+                        break;
+                }
+            } catch (error) {
+                console.error('Error checking payment status:', error);
+                showMessage("Failed to check payment status");
+            }
+        }
+
+        function showMessage(messageText) {
+            const messageDiv = document.querySelector("#payment-message");
+            messageDiv.textContent = messageText;
+            if (messageText.includes("successful")) {
+                messageDiv.classList.remove("text-red-500");
+                messageDiv.classList.add("text-green-500");
+            } else if (messageText.includes("processing")) {
+                messageDiv.classList.remove("text-red-500");
+                messageDiv.classList.add("text-blue-500");
+            } else {
+                messageDiv.classList.add("text-red-500");
             }
         }
     </script>
