@@ -43,7 +43,12 @@
                 {% for data in progress_data %}
                   {% with total=total|add:data.progress.completion_percentage count=count|add:1 %}{% endwith %}
                 {% endfor %}
-                {{ total|divisibleby:count|default:0 }}%
+                {% if count > 0 %}
+                  {% widthratio total count 1 %}
+                {% else %}
+                  0
+                {% endif %}
+                %
               {% endwith %}
             </h3>
           </div>
@@ -62,7 +67,12 @@
                 {% for data in progress_data %}
                   {% with total=total|add:data.progress.attendance_rate count=count|add:1 %}{% endwith %}
                 {% endfor %}
-                {{ total|divisibleby:count|default:0 }}%
+                {% if count > 0 %}
+                  {% widthratio total count 1 %}
+                {% else %}
+                  0
+                {% endif %}
+                %
               {% endwith %}
             </h3>
           </div>
