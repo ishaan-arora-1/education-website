@@ -105,24 +105,38 @@
   {% if cart.items.all %}
     <script src="https://js.stripe.com/v3/"></script>
     <script>
-        console.log('[Page Load] Starting cart checkout initialization');
-        console.log('[Config] Stripe Public Key:', '{{ stripe_public_key }}');
-        console.log('[Cart Data]', {
-            total: '{{ cart.total }}',
-            itemCount: '{{ cart.items.count }}',
-            isAuthenticated: '{{ request.user.is_authenticated }}'
+        // Debug output for Stripe key
+        console.log('[Debug] Template variables:', {
+            hasStripeKey: '{{ stripe_public_key }}' !== '',
+            stripeKeyValue: '{{ stripe_public_key }}'
         });
 
-        const stripe = Stripe('{{ stripe_public_key }}');
-        let elements;
+        try {
+            console.log('[Page Load] Starting cart checkout initialization');
 
-        initialize();
-        checkStatus();
+            if (!('{{ stripe_public_key }}')) {
+                console.error('[Error] No Stripe public key provided');
+                throw new Error('Stripe public key is missing');
+            }
 
-        document
-            .querySelector("#checkout-form")
-            .addEventListener("submit", handleSubmit);
-        console.log('[Setup] Event listeners attached');
+            const stripe = Stripe('{{ stripe_public_key }}');
+            let elements;
+
+            initialize();
+            checkStatus();
+
+            document
+                .querySelector("#checkout-form")
+                .addEventListener("submit", handleSubmit);
+            console.log('[Setup] Event listeners attached');
+        } catch (error) {
+            console.error('[Fatal Error]', error);
+            const messageDiv = document.querySelector("#payment-message");
+            if (messageDiv) {
+                messageDiv.textContent = "Payment system initialization failed. Please try again later.";
+                messageDiv.classList.add("text-red-500");
+            }
+        }
 
         async function initialize() {
             console.log('[Initialize] Starting Stripe Elements initialization');

@@ -1473,6 +1473,7 @@ def get_or_create_cart(request):
 def cart_view(request):
     """View the shopping cart."""
     cart = get_or_create_cart(request)
+    print("[DEBUG] Stripe public key:", settings.STRIPE_PUBLISHABLE_KEY)
     return render(request, "cart/cart.html", {"cart": cart, "stripe_public_key": settings.STRIPE_PUBLISHABLE_KEY})
 
 
