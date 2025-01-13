@@ -13,8 +13,8 @@ def teacher_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
-            return redirect(reverse("login"))
-        if not hasattr(request.user, "teacher"):
+            return redirect(reverse("account_login"))
+        if not hasattr(request.user, "profile") or not request.user.profile.is_teacher:
             raise PermissionDenied
         return view_func(request, *args, **kwargs)
 
