@@ -59,6 +59,7 @@
                    name="first_name"
                    id="id_first_name"
                    required
+                   value="{{ form.first_name.value|default:'' }}"
                    class="mt-1 block w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white sm:text-sm"
                    placeholder="First name" />
             {% if form.first_name.errors %}
@@ -72,6 +73,7 @@
                    name="last_name"
                    id="id_last_name"
                    required
+                   value="{{ form.last_name.value|default:'' }}"
                    class="mt-1 block w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white sm:text-sm"
                    placeholder="Last name" />
             {% if form.last_name.errors %}
@@ -90,6 +92,7 @@
                    name="username"
                    id="id_username"
                    required
+                   value="{{ form.username.value|default:'' }}"
                    class="mt-1 block w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white sm:text-sm"
                    placeholder="Choose a username" />
             {% if form.username.errors %}<p class="mt-1 text-xs text-red-600">{{ form.username.errors|join:", " }}</p>{% endif %}
@@ -103,6 +106,7 @@
                    name="email"
                    id="id_email"
                    required
+                   value="{{ form.email.value|default:'' }}"
                    class="mt-1 block w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white sm:text-sm"
                    placeholder="your@email.com" />
             {% if form.email.errors %}<p class="mt-1 text-xs text-red-600">{{ form.email.errors|join:", " }}</p>{% endif %}
@@ -150,6 +154,7 @@
           <input type="checkbox"
                  name="is_teacher"
                  id="id_is_teacher"
+                 {% if form.is_teacher.value %}checked{% endif %}
                  class="h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300 dark:border-gray-600 rounded cursor-pointer" />
           <label for="id_is_teacher"
                  class="ml-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
