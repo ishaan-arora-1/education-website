@@ -1,7 +1,11 @@
 from allauth.account.models import EmailAddress
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.contrib.auth import login
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
+from django.http import HttpResponseRedirect
+from django.urls import path, reverse
+from django.utils.html import format_html
 
 from .models import Course, Enrollment, Profile, Review, Session, Subject
 
@@ -54,6 +58,55 @@ class CustomUserAdmin(UserAdmin):
 
     get_email_verified.short_description = "Email Verified"
     get_email_verified.boolean = True
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "<id>/login_as_user/",
+                self.admin_site.admin_view(self.login_as_user),
+                name="auth_user_login_as",
+            ),
+        ]
+        return custom_urls + urls
+
+    def login_as_user(self, request, id):
+        user = self.get_object(request, id)
+        if not user:
+            return self._get_obj_does_not_exist_redirect(request, "auth", "user", id)
+
+        # Store the admin's ID and login as the user
+        request.session["logged_in_as"] = {
+            "original_user_id": request.user.id,
+            "original_username": request.user.username,
+            "target_username": user.username,
+        }
+        request.session.modified = True
+        messages.success(request, f"You are now logged in as {user.username}")
+
+        # Login as the selected user with the default auth backend
+        from django.contrib.auth.backends import ModelBackend
+
+        backend = ModelBackend()
+        user.backend = f"{backend.__module__}.{backend.__class__.__name__}"
+        login(request, user)
+
+        return HttpResponseRedirect("/")
+
+    def get_list_display(self, request):
+        list_display = super().get_list_display(request)
+        if request.user.is_superuser:
+            return list_display + ("login_as_button",)
+        return list_display
+
+    def login_as_button(self, obj):
+        if obj == self.model.objects.get(id=self.model._meta.pk.get_prep_value(obj.pk)):
+            return format_html(
+                '<a class="button" href="{}">Login as User</a>', reverse("admin:auth_user_login_as", args=[obj.pk])
+            )
+
+    login_as_button.short_description = ""
+    login_as_button.allow_tags = True
 
 
 class SessionInline(admin.TabularInline):

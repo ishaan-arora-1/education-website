@@ -2,7 +2,7 @@ from django.conf.urls.i18n import i18n_patterns
 from django.contrib import admin
 from django.urls import include, path
 
-from . import views
+from . import views, admin_views
 
 # Non-prefixed URLs
 urlpatterns = [
@@ -45,6 +45,7 @@ urlpatterns += i18n_patterns(
     path("stripe-webhook/", views.stripe_webhook, name="stripe_webhook"),
     # Admin and Utilities
     path("github_update/", views.github_update, name="github_update"),
+    path("admin/dashboard/", admin_views.admin_dashboard, name="admin_dashboard"),
     path("admin/", admin.site.urls),
     path("captcha/", include("captcha.urls")),
     path("subjects/", views.subjects, name="subjects"),

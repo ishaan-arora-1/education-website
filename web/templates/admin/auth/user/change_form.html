@@ -1,0 +1,25 @@
+{% extends "admin/change_form.html" %}
+
+{% load i18n %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <style>
+        .login-as-link {
+            background: #417690;
+        }
+
+        .login-as-link:hover {
+            background: #2d5066;
+        }
+    </style>
+{% endblock extrastyle %}
+{% block object-tools-items %}
+    {% if original and user.is_superuser %}
+        <li>
+            <a href="{% url 'admin:auth_user_login_as' original.pk %}"
+               class="login-as-link">{% translate "Login as User" %}</a>
+        </li>
+    {% endif %}
+    {{ block.super }}
+{% endblock object-tools-items %}
