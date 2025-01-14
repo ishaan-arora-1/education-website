@@ -1,18 +1,16 @@
 {% if user.is_superuser and logged_in_as %}
-    <div class="fixed top-0 left-0 right-0 bg-purple-700 text-white text-center py-2 px-4 z-50 flex items-center justify-center space-x-2">
-        <span>
-            <strong>Admin:</strong> Logged in as {{ logged_in_as.target_username }}
-            (originally {{ logged_in_as.original_username }})
-        </span>
-        <a href="{% url 'admin:index' %}"
-           class="bg-purple-800 hover:bg-purple-900 px-3 py-1 rounded-full text-sm transition-colors">
-            Return to Admin
-        </a>
-    </div>
-    <style>
-        /* Add margin to body when banner is present */
-        body {
-            margin-top: 40px;
-        }
-    </style>
+  <div class="fixed top-0 left-0 right-0 bg-purple-700 text-white text-center py-2 px-4 z-50 flex items-center justify-center space-x-2">
+    <span>
+      <strong>Admin:</strong> Logged in as {{ logged_in_as.target_username }}
+      (originally {{ logged_in_as.original_username }})
+    </span>
+    <a href="{% url 'admin:index' %}"
+       class="bg-purple-800 hover:bg-purple-900 px-3 py-1 rounded-full text-sm transition-colors">Return to Admin</a>
+  </div>
+  <style>
+      /* Add margin to body when banner is present */
+      body {
+          margin-top: 40px;
+      }
+  </style>
 {% endif %}

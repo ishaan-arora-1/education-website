@@ -1641,14 +1641,18 @@ def checkout_success(request):
         cart.items.all().delete()
 
         # Render the receipt page
-        return render(request, "cart/receipt.html", {
-            "payment_intent_id": payment_intent_id,
-            "order_date": timezone.now(),
-            "user": user,
-            "enrollments": enrollments,
-            "session_enrollments": session_enrollments,
-            "total": total_amount,
-        })
+        return render(
+            request,
+            "cart/receipt.html",
+            {
+                "payment_intent_id": payment_intent_id,
+                "order_date": timezone.now(),
+                "user": user,
+                "enrollments": enrollments,
+                "session_enrollments": session_enrollments,
+                "total": total_amount,
+            },
+        )
 
     except stripe.error.StripeError as e:
         print(f"[checkout_success] Stripe error: {str(e)}")
@@ -1658,6 +1662,7 @@ def checkout_success(request):
         print(f"[checkout_success] Unexpected error: {str(e)}")
         print(f"[checkout_success] Error type: {type(e)}")
         import traceback
+
         print(f"[checkout_success] Traceback: {traceback.format_exc()}")
         messages.error(request, f"Failed to process checkout: {str(e)}")
         return redirect("cart_view")

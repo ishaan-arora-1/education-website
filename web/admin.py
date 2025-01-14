@@ -7,7 +7,7 @@ from django.http import HttpResponseRedirect
 from django.urls import path, reverse
 from django.utils.html import format_html
 
-from .models import Course, Enrollment, Profile, Review, Session, Subject
+from .models import Cart, CartItem, Course, Enrollment, Profile, Review, Session, Subject
 
 
 class ProfileInline(admin.StackedInline):
@@ -150,6 +150,32 @@ class ReviewAdmin(admin.ModelAdmin):
     list_display = ("student", "course", "rating", "created_at")
     list_filter = ("rating", "created_at")
     search_fields = ("student__username", "course__title", "comment")
+
+
+class CartItemInline(admin.TabularInline):
+    model = CartItem
+    extra = 0
+    readonly_fields = ("created_at", "updated_at")
+    raw_id_fields = ("course", "session")
+
+
+@admin.register(Cart)
+class CartAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "session_key", "item_count", "total", "created_at")
+    list_filter = ("created_at", "updated_at")
+    search_fields = ("user__username", "user__email", "session_key")
+    readonly_fields = ("created_at", "updated_at")
+    inlines = [CartItemInline]
+    raw_id_fields = ("user",)
+
+
+@admin.register(CartItem)
+class CartItemAdmin(admin.ModelAdmin):
+    list_display = ("id", "cart", "course", "session", "price", "created_at")
+    list_filter = ("created_at", "updated_at")
+    search_fields = ("cart__user__username", "cart__user__email", "course__title", "session__title")
+    readonly_fields = ("created_at", "updated_at")
+    raw_id_fields = ("cart", "course", "session")
 
 
 # Unregister the default User admin and register our custom one

@@ -3,130 +3,130 @@
 {% load static %}
 
 {% block extrastyle %}
-    {{ block.super }}
-    <style>
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 1rem;
-            padding: 1rem;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+  {{ block.super }}
+  <style>
+      .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          gap: 1rem;
+          padding: 1rem;
+          max-width: 1400px;
+          margin: 0 auto;
+      }
 
-        .stat-card {
-            background: white;
-            border-radius: 8px;
-            padding: 1rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-            transition: transform 0.2s, box-shadow 0.2s;
-            cursor: pointer;
-        }
+      .stat-card {
+          background: white;
+          border-radius: 8px;
+          padding: 1rem;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+          transition: transform 0.2s, box-shadow 0.2s;
+          cursor: pointer;
+      }
 
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
-        }
+      .stat-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+      }
 
-        .stat-title {
-            font-size: 0.875rem;
-            color: #666;
-            margin-bottom: 0.5rem;
-        }
+      .stat-title {
+          font-size: 0.875rem;
+          color: #666;
+          margin-bottom: 0.5rem;
+      }
 
-        .stat-count {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            color: #2b3a42;
-        }
+      .stat-count {
+          font-size: 1.5rem;
+          font-weight: bold;
+          margin-bottom: 0.5rem;
+          color: #2b3a42;
+      }
 
-        .sparkline {
-            height: 50px;
-            width: 100%;
-        }
+      .sparkline {
+          height: 50px;
+          width: 100%;
+      }
 
-        .stat-link {
-            text-decoration: none;
-            color: inherit;
-            display: block;
-        }
+      .stat-link {
+          text-decoration: none;
+          color: inherit;
+          display: block;
+      }
 
-        .stat-link:hover {
-            text-decoration: none;
-            color: inherit;
-        }
-    </style>
+      .stat-link:hover {
+          text-decoration: none;
+          color: inherit;
+      }
+  </style>
 {% endblock extrastyle %}
 {% block content %}
-    <div id="content-main">
-        <div class="stats-grid">
-            {% for stat in stats %}
-                {% if stat.admin_url %}<a href="{{ stat.admin_url }}" class="stat-link">{% endif %}
-                    <div class="stat-card">
-                        <div class="stat-title">{{ stat.title }}</div>
-                        <div class="stat-count">{{ stat.count }}</div>
-                        <canvas class="sparkline" id="sparkline-{{ forloop.counter }}"></canvas>
-                    </div>
-                    {% if stat.admin_url %}</a>{% endif %}
-            {% endfor %}
-        </div>
+  <div id="content-main">
+    <div class="stats-grid">
+      {% for stat in stats %}
+        {% if stat.admin_url %}<a href="{{ stat.admin_url }}" class="stat-link">{% endif %}
+          <div class="stat-card">
+            <div class="stat-title">{{ stat.title }}</div>
+            <div class="stat-count">{{ stat.count }}</div>
+            <canvas class="sparkline" id="sparkline-{{ forloop.counter }}"></canvas>
+          </div>
+          {% if stat.admin_url %}</a>{% endif %}
+      {% endfor %}
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script>
-        {
-            %
-            for stat in stats %
-        }
-        new Chart(document.getElementById("sparkline-{{ forloop.counter }}"), {
-            type: 'line',
-            data: {
-                labels: Array(30).fill(''),
-                datasets: [{
-                    data: {
-                        {
-                            stat.history | safe
-                        }
-                    },
-                    borderColor: '#4CAF50',
-                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                    fill: true,
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        enabled: false
-                    }
-                },
-                scales: {
-                    x: {
-                        display: false,
-                        grid: {
-                            display: false
-                        }
-                    },
-                    y: {
-                        display: false,
-                        min: 0,
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
-            }
-        });
-        {
-            %
-            endfor %
-        }
-    </script>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+      {
+          %
+          for stat in stats %
+      }
+      new Chart(document.getElementById("sparkline-{{ forloop.counter }}"), {
+          type: 'line',
+          data: {
+              labels: Array(30).fill(''),
+              datasets: [{
+                  data: {
+                      {
+                          stat.history | safe
+                      }
+                  },
+                  borderColor: '#4CAF50',
+                  backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                  fill: true,
+                  borderWidth: 2,
+                  pointRadius: 0,
+                  tension: 0.4
+              }]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                  legend: {
+                      display: false
+                  },
+                  tooltip: {
+                      enabled: false
+                  }
+              },
+              scales: {
+                  x: {
+                      display: false,
+                      grid: {
+                          display: false
+                      }
+                  },
+                  y: {
+                      display: false,
+                      min: 0,
+                      grid: {
+                          display: false
+                      }
+                  }
+              }
+          }
+      });
+      {
+          %
+          endfor %
+      }
+  </script>
 {% endblock content %}

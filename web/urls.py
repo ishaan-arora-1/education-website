@@ -2,7 +2,7 @@ from django.conf.urls.i18n import i18n_patterns
 from django.contrib import admin
 from django.urls import include, path
 
-from . import views, admin_views
+from . import admin_views, views
 
 # Non-prefixed URLs
 urlpatterns = [
