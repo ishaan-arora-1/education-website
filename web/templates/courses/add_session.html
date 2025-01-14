@@ -1,8 +1,19 @@
 {% extends "base.html" %}
 
+{% load static %}
+
 {% block title %}
   Add Session - {{ course.title }}
 {% endblock title %}
+{% block extra_head %}
+  <!-- Flatpickr CSS -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css" />
+  <!-- Flatpickr JS -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+{% endblock extra_head %}
 {% block content %}
   <div class="container mx-auto px-4 py-8">
     <div class="max-w-3xl mx-auto">
@@ -16,7 +27,19 @@
           {% for field in form %}
             <div>
               <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
-              {{ field }}
+              {% if field.name == 'start_time' or field.name == 'end_time' %}
+                <input type="text"
+                       name="{{ field.name }}"
+                       id="{{ field.id_for_label }}"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                       placeholder="Select date and time"
+                       {% if field.value %}value="{{ field.value|date:'Y-m-d H:i' }}"{% endif %}
+                       data-enable-time="true"
+                       data-time_24hr="true"
+                       data-date-format="Y-m-d H:i" />
+              {% else %}
+                {{ field }}
+              {% endif %}
               {% if field.help_text %}
                 <small class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</small>
               {% endif %}
@@ -37,4 +60,66 @@
       </div>
     </div>
   </div>
+  <script>
+      document.addEventListener('DOMContentLoaded', function() {
+          // Initialize Flatpickr for datetime fields
+          const config = {
+              enableTime: true,
+              time_24hr: true,
+              dateFormat: "Y-m-d H:i",
+              minuteIncrement: 15,
+              defaultHour: 9,
+          };
+
+          // Initialize start time picker
+          const startPicker = flatpickr("#id_start_time", {
+              ...config,
+              onChange: function(selectedDates, dateStr) {
+                  // Update end time minimum date when start time changes
+                  endPicker.set('minDate', dateStr);
+
+                  // If end time is before start time, update it to start time + 1 hour
+                  if (endPicker.selectedDates[0] < selectedDates[0]) {
+                      const endDate = new Date(selectedDates[0]);
+                      endDate.setHours(endDate.getHours() + 1);
+                      endPicker.setDate(endDate);
+                  }
+              }
+          });
+
+          // Initialize end time picker
+          const endPicker = flatpickr("#id_end_time", {
+              ...config,
+              onChange: function(selectedDates) {
+                  // Update start time maximum date when end time changes
+                  startPicker.set('maxDate', selectedDates[0]);
+              }
+          });
+
+          // Apply dark mode to pickers if site is in dark mode
+          function updatePickerTheme() {
+              const isDark = document.documentElement.classList.contains('dark');
+              [startPicker, endPicker].forEach(picker => {
+                  picker.calendarContainer.classList.toggle('dark', isDark);
+              });
+          }
+
+          // Initial theme setup
+          updatePickerTheme();
+
+          // Watch for theme changes
+          const observer = new MutationObserver(function(mutations) {
+              mutations.forEach(function(mutation) {
+                  if (mutation.attributeName === 'class') {
+                      updatePickerTheme();
+                  }
+              });
+          });
+
+          observer.observe(document.documentElement, {
+              attributes: true,
+              attributeFilter: ['class']
+          });
+      });
+  </script>
 {% endblock content %}
