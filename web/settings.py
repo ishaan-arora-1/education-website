@@ -270,3 +270,6 @@ if os.environ.get("DATABASE_URL"):
 
 # Slack settings
 SLACK_WEBHOOK_URL = env.str("SLACK_WEBHOOK_URL", default="")
+
+# Admin URL Configuration
+ADMIN_URL = env.str("ADMIN_URL", default="a-dmin-url123")

@@ -228,6 +228,12 @@
                     <i class="fas fa-user-graduate mr-2"></i> Student Dashboard
                   </a>
                 {% endif %}
+                {% if user.is_superuser %}
+                  <a href="{% url 'admin:index' %}"
+                     class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="fas fa-cog mr-2"></i> Admin Panel
+                  </a>
+                {% endif %}
                 <a href="{% url 'profile' %}"
                    class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
                   <i class="fas fa-user-circle mr-2"></i> Profile
@@ -317,6 +323,13 @@
                   <i class="fas fa-user-circle"></i>
                   <span>Profile</span>
                 </a>
+                {% if user.is_superuser %}
+                  <a href="{% url 'admin:index' %}"
+                     class="flex items-center space-x-2 px-4 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                    <i class="fas fa-cog"></i>
+                    <span>Admin Panel</span>
+                  </a>
+                {% endif %}
                 <form method="post" action="{% url 'account_logout' %}">
                   {% csrf_token %}
                   <button type="submit"
