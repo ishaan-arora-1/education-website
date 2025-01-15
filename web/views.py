@@ -27,8 +27,10 @@ from django.views.decorators.csrf import csrf_exempt
 from .calendar_sync import generate_google_calendar_link, generate_ical_feed, generate_outlook_calendar_link
 from .decorators import teacher_required
 from .forms import (
+    BlogPostForm,
     CourseForm,
     CourseMaterialForm,
+    ForumCategoryForm,
     InviteStudentForm,
     LearnForm,
     ProfileUpdateForm,
@@ -233,7 +235,25 @@ def course_detail(request, slug):
 
     # Calendar data
     today = timezone.now().date()
-    current_month = today.replace(day=1)
+
+    # Get the requested month from query parameters, default to current month
+    try:
+        year = int(request.GET.get("year", today.year))
+        month = int(request.GET.get("month", today.month))
+        current_month = today.replace(year=year, month=month, day=1)
+    except (ValueError, TypeError):
+        current_month = today.replace(day=1)
+
+    # Calculate previous and next month
+    if current_month.month == 1:
+        prev_month = current_month.replace(year=current_month.year - 1, month=12)
+    else:
+        prev_month = current_month.replace(month=current_month.month - 1)
+
+    if current_month.month == 12:
+        next_month = current_month.replace(year=current_month.year + 1, month=1)
+    else:
+        next_month = current_month.replace(month=current_month.month + 1)
 
     # Get the calendar for current month
     cal = calendar.monthcalendar(current_month.year, current_month.month)
@@ -267,6 +287,9 @@ def course_detail(request, slug):
         "enrollment": enrollment,
         "completed_sessions": completed_sessions,
         "calendar_weeks": calendar_weeks,
+        "current_month": current_month,
+        "prev_month": prev_month,
+        "next_month": next_month,
     }
 
     return render(request, "courses/detail.html", context)
@@ -1384,7 +1407,26 @@ def session_detail(request, session_id):
 
 def blog_list(request):
     blog_posts = BlogPost.objects.filter(status="published").order_by("-published_at")
-    return render(request, "blog/list.html", {"blog_posts": blog_posts})
+    tags = BlogPost.objects.values_list("tags", flat=True).distinct()
+    # Split comma-separated tags and get unique values
+    unique_tags = sorted(set(tag.strip() for tags_str in tags if tags_str for tag in tags_str.split(",")))
+    return render(request, "blog/list.html", {"blog_posts": blog_posts, "tags": unique_tags})
+
+
+@login_required
+def create_blog_post(request):
+    if request.method == "POST":
+        form = BlogPostForm(request.POST, request.FILES)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.author = request.user
+            post.save()
+            messages.success(request, "Blog post created successfully!")
+            return redirect("blog_detail", slug=post.slug)
+    else:
+        form = BlogPostForm()
+
+    return render(request, "blog/create.html", {"form": form})
 
 
 def blog_detail(request, slug):
@@ -1454,16 +1496,25 @@ def teacher_dashboard(request):
 
     # Get enrollment and progress stats for each course
     course_stats = []
+    total_students = 0
+    total_completed = 0
+    total_earnings = 0
     for course in courses:
         enrollments = course.enrollments.filter(status="approved")
-        total_students = enrollments.count()
-        completed = enrollments.filter(status="completed").count()
+        course_total_students = enrollments.count()
+        course_completed = enrollments.filter(status="completed").count()
+        total_students += course_total_students
+        total_completed += course_completed
+        # Calculate earnings (90% of course price for each enrollment, 10% platform fee)
+        course_earnings = course_total_students * course.price * 0.9
+        total_earnings += course_earnings
         course_stats.append(
             {
                 "course": course,
-                "total_students": total_students,
-                "completed": completed,
-                "completion_rate": (completed / total_students * 100) if total_students > 0 else 0,
+                "total_students": course_total_students,
+                "completed": course_completed,
+                "completion_rate": (course_completed / course_total_students * 100) if course_total_students > 0 else 0,
+                "earnings": course_earnings,
             }
         )
 
@@ -1471,7 +1522,8 @@ def teacher_dashboard(request):
         "courses": courses,
         "upcoming_sessions": upcoming_sessions,
         "course_stats": course_stats,
-        "completion_rate": (completed / total_students * 100) if total_students > 0 else 0,
+        "completion_rate": (total_completed / total_students * 100) if total_students > 0 else 0,
+        "total_earnings": round(total_earnings, 2),
     }
     return render(request, "dashboard/teacher.html", context)
 
@@ -1874,3 +1926,23 @@ def stripe_connect_webhook(request):
             return HttpResponse(status=404)
 
     return HttpResponse(status=200)
+
+
+@login_required
+@teacher_required
+def create_forum_category(request):
+    """Create a new forum category."""
+    if not request.user.is_staff:
+        messages.error(request, "Only staff members can create forum categories.")
+        return redirect("forum_categories")
+
+    if request.method == "POST":
+        form = ForumCategoryForm(request.POST)
+        if form.is_valid():
+            category = form.save()
+            messages.success(request, f"Forum category '{category.name}' created successfully!")
+            return redirect("forum_categories")
+    else:
+        form = ForumCategoryForm()
+
+    return render(request, "web/forum/create_category.html", {"form": form})

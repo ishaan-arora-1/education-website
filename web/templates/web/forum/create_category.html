@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Create Forum Category{% endblock %}
+{% block content %}
+  <main class="flex-1 w-full max-w-[90rem] mx-auto mt-6 px-4 md:px-6">
+    <div class="max-w-3xl mx-auto">
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold mb-2 flex items-center">
+          <i class="fa-solid fa-folder-plus text-teal-600 dark:text-teal-400 mr-2"></i>
+          Create Forum Category
+        </h1>
+        <p class="text-gray-600 dark:text-gray-400">Create a new category for forum discussions.</p>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <form method="post" class="space-y-6">
+          {% csrf_token %}
+          {% for field in form %}
+            <div>
+              <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</p>{% endif %}
+              {% if field.errors %}
+                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors|join:", " }}</p>
+              {% endif %}
+            </div>
+          {% endfor %}
+          <div class="flex justify-end space-x-4">
+            <a href="{% url 'forum_categories' %}"
+               class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+              Cancel
+            </a>
+            <button type="submit"
+                    class="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+              Create Category
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+{% endblock %}

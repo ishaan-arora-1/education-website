@@ -192,7 +192,20 @@
               </div>
               <!-- Calendar -->
               <div class="mt-6 border-t dark:border-gray-600 pt-4">
-                <h3 class="text-sm font-semibold mb-3">Session Calendar</h3>
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="text-sm font-semibold">Session Calendar</h3>
+                  <div class="flex items-center space-x-4">
+                    <a href="?year={{ prev_month.year }}&month={{ prev_month.month }}"
+                       class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">
+                      <i class="fas fa-chevron-left"></i>
+                    </a>
+                    <span class="text-sm font-medium">{{ current_month|date:"F Y" }}</span>
+                    <a href="?year={{ next_month.year }}&month={{ next_month.month }}"
+                       class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">
+                      <i class="fas fa-chevron-right"></i>
+                    </a>
+                  </div>
+                </div>
                 <div class="bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 overflow-hidden">
                   <div class="grid grid-cols-7 text-center text-xs font-medium border-b dark:border-gray-700">
                     <div class="py-2">Sun</div>
@@ -211,7 +224,8 @@
                             <div class="relative">
                               <span class="{% if day.has_session %}font-bold text-teal-600 dark:text-teal-400{% endif %}">{{ day.date.day }}</span>
                               {% if day.has_session %}
-                                <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-teal-500 rounded-full"></div>
+                                <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-teal-500 dark:bg-teal-400 rounded-full">
+                                </div>
                               {% endif %}
                             </div>
                           {% endif %}
@@ -230,16 +244,23 @@
                 <div class="flex items-center gap-4">
                   <h1 class="text-3xl font-bold">{{ course.title }}</h1>
                   {% if user == course.teacher %}
-                    <a href="{% url 'update_course' course.slug %}"
-                       class="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-                       title="Edit Course">
-                      <i class="fas fa-edit text-xl"></i>
-                    </a>
-                    <a href="{% url 'invite_student' course.id %}"
-                       class="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 ml-2"
-                       title="Invite Student">
-                      <i class="fas fa-user-plus text-xl"></i>
-                    </a>
+                    <div class="flex items-center gap-3">
+                      <a href="{% url 'update_course' course.slug %}"
+                         class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition duration-200">
+                        <i class="fas fa-edit mr-2"></i>
+                        Edit Course
+                      </a>
+                      <a href="{% url 'course_progress_overview' course.slug %}"
+                         class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition duration-200">
+                        <i class="fas fa-users mr-2"></i>
+                        View Students ({{ course.enrollments.count }})
+                      </a>
+                      <a href="{% url 'invite_student' course.id %}"
+                         class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition duration-200">
+                        <i class="fas fa-user-plus mr-2"></i>
+                        Invite Student
+                      </a>
+                    </div>
                   {% endif %}
                 </div>
                 {% if user.is_authenticated and enrollment %}

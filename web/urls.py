@@ -17,6 +17,7 @@ urlpatterns += i18n_patterns(
     path("teach/", views.teach, name="teach"),
     path("about/", views.about, name="about"),
     path("blog/", views.blog_list, name="blog"),
+    path("blog/create/", views.create_blog_post, name="create_blog_post"),
     path("blog/<slug:slug>/", views.blog_detail, name="blog_detail"),
     # Authentication URLs
     # path("login/", auth_views.LoginView.as_view(), name="login"),
@@ -104,8 +105,8 @@ urlpatterns += i18n_patterns(
     ),
     # Forum URLs
     path("forum/", views.forum_categories, name="forum_categories"),
-    path("forum/<slug:slug>/", views.forum_category, name="forum_category"),
-    path("forum/<slug:category_slug>/create/", views.create_topic, name="create_topic"),
+    path("forum/category/create/", views.create_forum_category, name="create_forum_category"),
+    path("forum/category/<slug:slug>/", views.forum_category, name="forum_category"),
     path(
         "forum/<slug:category_slug>/<int:topic_id>/",
         views.forum_topic,

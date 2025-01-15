@@ -7,7 +7,7 @@ from django.template.defaultfilters import slugify
 from django.utils.crypto import get_random_string
 from markdownx.fields import MarkdownxFormField
 
-from .models import Course, CourseMaterial, Profile, Review, Session, Subject
+from .models import BlogPost, Course, CourseMaterial, ForumCategory, Profile, Review, Session, Subject
 from .widgets import (
     TailwindCaptchaTextInput,
     TailwindCheckboxInput,
@@ -34,6 +34,8 @@ __all__ = [
     "LearnForm",
     "TeachForm",
     "InviteStudentForm",
+    "ForumCategoryForm",
+    "BlogPostForm",
 ]
 
 
@@ -594,3 +596,72 @@ class InviteStudentForm(forms.Form):
             }
         ),
     )
+
+
+class ForumCategoryForm(forms.ModelForm):
+    """Form for creating and editing forum categories."""
+
+    class Meta:
+        model = ForumCategory
+        fields = ["name", "description", "icon"]
+        widgets = {
+            "name": forms.TextInput(
+                attrs={
+                    "class": (
+                        "w-full border border-gray-300 dark:border-gray-600 rounded p-2 "
+                        "focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 "
+                        "dark:focus:ring-offset-gray-800 bg-white dark:bg-gray-800"
+                    )
+                }
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": (
+                        "w-full border border-gray-300 dark:border-gray-600 rounded p-2 "
+                        "focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 "
+                        "dark:focus:ring-offset-gray-800 bg-white dark:bg-gray-800"
+                    ),
+                    "rows": 4,
+                }
+            ),
+            "icon": forms.TextInput(
+                attrs={
+                    "class": (
+                        "w-full border border-gray-300 dark:border-gray-600 rounded p-2 "
+                        "focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 "
+                        "dark:focus:ring-offset-gray-800 bg-white dark:bg-gray-800"
+                    ),
+                    "placeholder": "fa-folder",
+                }
+            ),
+        }
+        help_texts = {
+            "icon": "Enter a Font Awesome icon class (e.g., fa-folder, fa-book, fa-code)",
+        }
+
+
+class BlogPostForm(forms.ModelForm):
+    """Form for creating and editing blog posts."""
+
+    class Meta:
+        model = BlogPost
+        fields = ["title", "content", "excerpt", "featured_image", "status", "tags"]
+
+        input_classes = (
+            "w-full border border-gray-300 dark:border-gray-600 rounded p-2 "
+            "focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 "
+            "dark:focus:ring-offset-gray-800 bg-white dark:bg-gray-800"
+        )
+
+        widgets = {
+            "title": forms.TextInput(attrs={"class": input_classes}),
+            "content": forms.Textarea(attrs={"class": input_classes, "rows": 10}),
+            "excerpt": forms.Textarea(attrs={"class": input_classes, "rows": 3}),
+            "tags": forms.TextInput(
+                attrs={
+                    "class": input_classes,
+                    "placeholder": "Enter comma-separated tags",
+                }
+            ),
+            "status": forms.Select(attrs={"class": input_classes}),
+        }
