@@ -26,7 +26,8 @@ class ProfileAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at", "updated_at")
     fieldsets = (
         (None, {"fields": ("user", "is_teacher")}),
-        ("Profile Information", {"fields": ("bio", "expertise")}),
+        ("Profile Information", {"fields": ("bio", "expertise", "avatar")}),
+        ("Stripe Information", {"fields": ("stripe_account_id", "stripe_account_status", "commission_rate")}),
         (
             "Timestamps",
             {"fields": ("created_at", "updated_at"), "classes": ("collapse",)},

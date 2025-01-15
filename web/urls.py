@@ -139,6 +139,9 @@ urlpatterns += i18n_patterns(
     path("markdownx/", include("markdownx.urls")),
     # Course Invitation URLs
     path("courses/<int:course_id>/invite/", views.invite_student, name="invite_student"),
+    path("terms/", views.terms, name="terms"),
+    path("stripe/connect/onboarding/", views.stripe_connect_onboarding, name="stripe_connect_onboarding"),
+    path("stripe/connect/webhook/", views.stripe_connect_webhook, name="stripe_connect_webhook"),
     prefix_default_language=True,
 )
 

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Terms of Service - Alpha One Labs{% endblock %}
+{% block content %}
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Terms of Service</h1>
+    <div class="prose dark:prose-invert max-w-none">
+      <h2 class="text-2xl font-semibold mt-8 mb-4">1. Commission Structure</h2>
+      <p>Alpha One Labs operates on a revenue-sharing model where:</p>
+      <ul class="list-disc pl-6 mb-4">
+        <li>Teachers receive 90% of the course and session fees</li>
+        <li>
+          Alpha One Labs retains a 10% commission to cover platform maintenance, payment processing, and support services
+        </li>
+        <li>Payments are processed automatically through Stripe and distributed to teachers' connected accounts</li>
+      </ul>
+      <h2 class="text-2xl font-semibold mt-8 mb-4">2. Teacher Payments</h2>
+      <p>To receive payments, teachers must:</p>
+      <ul class="list-disc pl-6 mb-4">
+        <li>Create and connect a Stripe account</li>
+        <li>Provide necessary tax information and banking details</li>
+        <li>Maintain compliance with Stripe's terms of service</li>
+        <li>Keep their payment information up to date</li>
+      </ul>
+      <h2 class="text-2xl font-semibold mt-8 mb-4">3. Platform Rules</h2>
+      <p>All users must adhere to the following rules:</p>
+      <ul class="list-disc pl-6 mb-4">
+        <li>Provide accurate and truthful information</li>
+        <li>Respect intellectual property rights</li>
+        <li>Maintain professional conduct</li>
+        <li>Follow content guidelines</li>
+      </ul>
+      <h2 class="text-2xl font-semibold mt-8 mb-4">4. Course Content</h2>
+      <p>Teachers are responsible for:</p>
+      <ul class="list-disc pl-6 mb-4">
+        <li>Creating and maintaining high-quality course content</li>
+        <li>Ensuring content accuracy and relevance</li>
+        <li>Responding to student inquiries in a timely manner</li>
+        <li>Updating course materials as needed</li>
+      </ul>
+      <h2 class="text-2xl font-semibold mt-8 mb-4">5. Refund Policy</h2>
+      <p>Our refund policy includes:</p>
+      <ul class="list-disc pl-6 mb-4">
+        <li>30-day money-back guarantee for course purchases</li>
+        <li>Pro-rated refunds for subscription-based courses</li>
+        <li>No refunds for completed individual sessions</li>
+        <li>Case-by-case evaluation for special circumstances</li>
+      </ul>
+      <h2 class="text-2xl font-semibold mt-8 mb-4">6. Privacy and Data Protection</h2>
+      <p>We are committed to:</p>
+      <ul class="list-disc pl-6 mb-4">
+        <li>Protecting user data and privacy</li>
+        <li>Complying with relevant data protection regulations</li>
+        <li>Securing payment information</li>
+        <li>Maintaining transparent data practices</li>
+      </ul>
+      <h2 class="text-2xl font-semibold mt-8 mb-4">7. Platform Changes</h2>
+      <p>Alpha One Labs reserves the right to:</p>
+      <ul class="list-disc pl-6 mb-4">
+        <li>Modify these terms with notice to users</li>
+        <li>Update platform features and functionality</li>
+        <li>Adjust commission rates with advance notice</li>
+        <li>Change payment processing methods if necessary</li>
+      </ul>
+      <div class="mt-8 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+        <p class="font-semibold">Last Updated: {% now "F j, Y" %}</p>
+        <p class="mt-2">For questions about these terms, please contact our support team.</p>
+      </div>
+    </div>
+  </div>
+{% endblock %}

@@ -58,6 +58,7 @@ from .models import (
     ForumTopic,
     PeerConnection,
     PeerMessage,
+    Profile,
     Session,
     SessionAttendance,
     SessionEnrollment,
@@ -1800,3 +1801,76 @@ Click here to view the course: {course_url}
         "form": form,
     }
     return render(request, "courses/invite.html", context)
+
+
+def terms(request):
+    """Display the terms of service page."""
+    return render(request, "terms.html")
+
+
+@login_required
+@teacher_required
+def stripe_connect_onboarding(request):
+    """Start the Stripe Connect onboarding process for teachers."""
+    if not request.user.profile.is_teacher:
+        messages.error(request, "Only teachers can set up payment accounts.")
+        return redirect("profile")
+
+    try:
+        if not request.user.profile.stripe_account_id:
+            # Create a new Stripe Connect account
+            account = stripe.Account.create(
+                type="express",
+                country="US",
+                email=request.user.email,
+                capabilities={
+                    "card_payments": {"requested": True},
+                    "transfers": {"requested": True},
+                },
+            )
+
+            # Save the account ID to the user's profile
+            request.user.profile.stripe_account_id = account.id
+            request.user.profile.save()
+
+        # Create an account link for onboarding
+        account_link = stripe.AccountLink.create(
+            account=request.user.profile.stripe_account_id,
+            refresh_url=request.build_absolute_uri(reverse("stripe_connect_onboarding")),
+            return_url=request.build_absolute_uri(reverse("profile")),
+            type="account_onboarding",
+        )
+
+        return redirect(account_link.url)
+
+    except stripe.error.StripeError as e:
+        messages.error(request, f"Failed to set up Stripe account: {str(e)}")
+        return redirect("profile")
+
+
+@csrf_exempt
+def stripe_connect_webhook(request):
+    """Handle Stripe Connect account updates."""
+    payload = request.body
+    sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
+
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, settings.STRIPE_CONNECT_WEBHOOK_SECRET)
+    except ValueError:
+        return HttpResponse(status=400)
+    except stripe.error.SignatureVerificationError:
+        return HttpResponse(status=400)
+
+    if event.type == "account.updated":
+        account = event.data.object
+        try:
+            profile = Profile.objects.get(stripe_account_id=account.id)
+            if account.charges_enabled and account.payouts_enabled:
+                profile.stripe_account_status = "verified"
+            else:
+                profile.stripe_account_status = "pending"
+            profile.save()
+        except Profile.DoesNotExist:
+            return HttpResponse(status=404)
+
+    return HttpResponse(status=200)

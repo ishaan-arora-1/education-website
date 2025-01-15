@@ -45,11 +45,33 @@ class Profile(models.Model):
     expertise = models.CharField(max_length=200, blank=True, default="")
     is_teacher = models.BooleanField(default=False)
     avatar = models.ImageField(upload_to="avatars/", blank=True, default="")
+    stripe_account_id = models.CharField(max_length=100, blank=True)
+    stripe_account_status = models.CharField(
+        max_length=20,
+        choices=[
+            ("pending", "Pending"),
+            ("verified", "Verified"),
+            ("rejected", "Rejected"),
+        ],
+        default="pending",
+        blank=True,
+    )
+    commission_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=10.00,
+        help_text="Commission rate in percentage (e.g., 10.00 for 10%)",
+        blank=True,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.user.username}'s profile"
+
+    @property
+    def can_receive_payments(self):
+        return self.is_teacher and self.stripe_account_id and self.stripe_account_status == "verified"
 
     def save(self, *args, **kwargs):
         if self.avatar:
