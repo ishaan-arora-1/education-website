@@ -4,9 +4,8 @@ on:
   push:
 
 jobs:
-  test:
+  linting:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
 
@@ -22,11 +21,21 @@ jobs:
         pre-commit install
         pre-commit run --all-files
 
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python3.10.x
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.10.x
+        cache: 'pip'
+
     - name: Run tests
       run: |
         cp .env.sample .env
         python -m pip install --upgrade pip wheel setuptools
-        # Install main requirements with verbosity
         pip install -v -r requirements.txt
         python manage.py test
 
@@ -40,7 +49,18 @@ jobs:
     #     file: ./coverage.xml
     #     fail_ci_if_error: true
 
-    # - name: Check for security vulnerabilities
-    #   run: |
-    #     pip install safety
-    #     safety check
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python3.10.x
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.10.x
+        cache: 'pip'
+
+    - name: Check for security vulnerabilities
+      run: |
+        pip install safety
+        safety check
