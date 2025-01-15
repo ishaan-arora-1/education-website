@@ -1,3 +1,4 @@
+import calendar
 import json
 import os
 import subprocess
@@ -28,6 +29,7 @@ from .decorators import teacher_required
 from .forms import (
     CourseForm,
     CourseMaterialForm,
+    InviteStudentForm,
     LearnForm,
     ProfileUpdateForm,
     ReviewForm,
@@ -209,28 +211,24 @@ def create_course(request):
 
 
 def course_detail(request, slug):
-    import calendar
-
-    from django.utils import timezone
-
     course = get_object_or_404(Course, slug=slug)
     sessions = course.sessions.all().order_by("start_time")
     now = timezone.now()
-    is_enrolled = False
     is_teacher = request.user == course.teacher
-    enrollment = None
     completed_sessions = []
 
+    # Get enrollment if user is authenticated
+    enrollment = None
+    is_enrolled = False
     if request.user.is_authenticated:
-        try:
-            enrollment = course.enrollments.get(student=request.user)
-            is_enrolled = True
+        enrollment = Enrollment.objects.filter(course=course, student=request.user, status="approved").first()
+        is_enrolled = enrollment is not None
+        if enrollment:
             # Get completed sessions through SessionAttendance
             completed_sessions = SessionAttendance.objects.filter(
                 student=request.user, session__course=course, status="completed"
-            ).values_list("session", flat=True)
-        except Enrollment.DoesNotExist:
-            pass
+            ).values_list("session__id", flat=True)
+            completed_sessions = course.sessions.filter(id__in=completed_sessions)
 
     # Calendar data
     today = timezone.now().date()
@@ -258,21 +256,19 @@ def course_detail(request, slug):
                 calendar_week.append({"date": date, "in_month": True, "has_session": date in session_dates})
         calendar_weeks.append(calendar_week)
 
-    return render(
-        request,
-        "courses/detail.html",
-        {
-            "course": course,
-            "sessions": sessions,
-            "now": now,
-            "today": today,
-            "is_enrolled": is_enrolled,
-            "is_teacher": is_teacher,
-            "enrollment": enrollment,
-            "completed_sessions": completed_sessions,
-            "calendar_weeks": calendar_weeks,
-        },
-    )
+    context = {
+        "course": course,
+        "sessions": sessions,
+        "now": now,
+        "today": today,
+        "is_teacher": is_teacher,
+        "is_enrolled": is_enrolled,
+        "enrollment": enrollment,
+        "completed_sessions": completed_sessions,
+        "calendar_weeks": calendar_weeks,
+    }
+
+    return render(request, "courses/detail.html", context)
 
 
 @login_required
@@ -455,7 +451,10 @@ def learn(request):
                 print(f"Error sending email: {e}")
                 messages.error(request, "Sorry, there was an error sending your inquiry. Please try again later.")
     else:
-        form = LearnForm()
+        initial_data = {}
+        if request.GET.get("subject"):
+            initial_data["subject"] = request.GET.get("subject")
+        form = LearnForm(initial=initial_data)
 
     return render(request, "learn.html", {"form": form})
 
@@ -495,7 +494,10 @@ def teach(request):
                 print(f"Error sending email: {e}")
                 messages.error(request, "Sorry, there was an error sending your application. Please try again later.")
     else:
-        form = TeachForm()
+        initial_data = {}
+        if request.GET.get("subject"):
+            initial_data["subject"] = request.GET.get("subject")
+        form = TeachForm(initial=initial_data)
 
     return render(request, "teach.html", {"form": form})
 
@@ -1739,3 +1741,62 @@ def edit_session(request, session_id):
         form = SessionForm(instance=session)
 
     return render(request, "courses/edit_session.html", {"form": form, "session": session, "course": session.course})
+
+
+@login_required
+def invite_student(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+
+    # Check if user is the teacher of this course
+    if course.teacher != request.user:
+        messages.error(request, "You are not authorized to invite students to this course.")
+        return redirect("course_detail", slug=course.slug)
+
+    if request.method == "POST":
+        form = InviteStudentForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data["email"]
+            message = form.cleaned_data.get("message", "")
+
+            # Generate course URL
+            course_url = request.build_absolute_uri(reverse("course_detail", args=[course.slug]))
+
+            # Send invitation email
+            context = {
+                "course": course,
+                "teacher": request.user,
+                "message": message,
+                "course_url": course_url,
+            }
+            html_message = render_to_string("emails/course_invitation.html", context)
+            text_message = f"""
+You have been invited to join {course.title}!
+
+Message from {request.user.get_full_name() or request.user.username}:
+{message}
+
+Course Price: ${course.price}
+
+Click here to view the course: {course_url}
+"""
+
+            try:
+                send_mail(
+                    f"Invitation to join {course.title}",
+                    text_message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [email],
+                    html_message=html_message,
+                )
+                messages.success(request, f"Invitation sent to {email}")
+                return redirect("course_detail", slug=course.slug)
+            except Exception:
+                messages.error(request, "Failed to send invitation email. Please try again.")
+    else:
+        form = InviteStudentForm()
+
+    context = {
+        "course": course,
+        "form": form,
+    }
+    return render(request, "courses/invite.html", context)

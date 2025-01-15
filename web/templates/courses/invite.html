@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="max-w-2xl mx-auto px-4 py-8">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+      <h1 class="text-2xl font-bold mb-6">Invite Student to {{ course.title }}</h1>
+      <form method="post" class="space-y-6">
+        {% csrf_token %}
+        {% if messages %}
+          {% for message in messages %}
+            <div class="p-4 mb-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-100{% else %}bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-100{% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+        {% if form.non_field_errors %}
+          <div class="p-4 mb-4 rounded-lg bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-100">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+        <div class="space-y-4">
+          <div>
+            <label for="{{ form.email.id_for_label }}"
+                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {{ form.email.label }}
+            </label>
+            {{ form.email }}
+            {% if form.email.errors %}
+              <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.email.errors.0 }}</p>
+            {% endif %}
+          </div>
+          <div>
+            <label for="{{ form.message.id_for_label }}"
+                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {{ form.message.label }}
+            </label>
+            {{ form.message }}
+            {% if form.message.errors %}
+              <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.message.errors.0 }}</p>
+            {% endif %}
+          </div>
+        </div>
+        <div class="flex justify-end space-x-4 mt-6">
+          <a href="{% url 'course_detail' course.id %}"
+             class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            Cancel
+          </a>
+          <button type="submit"
+                  class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+            Send Invitation
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock content %}

@@ -137,6 +137,8 @@ urlpatterns += i18n_patterns(
     path("cart/payment-intent/", views.create_cart_payment_intent, name="create_cart_payment_intent"),
     path("cart/checkout/success/", views.checkout_success, name="checkout_success"),
     path("markdownx/", include("markdownx.urls")),
+    # Course Invitation URLs
+    path("courses/<int:course_id>/invite/", views.invite_student, name="invite_student"),
     prefix_default_language=True,
 )
 

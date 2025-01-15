@@ -3,12 +3,13 @@ from unittest.mock import patch
 
 from allauth.account.models import EmailAddress
 from django.contrib.auth.models import User
+from django.core import mail
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
 from web.forms import LearnForm, TeachForm
-from web.models import Course, Profile, Session, Subject
+from web.models import Course, Enrollment, Profile, Session, SessionAttendance, Subject
 from web.utils import get_or_create_cart
 
 
@@ -316,3 +317,263 @@ class PageLoadTests(BaseViewTest):
         self.assertIsInstance(response.context["form"], TeachForm)
 
         print("[PageLoadTests] Form pages verified successfully")
+
+
+class CourseInvitationTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        # Create a teacher
+        self.teacher = User.objects.create_user(
+            username="testteacher", email="teacher@test.com", password="testpass123"
+        )
+        # Create a subject
+        self.subject = Subject.objects.create(name="Test Subject")
+        # Create a course
+        self.course = Course.objects.create(
+            title="Test Course",
+            description="Test Description",
+            teacher=self.teacher,
+            subject=self.subject,
+            price=29.99,
+            status="published",
+            max_students=50,
+        )
+        self.invite_url = reverse("invite_student", args=[self.course.id])
+
+    def test_invite_student_view_access(self):
+        """Test that only the course teacher can access the invite view"""
+        # Unauthenticated user should be redirected to login
+        response = self.client.get(self.invite_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith("/en/accounts/login/"))
+
+        # Create and login a non-teacher user
+        User.objects.create_user(username="other", email="other@test.com", password="testpass123")
+        self.client.login(username="other", password="testpass123")
+        response = self.client.get(self.invite_url)
+        self.assertEqual(response.status_code, 302)  # Should be redirected
+        self.assertTrue(response.url.startswith("/en/courses/"))
+
+        # Teacher should have access
+        self.client.login(username="testteacher", password="testpass123")
+        response = self.client.get(self.invite_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "courses/invite.html")
+
+    def test_invite_student_send_invitation(self):
+        """Test sending an invitation to a student"""
+        self.client.login(username="testteacher", password="testpass123")
+
+        # Send invitation
+        data = {"email": "student@test.com", "message": "Please join my course!"}
+        response = self.client.post(self.invite_url, data)
+
+        # Check redirect
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("course_detail", args=[self.course.slug]))
+
+        # Check that email was sent
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertEqual(email.subject, f"Invitation to join {self.course.title}")
+        self.assertEqual(email.to, ["student@test.com"])
+
+        # Check email content
+        self.assertIn(self.course.title, email.body)
+        self.assertIn("Please join my course!", email.body)
+        self.assertIn(str(self.course.price), email.body)
+
+        # Verify success message
+        messages = list(response.wsgi_request._messages)
+        self.assertEqual(len(messages), 1)
+        self.assertIn("Invitation sent", str(messages[0]))
+
+
+class CourseDetailTests(TestCase):
+    def setUp(self):
+        """Set up test data for course detail tests"""
+        self.client = Client()
+
+        # Create users
+        self.teacher = User.objects.create_user(username="teacher", email="teacher@test.com", password="testpass123")
+        self.student = User.objects.create_user(username="student", email="student@test.com", password="testpass123")
+
+        # Create subject
+        self.subject = Subject.objects.create(
+            name="Test Subject",
+            slug="test-subject",
+            description="Test Description",
+        )
+
+        # Create course
+        self.course = Course.objects.create(
+            title="Test Course",
+            slug="test-course",
+            teacher=self.teacher,
+            description="Test Description",
+            learning_objectives="Test Objectives",
+            prerequisites="Test Prerequisites",
+            price=99.99,
+            max_students=50,
+            subject=self.subject,
+            level="beginner",
+            status="published",
+            allow_individual_sessions=True,
+        )
+
+        # Create sessions
+        now = timezone.now()
+        self.future_session = Session.objects.create(
+            course=self.course,
+            title="Future Session",
+            description="Future Session Description",
+            start_time=now + timezone.timedelta(days=1),
+            end_time=now + timezone.timedelta(days=1, hours=1),
+            price=29.99,
+            is_virtual=True,
+            meeting_link="https://meet.test.com",
+        )
+        self.past_session = Session.objects.create(
+            course=self.course,
+            title="Past Session",
+            description="Past Session Description",
+            start_time=now - timezone.timedelta(days=1),
+            end_time=now - timezone.timedelta(days=1, hours=1),
+            price=29.99,
+            location="Test Location",
+        )
+
+        # Create enrollment for student
+        self.enrollment = Enrollment.objects.create(
+            student=self.student,
+            course=self.course,
+            status="approved",
+        )
+
+        # Create attendance for past session
+        self.attendance = SessionAttendance.objects.create(
+            student=self.student,
+            session=self.past_session,
+            status="completed",
+        )
+
+        # URL for detail page
+        self.detail_url = reverse("course_detail", args=[self.course.slug])
+
+    def test_course_detail_page_load(self):
+        """Test course detail page loads for different user types"""
+        # Test anonymous user
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "courses/detail.html")
+
+        # Test teacher
+        self.client.login(username="teacher", password="testpass123")
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["is_teacher"])
+
+        # Test enrolled student
+        self.client.login(username="student", password="testpass123")
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["enrollment"])
+        self.assertFalse(response.context["is_teacher"])
+
+    def test_course_information_display(self):
+        """Test that course information is correctly displayed"""
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.context["course"], self.course)
+        self.assertContains(response, self.course.title)
+        self.assertContains(response, self.course.description)
+        self.assertContains(response, self.course.learning_objectives)
+        self.assertContains(response, self.course.prerequisites)
+        self.assertContains(response, str(self.course.price))
+        self.assertContains(response, self.course.get_level_display())
+        self.assertContains(response, self.course.subject.name)
+
+    def test_session_display(self):
+        """Test that sessions are correctly displayed"""
+        response = self.client.get(self.detail_url)
+        self.assertContains(response, self.future_session.title)
+        self.assertContains(response, self.past_session.title)
+        self.assertContains(response, self.future_session.meeting_link)
+        self.assertContains(response, self.past_session.location)
+
+        # Test session prices are shown when allow_individual_sessions is True
+        self.assertContains(response, str(self.future_session.price))
+
+        # Test virtual/in-person indicators
+        self.assertContains(response, "Virtual")
+        self.assertContains(response, self.past_session.location)
+
+    def test_teacher_specific_functionality(self):
+        """Test functionality available only to teachers"""
+        self.client.login(username="teacher", password="testpass123")
+        response = self.client.get(self.detail_url)
+
+        # Test edit course link is present
+        self.assertContains(response, reverse("update_course", args=[self.course.slug]))
+
+        # Test invite student link is present
+        self.assertContains(response, reverse("invite_student", args=[self.course.id]))
+
+        # Test add session link is present
+        self.assertContains(response, reverse("add_session", args=[self.course.slug]))
+
+        # Test session management links are present
+        self.assertContains(response, reverse("mark_session_attendance", args=[self.future_session.id]))
+        self.assertContains(response, reverse("edit_session", args=[self.future_session.id]))
+
+    def test_enrolled_student_functionality(self):
+        """Test functionality available to enrolled students"""
+        self.client.login(username="student", password="testpass123")
+        response = self.client.get(self.detail_url)
+
+        # Test enrollment status is shown
+        self.assertContains(response, "You're enrolled!")
+
+        # Test progress link is shown
+        self.assertContains(response, reverse("student_dashboard"))
+
+        # Test completed session is marked
+        self.assertIn(self.past_session, response.context["completed_sessions"])
+        self.assertContains(response, "Completed")
+
+    def test_calendar_display(self):
+        """Test that the session calendar is correctly displayed"""
+        response = self.client.get(self.detail_url)
+
+        # Test calendar context
+        self.assertTrue("calendar_weeks" in response.context)
+        self.assertTrue("today" in response.context)
+
+        # Test session dates are marked
+        calendar_weeks = response.context["calendar_weeks"]
+        session_date = self.future_session.start_time.date()
+
+        # Find the day in calendar that matches the session date
+        session_day_found = False
+        for week in calendar_weeks:
+            for day in week:
+                if day["date"] and day["date"] == session_date:
+                    self.assertTrue(day["has_session"])
+                    session_day_found = True
+                    break
+            if session_day_found:
+                break
+
+        self.assertTrue(session_day_found, "Session date not found in calendar")
+
+    def test_session_completion_form(self):
+        """Test session completion form for enrolled students"""
+        self.client.login(username="student", password="testpass123")
+        response = self.client.get(self.detail_url)
+
+        # Past session should have completion form if not completed
+        self.attendance.delete()  # Remove existing completion
+        response = self.client.get(self.detail_url)
+        self.assertContains(response, f'action="{reverse("mark_session_completed", args=[self.past_session.id])}"')
+
+        # Future session should not have completion form
+        self.assertNotContains(response, f'action="{reverse("mark_session_completed", args=[self.future_session.id])}"')

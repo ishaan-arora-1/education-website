@@ -33,6 +33,7 @@ __all__ = [
     "CustomLoginForm",
     "LearnForm",
     "TeachForm",
+    "InviteStudentForm",
 ]
 
 
@@ -561,4 +562,35 @@ class TeachForm(forms.Form):
         widget=TailwindCaptchaTextInput(
             attrs={"class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"}
         )
+    )
+
+
+class InviteStudentForm(forms.Form):
+    email = forms.EmailField(
+        label="Student's Email",
+        widget=forms.EmailInput(
+            attrs={
+                "class": (
+                    "w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 "
+                    "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 "
+                    "focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent"
+                ),
+                "placeholder": "Enter student's email address",
+            }
+        ),
+    )
+    message = forms.CharField(
+        required=False,
+        label="Personal Message (optional)",
+        widget=forms.Textarea(
+            attrs={
+                "class": (
+                    "w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 "
+                    "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 "
+                    "focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent"
+                ),
+                "placeholder": "Add a personal message to your invitation",
+                "rows": 3,
+            }
+        ),
     )

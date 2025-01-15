@@ -110,12 +110,11 @@
                                 <i class="fas fa-video mr-2"></i>
                                 Virtual
                               </div>
-                            {% else %}
-                              <div class="flex items-center text-green-600 dark:text-green-400">
-                                <i class="fas fa-location-dot mr-2"></i>
-                                {{ session.location }}
-                              </div>
                             {% endif %}
+                            <div class="flex items-center text-green-600 dark:text-green-400">
+                              <i class="fas fa-location-dot mr-2"></i>
+                              {{ session.location }}
+                            </div>
                             {% if course.allow_individual_sessions and session.price %}
                               <div class="flex items-center text-orange-600 dark:text-orange-400 font-semibold">
                                 <i class="fas fa-tag mr-2"></i>
@@ -232,23 +231,41 @@
                   <h1 class="text-3xl font-bold">{{ course.title }}</h1>
                   {% if user == course.teacher %}
                     <a href="{% url 'update_course' course.slug %}"
-                       class="text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300"
+                       class="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
                        title="Edit Course">
                       <i class="fas fa-edit text-xl"></i>
                     </a>
+                    <a href="{% url 'invite_student' course.id %}"
+                       class="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 ml-2"
+                       title="Invite Student">
+                      <i class="fas fa-user-plus text-xl"></i>
+                    </a>
                   {% endif %}
                 </div>
+                {% if user.is_authenticated and enrollment %}
+                  <div class="flex items-center gap-4">
+                    <div class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-4 py-2 rounded-lg flex items-center">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <span>You're enrolled!</span>
+                    </div>
+                    <a href="{% url 'student_dashboard' %}?course={{ course.id }}"
+                       class="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center">
+                      <i class="fas fa-chart-line mr-2"></i>
+                      <span>View Progress</span>
+                    </a>
+                  </div>
+                {% endif %}
                 <!-- Share Button -->
-                <div class="relative" x-data="{ open: false }">
-                  <button x-on:click="open = !open"
-                          class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 p-2 rounded-full">
+                <div class="relative ml-2" x-data="{ open: false }">
+                  <button class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 p-2 rounded-full"
+                          @click="open = !open">
                     <i class="fas fa-share-alt text-gray-600 dark:text-gray-300"></i>
                   </button>
-                  <div x-show="open"
-                       @click.away="open = false"
-                       class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                  <div class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10"
+                       x-show="open"
+                       @click.away="open = false">
                     <div class="p-2 space-y-1">
-                      <a href="https://twitter.com/intent/tweet?text=Check%20out%20this%20course:%20{{ course.title|urlencode }}&url={{ request.build_absolute_uri|urlencode }}"
+                      <a href="https://twitter.com/intent/tweet?text=Check%20out%20this%20course%3A%20{{ course.title|urlencode }}&url={{ request.build_absolute_uri|urlencode }}"
                          target="_blank"
                          class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
                         <i class="fab fa-twitter text-blue-400 mr-2"></i>
@@ -266,8 +283,8 @@
                         <i class="fab fa-linkedin text-blue-700 mr-2"></i>
                         <span class="text-sm">Share on LinkedIn</span>
                       </a>
-                      <button @click="navigator.clipboard.writeText('{{ request.build_absolute_uri }}'); $dispatch('notification', {message: 'Link copied!'})"
-                              class="w-full flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                      <button class="w-full flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                              @click="navigator.clipboard.writeText('{{ request.build_absolute_uri }}'); $dispatch('notification', {message: 'Link copied!'})">
                         <i class="fas fa-link text-gray-600 dark:text-gray-400 mr-2"></i>
                         <span class="text-sm">Copy Link</span>
                       </button>
