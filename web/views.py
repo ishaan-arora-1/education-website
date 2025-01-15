@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import time
+from decimal import Decimal
 
 import requests
 import stripe
@@ -1498,7 +1499,7 @@ def teacher_dashboard(request):
     course_stats = []
     total_students = 0
     total_completed = 0
-    total_earnings = 0
+    total_earnings = Decimal("0.00")
     for course in courses:
         enrollments = course.enrollments.filter(status="approved")
         course_total_students = enrollments.count()
@@ -1506,7 +1507,7 @@ def teacher_dashboard(request):
         total_students += course_total_students
         total_completed += course_completed
         # Calculate earnings (90% of course price for each enrollment, 10% platform fee)
-        course_earnings = course_total_students * course.price * 0.9
+        course_earnings = Decimal(str(course_total_students)) * course.price * Decimal("0.9")
         total_earnings += course_earnings
         course_stats.append(
             {
