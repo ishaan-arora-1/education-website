@@ -1,33 +1,53 @@
 {% extends "base.html" %}
 
-{% block title %}
-  Teach - Share Your Knowledge
-{% endblock title %}
+{% load static %}
+
 {% block content %}
   <div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-center mb-4">
+      <i class="fas fa-chalkboard-teacher mr-2"></i>Teach with Alpha One Labs
+    </h1>
+    <p class="text-lg text-center text-gray-600 dark:text-gray-400 mb-8">
+      Share your knowledge and help others learn! Fill out the form below to get started.
+    </p>
     <div class="max-w-2xl mx-auto">
-      <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold mb-4">Share Your Knowledge</h1>
-        <p class="text-gray-600 dark:text-gray-300">Join our community of educators and help others learn and grow.</p>
-      </div>
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <form method="post" class="space-y-6">
-          {% csrf_token %}
-          {% for field in form %}
-            <div>
-              <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
-              {{ field }}
-              {% if field.help_text %}
-                <small class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</small>
-              {% endif %}
-              {% if field.errors %}<div class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors }}</div>{% endif %}
-            </div>
-          {% endfor %}
-          <button type="submit"
-                  class="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
-            Submit Application
-          </button>
-        </form>
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+        <div class="p-6">
+          <h3 class="text-2xl font-semibold mb-6">Teaching Application</h3>
+          {% if form.errors %}
+            <div class="mb-4 p-4 bg-red-50 dark:bg-red-900 text-red-600 dark:text-red-200 rounded-lg"
+                 role="alert">Please correct the errors below.</div>
+          {% endif %}
+          <form method="post" novalidate>
+            {% csrf_token %}
+            {% for field in form %}
+              <div class="mb-4">
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
+                {% if field.name == "captcha" %}
+                  <div class="flex items-center space-x-2">
+                    {{ field }}
+                    <a href="#"
+                       onclick="document.getElementById('{{ field.id_for_label }}').value=''; document.getElementById('{{ field.id_for_label }}_container').getElementsByTagName('img')[0].src = '{% url 'captcha-refresh' %}?_=' + (new Date()).getTime(); return false"
+                       class="text-indigo-500 hover:text-indigo-600">
+                      <i class="fas fa-sync-alt"></i>
+                      Refresh
+                    </a>
+                  </div>
+                {% else %}
+                  {{ field }}
+                {% endif %}
+                {% if field.help_text %}<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</p>{% endif %}
+                {% if field.errors %}
+                  {% for error in field.errors %}<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ error }}</p>{% endfor %}
+                {% endif %}
+              </div>
+            {% endfor %}
+            <button type="submit"
+                    class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
+              Submit Application
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   </div>

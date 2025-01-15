@@ -433,36 +433,39 @@ def learn(request):
     if request.method == "POST":
         form = LearnForm(request.POST)
         if form.is_valid():
-            # Process form data
-            name = form.cleaned_data["name"]
-            email = form.cleaned_data["email"]
             subject = form.cleaned_data["subject"]
+            email = form.cleaned_data["email"]
             message = form.cleaned_data["message"]
 
-            # Compose the email content
-            email_subject = f"New Learning Inquiry: {subject}"
-            email_message = (
-                f"Hello Admin,\n\n"
-                f"You've received a new learning inquiry:\n\n"
-                f"Name: {name}\n"
-                f"Email: {email}\n"
-                f"Subject: {subject}\n"
-                f"Message:\n{message}\n\n"
-                f"Regards,\nAlpha One Labs"
+            # Prepare email content
+            email_subject = f"Learning Interest: {subject}"
+            email_body = render_to_string(
+                "emails/learn_interest.html",
+                {
+                    "subject": subject,
+                    "email": email,
+                    "message": message,
+                },
             )
 
-            # Send the email
-            send_mail(
-                email_subject,
-                email_message,
-                settings.EMAIL_FROM,  # From email (configured in settings)
-                [settings.EMAIL_FROM],  # Replace with the recipient's email
-                fail_silently=False,
-            )
-
-            return HttpResponse("Thank you for your interest in learning! We've received your inquiry.")
+            # Send email
+            try:
+                send_mail(
+                    email_subject,
+                    email_body,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [settings.DEFAULT_FROM_EMAIL],
+                    html_message=email_body,
+                    fail_silently=False,
+                )
+                messages.success(request, "Thank you for your interest! We'll be in touch soon.")
+                return redirect("index")
+            except Exception as e:
+                print(f"Error sending email: {e}")
+                messages.error(request, "Sorry, there was an error sending your inquiry. Please try again later.")
     else:
         form = LearnForm()
+
     return render(request, "learn.html", {"form": form})
 
 
@@ -470,36 +473,39 @@ def teach(request):
     if request.method == "POST":
         form = TeachForm(request.POST)
         if form.is_valid():
-            # Process form data
-            name = form.cleaned_data["name"]
+            subject = form.cleaned_data["subject"]
             email = form.cleaned_data["email"]
             expertise = form.cleaned_data["expertise"]
-            experience = form.cleaned_data["experience"]
 
-            # Compose the email content
-            email_subject = f"New Teaching Inquiry from {name}"
-            email_message = (
-                f"Hello Admin,\n\n"
-                f"You've received a new teaching inquiry:\n\n"
-                f"Name: {name}\n"
-                f"Email: {email}\n"
-                f"Expertise: {expertise}\n"
-                f"Experience:\n{experience}\n\n"
-                f"Regards,\nAlpha One Labs"
+            # Prepare email content
+            email_subject = f"Teaching Application: {subject}"
+            email_body = render_to_string(
+                "emails/teach_application.html",
+                {
+                    "subject": subject,
+                    "email": email,
+                    "expertise": expertise,
+                },
             )
 
-            # Send the email
-            send_mail(
-                email_subject,
-                email_message,
-                settings.EMAIL_FROM,  # From email (configured in settings)
-                [settings.EMAIL_FROM],  # Replace with the recipient's email
-                fail_silently=False,
-            )
-
-            return HttpResponse("Thank you for your interest in teaching! We've received your inquiry.")
+            # Send email
+            try:
+                send_mail(
+                    email_subject,
+                    email_body,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [settings.DEFAULT_FROM_EMAIL],
+                    html_message=email_body,
+                    fail_silently=False,
+                )
+                messages.success(request, "Thank you for your application! We'll review it and get back to you soon.")
+                return redirect("index")
+            except Exception as e:
+                print(f"Error sending email: {e}")
+                messages.error(request, "Sorry, there was an error sending your application. Please try again later.")
     else:
         form = TeachForm()
+
     return render(request, "teach.html", {"form": form})
 
 

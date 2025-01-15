@@ -293,7 +293,7 @@
             "{{ latest_topic.content|default:"I'm looking for resources on group theory and number theory. Any recommendations?" }}" — <em>posted by {{ latest_topic.author.username|default:"user123" }}</em>
           </p>
           <a href="{% if latest_topic %}{% url 'forum_topic' latest_topic.category.slug latest_topic.id %}{% else %}{% url 'forum_categories' %}{% endif %}"
-             class="text-orange-500 dark:text-orange-400 text-sm hover:underline inline-block mt-2">View Discussion &rarr;</a>
+             class="text-orange-500 dark:text-orange-400 text-sm hover:underline inline-block mt-2">View Discussion →</a>
         </div>
         <!-- Recent Blog Post -->
         <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
@@ -306,7 +306,7 @@
             {{ latest_post.excerpt|default:"Learn how new technologies are shaping the way we teach and learn, including AI-driven insights and personalized curriculum..." }}
           </p>
           <a href="{% if latest_post %}{% url 'blog_detail' latest_post.slug %}{% else %}{% url 'blog' %}{% endif %}"
-             class="text-orange-500 dark:text-orange-400 text-sm hover:underline inline-block mt-2">Read More &rarr;</a>
+             class="text-orange-500 dark:text-orange-400 text-sm hover:underline inline-block mt-2">Read More →</a>
         </div>
       </div>
     </div>

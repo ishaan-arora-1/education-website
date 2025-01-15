@@ -31,6 +31,8 @@ __all__ = [
     "TeacherSignupForm",
     "ProfileUpdateForm",
     "CustomLoginForm",
+    "LearnForm",
+    "TeachForm",
 ]
 
 
@@ -491,3 +493,72 @@ class CustomLoginForm(LoginForm):
                 )
 
         return cleaned_data
+
+
+class LearnForm(forms.Form):
+    subject = forms.CharField(
+        max_length=100,
+        widget=TailwindInput(
+            attrs={
+                "placeholder": "What would you like to learn?",
+                "class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-orange-500",
+            }
+        ),
+    )
+    email = forms.EmailField(
+        widget=TailwindEmailInput(
+            attrs={
+                "placeholder": "Your email address",
+                "class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-orange-500",
+            }
+        )
+    )
+    message = forms.CharField(
+        widget=TailwindTextarea(
+            attrs={
+                "placeholder": "Tell us more about what you want to learn...",
+                "rows": 4,
+                "class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-orange-500",
+            }
+        ),
+        required=False,
+    )
+    captcha = CaptchaField(
+        widget=TailwindCaptchaTextInput(
+            attrs={"class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-orange-500"}
+        )
+    )
+
+
+class TeachForm(forms.Form):
+    subject = forms.CharField(
+        max_length=100,
+        widget=TailwindInput(
+            attrs={
+                "placeholder": "What would you like to teach?",
+                "class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500",
+            }
+        ),
+    )
+    email = forms.EmailField(
+        widget=TailwindEmailInput(
+            attrs={
+                "placeholder": "Your email address",
+                "class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500",
+            }
+        )
+    )
+    expertise = forms.CharField(
+        widget=TailwindTextarea(
+            attrs={
+                "placeholder": "Tell us about your expertise and teaching experience...",
+                "rows": 4,
+                "class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500",
+            }
+        )
+    )
+    captcha = CaptchaField(
+        widget=TailwindCaptchaTextInput(
+            attrs={"class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"}
+        )
+    )

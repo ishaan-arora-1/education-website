@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description"
+          content="Learning interest notification from Alpha One Labs" />
+    <meta name="keywords"
+          content="learning, education, interest, Alpha One Labs" />
+    <title>New Learning Interest - Alpha One Labs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: #f97316;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px;
+        }
+
+        .content {
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>New Learning Interest</h1>
+    </div>
+    <div class="content">
+      <h2>Subject Interest: {{ subject }}</h2>
+      <p>
+        <strong>From:</strong> {{ email }}
+      </p>
+      {% if message %}
+        <h3>Additional Information:</h3>
+        <p>{{ message }}</p>
+      {% endif %}
+    </div>
+    <div class="footer">
+      <p>This is an automated message from Alpha One Labs Learning Platform</p>
+    </div>
+  </body>
+</html>

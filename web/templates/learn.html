@@ -23,18 +23,18 @@
             {% for field in form %}
               <div class="mb-4">
                 <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
-                {% if field.field.widget.input_type == 'checkbox' %}
-                  <input type="{{ field.field.widget.input_type }}"
-                         name="{{ field.html_name }}"
-                         id="{{ field.id_for_label }}"
-                         {% if field.value %}checked{% endif %}
-                         class="rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-800 h-4 w-4" />
+                {% if field.name == "captcha" %}
+                  <div class="flex items-center space-x-2">
+                    {{ field }}
+                    <a href="#"
+                       onclick="document.getElementById('{{ field.id_for_label }}').value=''; document.getElementById('{{ field.id_for_label }}_container').getElementsByTagName('img')[0].src = '{% url 'captcha-refresh' %}?_=' + (new Date()).getTime(); return false"
+                       class="text-orange-500 hover:text-orange-600">
+                      <i class="fas fa-sync-alt"></i>
+                      Refresh
+                    </a>
+                  </div>
                 {% else %}
-                  <input type="{{ field.field.widget.input_type|default:'text' }}"
-                         name="{{ field.html_name }}"
-                         id="{{ field.id_for_label }}"
-                         value="{{ field.value|default:'' }}"
-                         class="block w-full border {% if field.errors %}border-red-500 dark:border-red-500{% else %}border-gray-300 dark:border-gray-600{% endif %} rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800" />
+                  {{ field }}
                 {% endif %}
                 {% if field.help_text %}<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</p>{% endif %}
                 {% if field.errors %}
@@ -43,7 +43,7 @@
               </div>
             {% endfor %}
             <button type="submit"
-                    class="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
+                    class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
               Submit Inquiry
             </button>
           </form>
