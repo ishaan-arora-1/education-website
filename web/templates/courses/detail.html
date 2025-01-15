@@ -250,7 +250,9 @@
                 {% if course.tags %}<span class="text-sm text-gray-600 dark:text-gray-400">{{ course.tags }}</span>{% endif %}
               </div>
               <!-- Course Description -->
-              <div class="prose dark:prose-invert max-w-none mb-8">{{ course.description|markdown }}</div>
+              <div class="prose prose-lg dark:prose-invert max-w-none mb-8 prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:text-gray-600 dark:prose-p:text-gray-300 prose-a:text-teal-600 hover:prose-a:text-teal-500 prose-strong:text-gray-900 dark:prose-strong:text-white prose-ul:list-disc prose-ol:list-decimal prose-li:my-1 prose-img:rounded-lg">
+                {{ course.description|markdown }}
+              </div>
             </div>
           </div>
         </div>
