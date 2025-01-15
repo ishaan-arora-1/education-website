@@ -261,7 +261,18 @@ if os.environ.get("DATABASE_URL"):
         DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
         GS_BUCKET_NAME = os.environ.get("GS_BUCKET_NAME")
         GS_PROJECT_ID = os.environ.get("GS_PROJECT_ID")
-        GS_CREDENTIALS = os.environ.get("GS_CREDENTIALS")
+
+        # Get service account file path from .env
+        service_account_filename = env.str("SERVICE_ACCOUNT_FILE")
+        SERVICE_ACCOUNT_FILE = os.path.join(BASE_DIR, service_account_filename)
+        if os.path.exists(SERVICE_ACCOUNT_FILE):
+            from google.oauth2 import service_account
+
+            GS_CREDENTIALS = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE)
+        else:
+            print(f"Warning: Service account file not found at {SERVICE_ACCOUNT_FILE}")
+            GS_CREDENTIALS = None
+
         GS_DEFAULT_ACL = "publicRead"
         GS_QUERYSTRING_AUTH = False
         GS_LOCATION = "media"  # Store files in a media directory in the bucket

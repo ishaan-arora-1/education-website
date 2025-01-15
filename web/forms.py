@@ -2,6 +2,7 @@ from allauth.account.forms import LoginForm, SignupForm
 from captcha.fields import CaptchaField
 from django import forms
 from django.contrib.auth.models import User
+from django.db import IntegrityError
 from django.template.defaultfilters import slugify
 from django.utils.crypto import get_random_string
 from markdownx.fields import MarkdownxFormField
@@ -79,9 +80,22 @@ class UserRegistrationForm(SignupForm):
                 if field_name in self.data:
                     self.fields[field_name].widget.attrs["value"] = self.data[field_name]
 
+    def clean_username(self):
+        username = self.cleaned_data.get("username")
+        if username:
+            try:
+                User.objects.get(username=username)
+                raise forms.ValidationError("This username is already taken. Please choose a different one.")
+            except User.DoesNotExist:
+                return username
+        return username
+
     def save(self, request):
         # First call parent's save to create the user and send verification email
-        user = super().save(request)
+        try:
+            user = super().save(request)
+        except IntegrityError:
+            raise forms.ValidationError("This username is already taken. Please choose a different one.")
 
         # Then update the additional fields
         user.first_name = self.cleaned_data["first_name"]
