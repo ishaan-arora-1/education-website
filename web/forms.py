@@ -324,17 +324,30 @@ class CourseMaterialForm(forms.ModelForm):
 
 class TeacherSignupForm(forms.Form):
     email = forms.EmailField(widget=TailwindEmailInput())
+    username = forms.CharField(
+        max_length=150,
+        widget=TailwindInput(attrs={"placeholder": "Choose a username"}),
+        help_text="This will be your unique identifier on the platform.",
+    )
     subject = forms.CharField(max_length=100, widget=TailwindInput())
     captcha = CaptchaField(widget=TailwindCaptchaTextInput)
 
+    def clean_username(self):
+        username = self.cleaned_data.get("username")
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError("This username is already taken. Please choose a different one.")
+        return username
+
     def save(self):
         email = self.cleaned_data["email"]
+        username = self.cleaned_data["username"]
         subject_name = self.cleaned_data["subject"]
 
-        # Create user with email as username
-        username = email.split("@")[0]
         random_password = get_random_string(length=30)
-        user = User.objects.create_user(username=username, email=email, password=random_password)
+        try:
+            user = User.objects.create_user(username=username, email=email, password=random_password)
+        except IntegrityError:
+            raise forms.ValidationError("This username is already taken. Please try again with a different username.")
 
         # Set user as teacher
         profile = user.profile
