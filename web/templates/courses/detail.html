@@ -240,7 +240,7 @@
                 </div>
                 <!-- Share Button -->
                 <div class="relative" x-data="{ open: false }">
-                  <button @click="open = !open"
+                  <button x-on:click="open = !open"
                           class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 p-2 rounded-full">
                     <i class="fas fa-share-alt text-gray-600 dark:text-gray-300"></i>
                   </button>
