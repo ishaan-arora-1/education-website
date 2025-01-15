@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "web",
     "captcha",
+    "markdownx",
 ]
 
 MIDDLEWARE = [
@@ -273,3 +274,15 @@ SLACK_WEBHOOK_URL = env.str("SLACK_WEBHOOK_URL", default="")
 
 # Admin URL Configuration
 ADMIN_URL = env.str("ADMIN_URL", default="a-dmin-url123")
+
+# Markdownx configuration
+MARKDOWNX_MARKDOWN_EXTENSIONS = [
+    "markdown.extensions.extra",
+    "markdown.extensions.codehilite",
+    "markdown.extensions.tables",
+    "markdown.extensions.toc",
+]
+
+MARKDOWNX_URLS_PATH = "/markdownx/markdownify/"
+MARKDOWNX_UPLOAD_URLS_PATH = "/markdownx/upload/"
+MARKDOWNX_MEDIA_PATH = "markdownx/"  # Path within MEDIA_ROOT

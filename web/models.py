@@ -10,6 +10,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.text import slugify
+from markdownx.models import MarkdownxField
 
 
 class Notification(models.Model):
@@ -81,16 +82,16 @@ class Course(models.Model):
         upload_to="course_images/%Y/%m/%d/", help_text="Course image (300x150 pixels)", blank=True
     )
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name="courses_teaching")
-    description = models.TextField(blank=True, default="")
-    learning_objectives = models.TextField()
-    prerequisites = models.TextField(blank=True)
+    description = MarkdownxField()
+    learning_objectives = MarkdownxField()
+    prerequisites = MarkdownxField(blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     allow_individual_sessions = models.BooleanField(
         default=False, help_text="Allow students to register for individual sessions"
     )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="draft")
     max_students = models.IntegerField(validators=[MinValueValidator(1)])
-    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     subject = models.ForeignKey(

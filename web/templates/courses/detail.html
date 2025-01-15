@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% load static %}
-{% load markdown_tags %}
+{% load markdownx %}
 
 {% block extra_head %}
   <!-- Share dropdown -->
@@ -136,7 +136,7 @@
                 {% if course.tags %}<span class="text-sm text-gray-600 dark:text-gray-400">{{ course.tags }}</span>{% endif %}
               </div>
               <!-- Course Description -->
-              <div class="prose dark:prose-invert max-w-none mb-8">{{ course.description|markdown }}</div>
+              <div class="prose dark:prose-invert max-w-none mb-8">{{ course.description|markdownx }}</div>
               <!-- Course Sessions -->
               <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
                 <div class="p-4">

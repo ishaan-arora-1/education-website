@@ -4,6 +4,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.template.defaultfilters import slugify
 from django.utils.crypto import get_random_string
+from markdownx.fields import MarkdownxFormField
 
 from .models import Course, CourseMaterial, Profile, Review, Session, Subject
 from .widgets import (
@@ -153,6 +154,19 @@ class CourseCreationForm(forms.ModelForm):
 
 
 class CourseForm(forms.ModelForm):
+    description = MarkdownxFormField(
+        label="Description", help_text="Use markdown for formatting. You can use **bold**, *italic*, lists, etc."
+    )
+    learning_objectives = MarkdownxFormField(
+        label="Learning Objectives",
+        help_text="Use markdown for formatting. List your objectives using - or * for bullet points.",
+    )
+    prerequisites = MarkdownxFormField(
+        label="Prerequisites",
+        help_text="Use markdown for formatting. List prerequisites using - or * for bullet points.",
+        required=False,
+    )
+
     class Meta:
         model = Course
         fields = [

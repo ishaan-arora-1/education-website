@@ -13,17 +13,3 @@ def last_modified(request):
         last_modified_time = "Unknown"
 
     return {"last_modified": last_modified_time}
-
-
-def logged_in_as(request):
-    """Add login-as status to context for superusers."""
-    # Only process for authenticated superusers
-    if not request.user.is_authenticated or not request.user.is_superuser:
-        return {}
-
-    # Only return data if we're actually logged in as someone else
-    logged_in_as = request.session.get("logged_in_as", {})
-    if not logged_in_as:
-        return {}
-
-    return {"logged_in_as": logged_in_as}

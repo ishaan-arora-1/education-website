@@ -136,6 +136,7 @@ urlpatterns += i18n_patterns(
     path("cart/remove/<int:item_id>/", views.remove_from_cart, name="remove_from_cart"),
     path("cart/payment-intent/", views.create_cart_payment_intent, name="create_cart_payment_intent"),
     path("cart/checkout/success/", views.checkout_success, name="checkout_success"),
+    path("markdownx/", include("markdownx.urls")),
     prefix_default_language=True,
 )
 
