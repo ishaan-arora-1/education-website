@@ -195,9 +195,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 MEDIA_ROOT = "/home/alphaonelabs99282llkb/web/media"
 MEDIA_URL = "/media/"
+
 # STATIC_ROOT = "/home/alphaonelabs99282llkb/web/static"
 STATIC_URL = "/static/"
-
 
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATICFILES_DIRS = [BASE_DIR / "static"]
@@ -219,6 +219,7 @@ else:
     EMAIL_HOST_USER = "apikey"
     EMAIL_HOST_PASSWORD = env.str("SENDGRID_PASSWORD", default="")
     DEFAULT_FROM_EMAIL = env.str("EMAIL_FROM", default="noreply@alphaonelabs.com")
+    EMAIL_FROM = os.getenv("EMAIL_FROM")
 
 # Stripe settings
 STRIPE_PUBLISHABLE_KEY = env("STRIPE_PUBLISHABLE_KEY", default="")
@@ -257,17 +258,14 @@ if os.environ.get("DATABASE_URL"):
 
     # Google Cloud Storage settings for media files in production
     if os.environ.get("GS_BUCKET_NAME"):
+        DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
         GS_BUCKET_NAME = os.environ.get("GS_BUCKET_NAME")
-        GS_DEFAULT_ACL = None
+        GS_PROJECT_ID = os.environ.get("GS_PROJECT_ID")
+        GS_CREDENTIALS = os.environ.get("GS_CREDENTIALS")
+        GS_DEFAULT_ACL = "publicRead"
         GS_QUERYSTRING_AUTH = False
         GS_LOCATION = "media"  # Store files in a media directory in the bucket
 
-        # Use default Google Cloud Storage backend
-        DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
-
-    SENDGRID_API_KEY = os.getenv("SENDGRID_PASSWORD", "blank")
-    EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
-    EMAIL_FROM = os.getenv("EMAIL_FROM")
 
 # Slack settings
 SLACK_WEBHOOK_URL = env.str("SLACK_WEBHOOK_URL", default="")
