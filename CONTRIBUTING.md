@@ -13,6 +13,7 @@ This project and everyone participating in it is governed by our Code of Conduct
 ### Prerequisites
 
 Before you begin:
+
 1. Ensure you have a [GitHub account](https://github.com/signup)
 2. Read our [README.md](README.md) for project setup instructions
 3. Familiarize yourself with our tech stack:
@@ -41,16 +42,19 @@ Before you begin:
 We follow these coding standards:
 
 1. **Python Code**:
+
    - Follow [PEP 8](https://www.python.org/dev/peps/pep-0008/)
    - Use [Black](https://github.com/psf/black) for code formatting
    - Sort imports using [isort](https://pycqa.github.io/isort/)
    - Maximum line length is 88 characters (Black default)
 
 2. **JavaScript Code**:
+
    - Follow [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript)
    - Use ESLint for linting
 
 3. **HTML/Templates**:
+
    - Use semantic HTML5 elements
    - Follow BEM methodology for CSS classes
    - Maintain consistent indentation (2 spaces)
@@ -90,6 +94,7 @@ We follow the [Conventional Commits](https://www.conventionalcommits.org/) speci
 ```
 
 Types:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -99,6 +104,7 @@ Types:
 - `chore`: Maintenance tasks
 
 Example:
+
 ```
 feat(auth): add social authentication support
 
@@ -114,17 +120,20 @@ Closes #123
 ## Pull Request Process
 
 1. **Update Documentation**:
+
    - Add/update docstrings
    - Update README.md if needed
    - Add comments for complex logic
 
 2. **Run Tests**:
+
    ```bash
    python manage.py test
    pre-commit run --all-files
    ```
 
 3. **Create Pull Request**:
+
    - Use a clear, descriptive title
    - Reference any related issues
    - Describe your changes in detail
@@ -132,6 +141,7 @@ Closes #123
    - List any dependencies added/removed
 
 4. **Code Review**:
+
    - Address reviewer comments
    - Make requested changes
    - Keep the PR focused and small

@@ -201,6 +201,7 @@ def create_course(request):
 
 def course_detail(request, slug):
     import calendar
+
     from django.utils import timezone
 
     course = get_object_or_404(Course, slug=slug)

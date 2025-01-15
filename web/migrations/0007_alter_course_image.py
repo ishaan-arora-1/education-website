@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('web', '0006_alter_course_created_at'),
+        ("web", "0006_alter_course_created_at"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='course',
-            name='image',
-            field=models.ImageField(blank=True, help_text='Course image (will be resized to 300x150 pixels)', upload_to='course_images'),
+            model_name="course",
+            name="image",
+            field=models.ImageField(
+                blank=True, help_text="Course image (will be resized to 300x150 pixels)", upload_to="course_images"
+            ),
         ),
     ]

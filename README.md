@@ -9,6 +9,7 @@ Alpha One Labs is an education platform designed to facilitate both learning and
 ## Features
 
 ### For Students
+
 - 📚 Course enrollment and management
 - 👥 Peer-to-peer connections and messaging
 - 📝 Study group creation and participation
@@ -18,6 +19,7 @@ Alpha One Labs is an education platform designed to facilitate both learning and
 - 📱 Responsive design for all devices
 
 ### For Teachers
+
 - 📝 Course creation and management
 - 📊 Student progress monitoring
 - 📈 Analytics dashboard
@@ -27,6 +29,7 @@ Alpha One Labs is an education platform designed to facilitate both learning and
 - 🔔 Automated notifications
 
 ### Technical Features
+
 - 🔒 Secure authentication system
 - 🌐 Internationalization support
 - 🚀 Performance optimized
@@ -38,6 +41,7 @@ Alpha One Labs is an education platform designed to facilitate both learning and
 ## Tech Stack
 
 ### Backend
+
 - Python 3.10+
 - Django 4.x
 - Celery for async tasks
@@ -45,12 +49,14 @@ Alpha One Labs is an education platform designed to facilitate both learning and
 - PostgreSQL (production) / SQLite (development)
 
 ### Frontend
+
 - Tailwind CSS
 - Alpine.js
 - Font Awesome icons
 - JavaScript (Vanilla)
 
 ### Infrastructure
+
 - Docker support
 - Nginx
 - Gunicorn
@@ -60,25 +66,30 @@ Alpha One Labs is an education platform designed to facilitate both learning and
 ## Setup Instructions
 
 ### Prerequisites
+
 - Python 3.10 or higher
 - pip or poetry for package management
 - Node.js and npm (for Tailwind CSS)
 - Git
 
 ### Local Development Setup
+
 1. Clone the repository
+
    ```bash
    git clone https://github.com/yourusername/education-website.git
    cd education-website
    ```
 
 2. Set up a virtual environment
+
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
 3. Install dependencies
+
    ```bash
    # Using pip
    pip install -r requirements.txt
@@ -88,22 +99,26 @@ Alpha One Labs is an education platform designed to facilitate both learning and
    ```
 
 4. Set up environment variables
+
    ```bash
    cp .env.sample .env
    # Edit .env with your configuration
    ```
 
 5. Run migrations
+
    ```bash
    python manage.py migrate
    ```
 
 6. Create a superuser
+
    ```bash
    python manage.py createsuperuser
    ```
 
 7. Run the development server
+
    ```bash
    python manage.py runserver
    ```
@@ -114,10 +129,10 @@ Alpha One Labs is an education platform designed to facilitate both learning and
 
 Copy `.env.sample` to `.env` and configure the variables.
 
-
 ## Development Guidelines
 
 ### Code Style
+
 - Follow PEP 8 guidelines for Python code
 - Use Black for code formatting
 - Use isort for import sorting
@@ -125,12 +140,14 @@ Copy `.env.sample` to `.env` and configure the variables.
 - Use ESLint for JavaScript code
 
 ### Git Workflow
+
 1. Create a new branch for each feature/bugfix
 2. Follow conventional commits for commit messages
 3. Submit pull requests for review
 4. Ensure all tests pass before merging
 
 ### Testing
+
 - Write unit tests for new features
 - Run tests before committing:
   ```bash
@@ -138,13 +155,16 @@ Copy `.env.sample` to `.env` and configure the variables.
   ```
 
 ### Pre-commit Hooks
+
 We use pre-commit hooks to ensure code quality:
+
 ```bash
 pre-commit install
 pre-commit run --all-files
 ```
 
 ### Documentation
+
 - Document all new features and API endpoints
 - Update README.md when adding major features
 - Use docstrings for Python functions and classes
@@ -157,6 +177,7 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 ## Support
 
 If you encounter any issues or need support, please:
+
 1. Search existing [Issues](https://github.com/alphaonelabs/education-website/issues)
 2. Create a new issue if your problem persists
 

@@ -5,25 +5,24 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('web', '0004_enrollment_payment_intent_id'),
+        ("web", "0004_enrollment_payment_intent_id"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='course',
-            name='description',
+            model_name="course",
+            name="description",
             field=markdownx.models.MarkdownxField(),
         ),
         migrations.AlterField(
-            model_name='course',
-            name='learning_objectives',
+            model_name="course",
+            name="learning_objectives",
             field=markdownx.models.MarkdownxField(),
         ),
         migrations.AlterField(
-            model_name='course',
-            name='prerequisites',
+            model_name="course",
+            name="prerequisites",
             field=markdownx.models.MarkdownxField(blank=True),
         ),
     ]

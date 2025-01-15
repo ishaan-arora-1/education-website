@@ -1,9 +1,11 @@
 import os
+from io import BytesIO
 
 from allauth.account.signals import user_signed_up
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models.signals import post_save
@@ -11,9 +13,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.text import slugify
 from markdownx.models import MarkdownxField
-from django.core.files.base import ContentFile
 from PIL import Image
-from io import BytesIO
 
 
 class Notification(models.Model):

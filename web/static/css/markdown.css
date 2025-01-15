@@ -49,16 +49,16 @@
 }
 
 .markdown-content a {
-  color: #0d9488;  /* teal-600 */
+  color: #0d9488; /* teal-600 */
   text-decoration: underline;
 }
 
 .markdown-content a:hover {
-  color: #0f766e;  /* teal-700 */
+  color: #0f766e; /* teal-700 */
 }
 
 .markdown-content code {
-  background-color: #f3f4f6;  /* gray-100 */
+  background-color: #f3f4f6; /* gray-100 */
   padding: 0.2rem 0.4rem;
   border-radius: 0.25rem;
   font-family: ui-monospace, monospace;
@@ -66,11 +66,11 @@
 }
 
 .dark .markdown-content code {
-  background-color: #374151;  /* gray-700 */
+  background-color: #374151; /* gray-700 */
 }
 
 .markdown-content pre {
-  background-color: #f3f4f6;  /* gray-100 */
+  background-color: #f3f4f6; /* gray-100 */
   padding: 1rem;
   border-radius: 0.5rem;
   overflow-x: auto;
@@ -78,19 +78,19 @@
 }
 
 .dark .markdown-content pre {
-  background-color: #374151;  /* gray-700 */
+  background-color: #374151; /* gray-700 */
 }
 
 .markdown-content blockquote {
-  border-left: 4px solid #e5e7eb;  /* gray-200 */
+  border-left: 4px solid #e5e7eb; /* gray-200 */
   padding-left: 1rem;
   margin: 1rem 0;
-  color: #6b7280;  /* gray-500 */
+  color: #6b7280; /* gray-500 */
 }
 
 .dark .markdown-content blockquote {
-  border-left-color: #4b5563;  /* gray-600 */
-  color: #9ca3af;  /* gray-400 */
+  border-left-color: #4b5563; /* gray-600 */
+  color: #9ca3af; /* gray-400 */
 }
 
 .markdown-content img {
@@ -108,12 +108,12 @@
 
 .markdown-content th,
 .markdown-content td {
-  border: 1px solid #e5e7eb;  /* gray-200 */
+  border: 1px solid #e5e7eb; /* gray-200 */
   padding: 0.5rem;
   text-align: left;
 }
 
 .dark .markdown-content th,
 .dark .markdown-content td {
-  border-color: #4b5563;  /* gray-600 */
-} 
+  border-color: #4b5563; /* gray-600 */
+}
