@@ -4,30 +4,6 @@
 
 {% block content %}
   <main class="flex-1 w-full max-w-[90rem] mx-auto mt-6 px-4 md:px-6">
-    <!-- Update the messages div positioning -->
-    {% if messages %}
-      <div class="fixed left-1/2 transform -translate-x-1/2 top-20 z-50 w-full max-w-lg space-y-2">
-        {% for message in messages %}
-          <div class="flex items-center p-4 rounded-lg shadow-lg {% if message.tags == 'error' %}bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200{% elif message.tags == 'success' %}bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200{% elif message.tags == 'warning' %}bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-200{% else %}bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200{% endif %}">
-            <div class="mr-3">
-              {% if message.tags == 'error' %}
-                <i class="fas fa-exclamation-circle"></i>
-              {% elif message.tags == 'success' %}
-                <i class="fas fa-check-circle"></i>
-              {% elif message.tags == 'warning' %}
-                <i class="fas fa-exclamation-triangle"></i>
-              {% else %}
-                <i class="fas fa-info-circle"></i>
-              {% endif %}
-            </div>
-            <p class="flex-1">{{ message }}</p>
-            <button type="button" class="ml-auto" onclick="this.parentElement.remove()">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-        {% endfor %}
-      </div>
-    {% endif %}
     <div class="flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-6">
       <div class="md:w-3/4 space-y-6">
         <div class="space-y-4">

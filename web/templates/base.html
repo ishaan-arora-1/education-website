@@ -17,39 +17,74 @@
     </title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome (Free CDN) -->
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <!-- jQuery (required for captcha refresh) -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
+        // Configure Tailwind first
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {}
+            }
+        }
+
+        // Debug flag
+        const DEBUG = true;
+
+        // Logging helper
+        function log(message) {
+            if (DEBUG) {
+                console.log(`[DarkMode] ${message}`);
+            }
+        }
+
         // Initialize dark mode from localStorage only
         function initializeDarkMode() {
+            log('Initializing dark mode');
             const darkModeEnabled = localStorage.getItem('darkMode') === 'true';
+            log(`Dark mode enabled in localStorage: ${darkModeEnabled}`);
+
             if (darkModeEnabled) {
                 document.documentElement.classList.add('dark');
+                log('Added dark class to HTML element');
             } else if (localStorage.getItem('darkMode') === null) {
                 // Set default to light mode if no preference is set
                 localStorage.setItem('darkMode', 'false');
+                log('No preference found, defaulting to light mode');
             }
             updateDarkModeIcon();
         }
 
         function toggleDarkMode() {
+            log('Toggle dark mode called');
             const isDark = document.documentElement.classList.toggle('dark');
             localStorage.setItem('darkMode', isDark.toString());
+            log(`Dark mode toggled to: ${isDark}`);
             updateDarkModeIcon();
         }
 
         function updateDarkModeIcon() {
             const isDark = document.documentElement.classList.contains('dark');
             const icon = document.getElementById('darkModeIcon');
+            log(`Updating icon. Dark mode is: ${isDark}`);
+
             if (icon) {
                 icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
                 icon.title = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+                log('Icon updated successfully');
+            } else {
+                log('Warning: Dark mode icon element not found');
             }
         }
 
+        // Initialize dark mode immediately and after DOM content loads
+        initializeDarkMode();
+        document.addEventListener('DOMContentLoaded', initializeDarkMode);
+    </script>
+    <!-- Font Awesome (Free CDN) -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <!-- jQuery (required for captcha refresh) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
         // Toggle the language dropdown
         function toggleLanguageDropdown() {
             document.getElementById('language-dropdown').classList.toggle('hidden');
@@ -73,9 +108,6 @@
                 userDropdown.classList.add('hidden');
             }
         });
-
-        // Initialize dark mode on page load
-        document.addEventListener('DOMContentLoaded', initializeDarkMode);
     </script>
     <style>
         /* Force dark mode styles */
@@ -119,10 +151,16 @@
         <nav class="hidden md:flex items-center space-x-4">
           <!-- Search bar (visible on larger screens) -->
           <div class="relative hidden lg:inline-block w-[250px]">
-            <input type="text"
-                   placeholder="What do you want to learn?"
-                   class="rounded-full w-[250px] bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700" />
-            <i class="fas fa-search absolute right-3 top-2 text-gray-500 dark:text-gray-300"></i>
+            <form action="{% url 'course_search' %}" method="get" class="m-0">
+              <input type="text"
+                     name="q"
+                     placeholder="What do you want to learn?"
+                     class="rounded-full w-[250px] bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700" />
+              <button type="submit"
+                      class="absolute right-3 top-2 text-gray-500 dark:text-gray-300">
+                <i class="fas fa-search"></i>
+              </button>
+            </form>
           </div>
           <!-- Main navigation links -->
           <div class="flex space-x-4">
@@ -274,10 +312,16 @@
             <div class="pt-16 px-4">
               <!-- Search bar -->
               <div class="relative mb-6">
-                <input type="text"
-                       placeholder="What do you want to learn?"
-                       class="w-full rounded-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700" />
-                <i class="fas fa-search absolute right-3 top-2.5 text-gray-500 dark:text-gray-400"></i>
+                <form action="{% url 'course_search' %}" method="get" class="m-0">
+                  <input type="text"
+                         name="q"
+                         placeholder="What do you want to learn?"
+                         class="w-full rounded-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-700" />
+                  <button type="submit"
+                          class="absolute right-3 top-2.5 text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-search"></i>
+                  </button>
+                </form>
               </div>
               <!-- Cart Link -->
               <a href="{% url 'cart_view' %}"
@@ -355,6 +399,30 @@
         </div>
       </div>
     </header>
+    <!-- Update the messages div positioning -->
+    {% if messages %}
+      <div class="fixed left-1/2 transform -translate-x-1/2 top-20 z-50 w-full max-w-lg space-y-2">
+        {% for message in messages %}
+          <div class="flex items-center p-4 rounded-lg shadow-lg {% if message.tags == 'error' %}bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200{% elif message.tags == 'success' %}bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200{% elif message.tags == 'warning' %}bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-200{% else %}bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200{% endif %}">
+            <div class="mr-3">
+              {% if message.tags == 'error' %}
+                <i class="fas fa-exclamation-circle"></i>
+              {% elif message.tags == 'success' %}
+                <i class="fas fa-check-circle"></i>
+              {% elif message.tags == 'warning' %}
+                <i class="fas fa-exclamation-triangle"></i>
+              {% else %}
+                <i class="fas fa-info-circle"></i>
+              {% endif %}
+            </div>
+            <p class="flex-1">{{ message }}</p>
+            <button type="button" class="ml-auto" onclick="this.parentElement.remove()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
     {% block extra_body %}
       {% block content %}
       {% endblock content %}
@@ -379,8 +447,15 @@
                target="_blank"
                rel="noopener noreferrer"
                class="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-              <i class="fa-brands fa-twitter"></i>
-              <span>Twitter</span>
+              <i class="fa-brands fa-x-twitter"></i>
+              <span>X</span>
+            </a>
+            <a href="https://instagram.com/alphaonelabs1"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+              <i class="fa-brands fa-instagram"></i>
+              <span>Instagram</span>
             </a>
             <a href="https://www.facebook.com/alphaonelabs"
                target="_blank"
@@ -410,14 +485,21 @@
             <i class="fa-solid fa-comments mr-2"></i>
             <span>Forum</span>
           </a>
-          <a href="https://x.com"
+          <a href="https://x.com/alphaonelabs"
              target="_blank"
              rel="noopener noreferrer"
              class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-            <i class="fa-brands fa-twitter mr-2"></i>
-            <span>Twitter</span>
+            <i class="fa-brands fa-x-twitter mr-2"></i>
+            <span>X</span>
           </a>
-          <a href="https://facebook.com"
+          <a href="https://instagram.com/alphaonelabs1"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
+            <i class="fa-brands fa-instagram mr-2"></i>
+            <span>Instagram</span>
+          </a>
+          <a href="https://facebook.com/alphaonelabs"
              target="_blank"
              rel="noopener noreferrer"
              class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">

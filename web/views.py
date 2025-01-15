@@ -119,11 +119,13 @@ def index(request):
 @login_required
 def profile(request):
     if request.method == "POST":
-        form = ProfileUpdateForm(request.POST, instance=request.user)
+        form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
             form.save()
-            messages.success(request, "Profile updated successfully!")
+            messages.success(request, "Your profile has been updated successfully!")
             return redirect("profile")
+        else:
+            messages.error(request, "Please correct the errors below.")
     else:
         form = ProfileUpdateForm(instance=request.user)
 
@@ -1574,7 +1576,7 @@ def create_cart_payment_intent(request):
 
 
 def checkout_success(request):
-    """Handle successful checkout."""
+    """Handle successful checkout and payment confirmation."""
     payment_intent_id = request.GET.get("payment_intent")
     print(f"[checkout_success] Starting checkout with payment_intent_id: {payment_intent_id}")
 

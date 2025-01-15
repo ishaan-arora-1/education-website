@@ -44,11 +44,29 @@ class Profile(models.Model):
     bio = models.TextField(blank=True, default="")
     expertise = models.CharField(max_length=200, blank=True, default="")
     is_teacher = models.BooleanField(default=False)
+    avatar = models.ImageField(upload_to="avatars/", blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.user.username}'s profile"
+
+    def save(self, *args, **kwargs):
+        if self.avatar:
+            img = Image.open(self.avatar)
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+            # Resize to a square avatar
+            size = (200, 200)
+            img = img.resize(size, Image.Resampling.LANCZOS)
+            # Save the resized image
+            buffer = BytesIO()
+            img.save(buffer, format="JPEG", quality=90)
+            # Update the ImageField
+            file_name = self.avatar.name
+            self.avatar.delete(save=False)  # Delete old image
+            self.avatar.save(file_name, ContentFile(buffer.getvalue()), save=False)
+        super().save(*args, **kwargs)
 
 
 class Subject(models.Model):

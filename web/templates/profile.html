@@ -17,7 +17,41 @@
               <span class="bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200 text-sm font-medium px-3 py-1 rounded-full">Teacher</span>
             {% endif %}
           </div>
-          <form method="post" class="space-y-6">
+          <!-- Profile Picture -->
+          <div class="mb-6 flex flex-col items-center">
+            {% if user.profile.avatar %}
+              <img src="{{ user.profile.avatar.url }}"
+                   alt="{{ user.username }}'s avatar"
+                   class="w-32 h-32 rounded-full object-cover mb-4"
+                   height="128"
+                   width="128" />
+            {% else %}
+              <div class="w-32 h-32 rounded-full bg-orange-500 flex items-center justify-center text-white text-4xl mb-4">
+                {{ user.first_name|first|default:user.username|first|upper }}
+              </div>
+            {% endif %}
+            <form method="post"
+                  enctype="multipart/form-data"
+                  class="w-full flex flex-col items-center">
+              {% csrf_token %}
+              <label for="avatar-upload"
+                     class="cursor-pointer mb-4 text-sm text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300">
+                <span class="flex items-center">
+                  <i class="fas fa-camera mr-2"></i>
+                  Change Avatar
+                </span>
+                <input type="file"
+                       id="avatar-upload"
+                       name="avatar"
+                       accept="image/*"
+                       class="hidden"
+                       onchange="this.form.submit()" />
+              </label>
+            </form>
+            <h3 class="text-lg font-medium">{{ user.username }}</h3>
+            {% if user.get_full_name %}<p class="text-sm text-gray-500 dark:text-gray-400">{{ user.get_full_name }}</p>{% endif %}
+          </div>
+          <form method="post" enctype="multipart/form-data" class="space-y-6">
             {% csrf_token %}
             {% for field in form %}
               <div>

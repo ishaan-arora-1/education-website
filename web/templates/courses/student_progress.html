@@ -88,7 +88,7 @@
                     setLoading(true);
 
                     const confirmParams = {
-                        return_url: window.location.origin + "{% url 'course_detail' slug=enrollment.course.slug %}"
+                        return_url: window.location.origin + "{% url 'checkout_success' %}"
                     };
 
                     try {
@@ -102,9 +102,8 @@
                         if (error) {
                             showError(error.message);
                         }
-                    } catch (error) {
-                        console.error('Payment error:', error);
-                        showError('An unexpected error occurred. Please try again.');
+                    } catch (e) {
+                        showError("An unexpected error occurred.");
                     }
 
                     setLoading(false);

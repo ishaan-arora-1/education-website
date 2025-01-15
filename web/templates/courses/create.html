@@ -1,8 +1,17 @@
 {% extends "base.html" %}
 
+{% load static %}
+
 {% block title %}
   Create New Course
 {% endblock title %}
+{% block extra_head %}
+  <!-- EasyMDE -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+  {{ form.media }}
+{% endblock extra_head %}
 {% block content %}
   <div class="container mx-auto px-4 py-8">
     <div class="max-w-3xl mx-auto">
@@ -14,13 +23,15 @@
         <form method="post" enctype="multipart/form-data" class="space-y-6">
           {% csrf_token %}
           {% for field in form %}
-            <div>
-              <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
-              {{ field }}
-              {% if field.help_text %}
-                <small class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</small>
+            <div class="space-y-2">
+              <label for="{{ field.id_for_label }}" class="block text-sm font-medium">{{ field.label }}</label>
+              {% if field.name in "description"|add:",learning_objectives"|add:",prerequisites" %}
+                <div class="markdown-editor">{{ field }}</div>
+              {% else %}
+                {{ field }}
               {% endif %}
-              {% if field.errors %}<div class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors }}</div>{% endif %}
+              {% if field.help_text %}<p class="text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</p>{% endif %}
+              {% if field.errors %}<div class="text-red-500 text-sm">{{ field.errors }}</div>{% endif %}
             </div>
           {% endfor %}
           <div class="flex justify-end space-x-4">
@@ -37,4 +48,77 @@
       </div>
     </div>
   </div>
+  <script>
+      document.addEventListener('DOMContentLoaded', function() {
+          // Initialize EasyMDE for markdown fields
+          document.querySelectorAll('.markdown-editor textarea').forEach(textarea => {
+              new EasyMDE({
+                  element: textarea,
+                  spellChecker: false,
+                  status: ['lines', 'words', 'cursor'],
+                  maxHeight: '400px',
+                  minHeight: '200px',
+                  toolbar: [
+                      'bold', 'italic', 'heading', '|',
+                      'quote', 'unordered-list', 'ordered-list', '|',
+                      'link', 'image', '|',
+                      'preview', 'side-by-side', 'fullscreen', '|',
+                      'guide'
+                  ],
+                  theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+              });
+          });
+
+          // Watch for theme changes and update editor theme
+          const observer = new MutationObserver(function(mutations) {
+              mutations.forEach(function(mutation) {
+                  if (mutation.attributeName === 'class') {
+                      const isDark = document.documentElement.classList.contains('dark');
+                      document.querySelectorAll('.EasyMDEContainer').forEach(container => {
+                          container.classList.toggle('dark-theme', isDark);
+                      });
+                  }
+              });
+          });
+
+          observer.observe(document.documentElement, {
+              attributes: true,
+              attributeFilter: ['class']
+          });
+      });
+  </script>
+  <style>
+      /* Dark mode styles for EasyMDE */
+      .dark .EasyMDEContainer {
+          background-color: #1f2937;
+      }
+
+      .dark .EasyMDEContainer .CodeMirror {
+          background-color: #374151;
+          color: #e5e7eb;
+          border-color: #4b5563;
+      }
+
+      .dark .editor-toolbar {
+          background-color: #1f2937;
+          border-color: #4b5563;
+      }
+
+      .dark .editor-toolbar button {
+          color: #e5e7eb !important;
+      }
+
+      .dark .editor-toolbar button:hover {
+          background-color: #374151;
+      }
+
+      .dark .editor-preview {
+          background-color: #1f2937;
+          color: #e5e7eb;
+      }
+
+      .dark .editor-statusbar {
+          color: #9ca3af;
+      }
+  </style>
 {% endblock content %}

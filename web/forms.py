@@ -367,24 +367,44 @@ class TeacherSignupForm(forms.Form):
 
 
 class ProfileUpdateForm(forms.ModelForm):
-    first_name = forms.CharField(max_length=30, required=False, widget=TailwindInput())
-    last_name = forms.CharField(max_length=30, required=False, widget=TailwindInput())
-    email = forms.EmailField(required=True, widget=TailwindEmailInput())
+    username = forms.CharField(
+        max_length=150,
+        required=True,
+        widget=TailwindInput(),
+        help_text="This is your public username that will be visible to other users",
+    )
+    first_name = forms.CharField(
+        max_length=30, required=False, widget=TailwindInput(), help_text="Your real name will not be shown publicly"
+    )
+    last_name = forms.CharField(
+        max_length=30, required=False, widget=TailwindInput(), help_text="Your real name will not be shown publicly"
+    )
+    email = forms.EmailField(
+        required=True, widget=TailwindEmailInput(), help_text="Your email will not be shown publicly"
+    )
     bio = forms.CharField(
         required=False,
         widget=TailwindTextarea(attrs={"rows": 4}),
-        help_text="Tell us about yourself",
+        help_text="Tell us about yourself - this will be visible on your public profile",
     )
     expertise = forms.CharField(
         max_length=200,
         required=False,
         widget=TailwindInput(),
-        help_text="List your areas of expertise (e.g. Python, Machine Learning, Web Development)",
+        help_text=(
+            "List your areas of expertise (e.g. Python, Machine Learning, Web Development) - "
+            "this will be visible on your public profile"
+        ),
+    )
+    avatar = forms.ImageField(
+        required=False,
+        widget=TailwindFileInput(),
+        help_text="Upload a profile picture (will be cropped to a square and resized to 200x200 pixels)",
     )
 
     class Meta:
         model = User
-        fields = ["first_name", "last_name", "email"]
+        fields = ["username", "first_name", "last_name", "email"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -396,6 +416,12 @@ class ProfileUpdateForm(forms.ModelForm):
             except Profile.DoesNotExist:
                 pass
 
+    def clean_username(self):
+        username = self.cleaned_data["username"]
+        if User.objects.exclude(pk=self.instance.pk).filter(username=username).exists():
+            raise forms.ValidationError("This username is already taken. Please choose a different one.")
+        return username
+
     def save(self, commit=True):
         user = super().save(commit=False)
         if commit:
@@ -403,6 +429,8 @@ class ProfileUpdateForm(forms.ModelForm):
             profile, created = Profile.objects.get_or_create(user=user)
             profile.bio = self.cleaned_data["bio"]
             profile.expertise = self.cleaned_data["expertise"]
+            if self.cleaned_data.get("avatar"):
+                profile.avatar = self.cleaned_data["avatar"]
             profile.save()
         return user
 

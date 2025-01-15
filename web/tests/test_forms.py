@@ -508,18 +508,39 @@ class TeachingInquiryFormTests(TestCase):
 
 class ProfileUpdateFormTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="testuser", password="testpass123")
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+        # Create a small valid GIF file (1x1 transparent pixel)
+        gif_content = (
+            b"GIF89a\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00!"
+            b"\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;"
+        )
+        self.test_image = SimpleUploadedFile(name="test_avatar.gif", content=gif_content, content_type="image/gif")
 
     def test_valid_profile_form(self):
         """Test profile update with valid data"""
         form_data = {
+            "username": "testuser",
+            "email": "test@example.com",
+            "first_name": "Test",
+            "last_name": "User",
+            "expertise": "Python, Django",
+        }
+        form_files = {"avatar": self.test_image}
+        form = ProfileUpdateForm(data=form_data, files=form_files, instance=self.user)
+        self.assertTrue(form.is_valid(), msg=form.errors)
+
+    def test_valid_profile_form_without_avatar(self):
+        """Test profile update with valid data but no avatar"""
+        form_data = {
+            "username": "testuser",
             "first_name": "John",
             "last_name": "Doe",
             "email": "john@example.com",
             "bio": "Python developer",
+            "expertise": "Python, Django",
         }
         form = ProfileUpdateForm(data=form_data, instance=self.user)
-        self.assertTrue(form.is_valid())
+        self.assertTrue(form.is_valid(), msg=form.errors)
 
     def test_invalid_profile_form(self):
         """Test profile update with invalid data"""
