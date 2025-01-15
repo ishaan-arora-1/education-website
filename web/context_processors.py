@@ -1,5 +1,5 @@
 import os
-import time
+from datetime import datetime
 
 from django.conf import settings
 
@@ -7,8 +7,9 @@ from django.conf import settings
 def last_modified(request):
     """Add last_modified timestamp to the global template context."""
     try:
-        timestamp = os.path.getmtime(settings.PA_WSGI)
-        last_modified_time = time.ctime(timestamp)
+        # Use the project's root directory modification time
+        timestamp = os.path.getmtime(settings.BASE_DIR)
+        last_modified_time = datetime.fromtimestamp(timestamp)
     except Exception:
         last_modified_time = "Unknown"
 
