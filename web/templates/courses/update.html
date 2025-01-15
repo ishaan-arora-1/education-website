@@ -24,7 +24,7 @@
           {% for field in form %}
             <div class="space-y-2">
               <label for="{{ field.id_for_label }}" class="block text-sm font-medium">{{ field.label }}</label>
-              {% if field.name in 'description,learning_objectives,prerequisites'|split:',' %}
+              {% if field.name in "description"|add:",learning_objectives"|add:",prerequisites" %}
                 <div class="markdown-editor">{{ field }}</div>
               {% else %}
                 {{ field }}
