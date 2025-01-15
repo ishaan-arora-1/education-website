@@ -1932,8 +1932,8 @@ def stripe_connect_webhook(request):
 @teacher_required
 def create_forum_category(request):
     """Create a new forum category."""
-    if not request.user.is_staff:
-        messages.error(request, "Only staff members can create forum categories.")
+    if not (request.user.is_staff or request.user.profile.is_teacher):
+        messages.error(request, "Only staff members and teachers can create forum categories.")
         return redirect("forum_categories")
 
     if request.method == "POST":

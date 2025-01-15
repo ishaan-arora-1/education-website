@@ -17,7 +17,7 @@
           Join discussions, ask questions, and share knowledge with our community.
         </p>
       </div>
-      {% if user.is_staff %}
+      {% if user.is_staff or user.profile.is_teacher %}
         <a href="{% url 'create_forum_category' %}"
            class="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-4 py-2 rounded-lg flex items-center">
           <i class="fa-solid fa-folder-plus mr-2"></i>
@@ -50,7 +50,7 @@
         <div class="col-span-full text-center py-8 text-gray-500 dark:text-gray-400">
           <i class="fa-solid fa-comment-slash text-4xl mb-2"></i>
           <p class="mb-4">No categories have been created yet.</p>
-          {% if user.is_staff %}
+          {% if user.is_staff or user.profile.is_teacher %}
             <a href="{% url 'create_forum_category' %}"
                class="inline-flex items-center bg-teal-600 hover:bg-teal-700 text-white font-semibold px-4 py-2 rounded-lg">
               <i class="fa-solid fa-folder-plus mr-2"></i>
