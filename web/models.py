@@ -11,6 +11,9 @@ from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.text import slugify
 from markdownx.models import MarkdownxField
+from django.core.files.base import ContentFile
+from PIL import Image
+from io import BytesIO
 
 
 class Notification(models.Model):
@@ -79,7 +82,7 @@ class Course(models.Model):
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, max_length=200)
     image = models.ImageField(
-        upload_to="course_images/%Y/%m/%d/", help_text="Course image (300x150 pixels)", blank=True
+        upload_to="course_images", help_text="Course image (will be resized to 300x150 pixels)", blank=True
     )
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name="courses_teaching")
     description = MarkdownxField()
@@ -115,6 +118,23 @@ class Course(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.title)
+
+        # Handle image resizing
+        if self.image:
+            img = Image.open(self.image)
+            # Convert to RGB if necessary
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+            # Resize image
+            img = img.resize((300, 150), Image.Resampling.LANCZOS)
+            # Save the resized image
+            buffer = BytesIO()
+            img.save(buffer, format="JPEG", quality=90)
+            # Update the ImageField
+            file_name = self.image.name
+            self.image.delete(save=False)  # Delete old image
+            self.image.save(file_name, ContentFile(buffer.getvalue()), save=False)
+
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -130,26 +150,6 @@ class Course(models.Model):
         if not reviews:
             return 0
         return sum(review.rating for review in reviews) / len(reviews)
-
-    def clean(self):
-        from django.core.exceptions import ValidationError
-        from PIL import Image
-
-        super().clean()
-
-        if self.image:
-            # Open the uploaded image
-            img = Image.open(self.image)
-
-            # Check dimensions
-            if img.size != (300, 150):
-                raise ValidationError(
-                    {
-                        "image": "Image dimensions must be 300x150 pixels. Current dimensions are {}x{}".format(
-                            img.size[0], img.size[1]
-                        )
-                    }
-                )
 
 
 class Session(models.Model):
