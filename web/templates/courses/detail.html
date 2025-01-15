@@ -191,6 +191,37 @@
                   <p class="text-sm text-gray-600 dark:text-gray-400">No sessions scheduled yet.</p>
                 {% endif %}
               </div>
+              <!-- Calendar -->
+              <div class="mt-6 border-t dark:border-gray-600 pt-4">
+                <h3 class="text-sm font-semibold mb-3">Session Calendar</h3>
+                <div class="bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 overflow-hidden">
+                  <div class="grid grid-cols-7 text-center text-xs font-medium border-b dark:border-gray-700">
+                    <div class="py-2">Sun</div>
+                    <div class="py-2">Mon</div>
+                    <div class="py-2">Tue</div>
+                    <div class="py-2">Wed</div>
+                    <div class="py-2">Thu</div>
+                    <div class="py-2">Fri</div>
+                    <div class="py-2">Sat</div>
+                  </div>
+                  <div class="grid grid-cols-7 text-center text-sm">
+                    {% for week in calendar_weeks %}
+                      {% for day in week %}
+                        <div class="p-2 border-b border-r dark:border-gray-700 {% if day.date == today %}bg-gray-100 dark:bg-gray-700{% endif %}">
+                          {% if day.in_month %}
+                            <div class="relative">
+                              <span class="{% if day.has_session %}font-bold text-teal-600 dark:text-teal-400{% endif %}">{{ day.date.day }}</span>
+                              {% if day.has_session %}
+                                <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-teal-500 rounded-full"></div>
+                              {% endif %}
+                            </div>
+                          {% endif %}
+                        </div>
+                      {% endfor %}
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <!-- Middle and Right Columns - Course Info -->

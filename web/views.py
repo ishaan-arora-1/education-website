@@ -200,6 +200,9 @@ def create_course(request):
 
 
 def course_detail(request, slug):
+    import calendar
+    from django.utils import timezone
+
     course = get_object_or_404(Course, slug=slug)
     sessions = course.sessions.all().order_by("start_time")
     now = timezone.now()
@@ -219,6 +222,32 @@ def course_detail(request, slug):
         except Enrollment.DoesNotExist:
             pass
 
+    # Calendar data
+    today = timezone.now().date()
+    current_month = today.replace(day=1)
+
+    # Get the calendar for current month
+    cal = calendar.monthcalendar(current_month.year, current_month.month)
+
+    # Get all session dates for this course in current month
+    session_dates = set(
+        session.start_time.date()
+        for session in sessions
+        if session.start_time.year == current_month.year and session.start_time.month == current_month.month
+    )
+
+    # Prepare calendar weeks data
+    calendar_weeks = []
+    for week in cal:
+        calendar_week = []
+        for day in week:
+            if day == 0:
+                calendar_week.append({"date": None, "in_month": False, "has_session": False})
+            else:
+                date = current_month.replace(day=day)
+                calendar_week.append({"date": date, "in_month": True, "has_session": date in session_dates})
+        calendar_weeks.append(calendar_week)
+
     return render(
         request,
         "courses/detail.html",
@@ -226,10 +255,12 @@ def course_detail(request, slug):
             "course": course,
             "sessions": sessions,
             "now": now,
+            "today": today,
             "is_enrolled": is_enrolled,
             "is_teacher": is_teacher,
             "enrollment": enrollment,
             "completed_sessions": completed_sessions,
+            "calendar_weeks": calendar_weeks,
         },
     )
 
