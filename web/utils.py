@@ -1,6 +1,8 @@
 import requests
 from django.conf import settings
 
+from web.models import Cart
+
 
 def send_slack_message(message):
     """Send message to Slack webhook"""
@@ -18,3 +20,16 @@ def send_slack_message(message):
 def format_currency(amount):
     """Format amount as currency"""
     return f"${amount:.2f}"
+
+
+def get_or_create_cart(request):
+    """Helper function to get or create a cart for both logged in and guest users."""
+    if request.user.is_authenticated:
+        cart, created = Cart.objects.get_or_create(user=request.user)
+    else:
+        session_key = request.session.session_key
+        if not session_key:
+            request.session.create()
+            session_key = request.session.session_key
+        cart, created = Cart.objects.get_or_create(session_key=session_key)
+    return cart

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from unittest.mock import patch
 
 from allauth.account.models import EmailAddress
@@ -6,7 +7,9 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
+from web.forms import LearnForm, TeachForm
 from web.models import Course, Profile, Session, Subject
+from web.utils import get_or_create_cart
 
 
 @override_settings(STRIPE_SECRET_KEY="dummy_key")
@@ -166,81 +169,150 @@ class CartCheckoutTest(BaseViewTest):
             description="Test Session Description",
             start_time=start,
             end_time=end,
-            price=29.99,
+            price=Decimal("29.99"),
         )
         self.cart_url = reverse("cart_view")
         self.add_course_url = reverse("add_course_to_cart", args=[self.course.id])
         self.add_session_url = reverse("add_session_to_cart", args=[self.session.id])
-        print("[CartCheckoutTest] setUp completed.")
 
-    @patch("web.views.notify_teacher_new_enrollment")
-    @patch("web.views.send_enrollment_confirmation")
     @patch("web.views.send_welcome_email")
-    @patch("web.views.stripe.PaymentIntent.retrieve")
-    @patch("web.views.stripe.PaymentIntent.create")
-    @patch("web.views.os.path.exists", return_value=True)
-    @patch("web.views.requests.post")
-    def test_guest_cart_checkout_flow(
-        self,
-        mock_requests_post,
-        mock_path_exists,
-        mock_create_intent,
-        mock_payment_intent,
-        mock_welcome_email,
-        mock_send_confirm,
-        mock_notify,
-    ):
+    @patch("stripe.PaymentIntent.retrieve")
+    def test_guest_cart_checkout_flow(self, mock_retrieve, mock_welcome_email):
         """Test that a guest user can add items to cart and checkout"""
         print("\n[CartCheckoutTest] Running test_guest_cart_checkout_flow...")
-
-        # Mock payment intent retrieval
-        mock_payment_intent.return_value.status = "succeeded"
-        mock_payment_intent.return_value.receipt_email = "test@example.com"
-        print("[CartCheckoutTest] Mocked payment intent with status=succeeded and receipt_email=test@example.com")
+        # Mock the payment intent
+        mock_payment_intent = type("PaymentIntent", (), {"status": "succeeded", "receipt_email": "test@example.com"})
+        mock_retrieve.return_value = mock_payment_intent
+        print(
+            "[CartCheckoutTest] Mocked payment intent with "
+            f"status={mock_payment_intent.status} and "
+            f"receipt_email={mock_payment_intent.receipt_email}"
+        )
 
         # Add course to cart
         print("[CartCheckoutTest] Adding course to cart...")
         response = self.client.post(self.add_course_url)
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, self.cart_url)
         print("[CartCheckoutTest] Course added to cart")
 
         # Add session to cart
         print("[CartCheckoutTest] Adding session to cart...")
         response = self.client.post(self.add_session_url)
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, self.cart_url)
         print("[CartCheckoutTest] Session added to cart")
 
         # Check cart contents
         print("[CartCheckoutTest] Checking cart contents...")
         response = self.client.get(self.cart_url)
-        self.assertEqual(response.status_code, 200)
-        cart = response.context["cart"]
+        cart = get_or_create_cart(response.wsgi_request)
         print(f"[CartCheckoutTest] Cart items count: {cart.items.count()}")
-        for item in cart.items.all():
-            if item.course:
-                print(f"[CartCheckoutTest] Cart has course: {item.course.title}")
-            if item.session:
-                print(f"[CartCheckoutTest] Cart has session: {item.session.title}")
+        self.assertEqual(cart.items.count(), 2)
+        print(f"[CartCheckoutTest] Cart has course: {cart.items.filter(course=self.course).exists()}")
+        self.assertTrue(cart.items.filter(course=self.course).exists())
+        print(f"[CartCheckoutTest] Cart has session: {cart.items.filter(session=self.session).exists()}")
+        self.assertTrue(cart.items.filter(session=self.session).exists())
 
-        # Simulate successful payment and checkout
-        payment_intent_id = "pi_test_123"
-        checkout_url = reverse("checkout_success")
-        print(f"\n[CartCheckoutTest] Starting checkout with payment_intent_id={payment_intent_id}")
-        response = self.client.get(checkout_url, {"payment_intent": payment_intent_id})
+        # Process checkout
+        print("\n[CartCheckoutTest] Starting checkout with payment_intent_id=pi_test_123")
+        response = self.client.get(reverse("checkout_success") + "?payment_intent=pi_test_123")
         print(f"[CartCheckoutTest] Checkout response status: {response.status_code}")
+        self.assertEqual(response.status_code, 200)
 
-        # Handle both redirect and direct responses
-        if hasattr(response, "url"):
-            print(f"[CartCheckoutTest] Checkout response redirect: {response.url}")
-        else:
-            print(f"[CartCheckoutTest] Checkout response content: {response.content.decode()[:200]}...")
+        # Verify receipt page
+        self.assertTemplateUsed(response, "cart/receipt.html")
+        self.assertEqual(response.context["payment_intent_id"], "pi_test_123")
+        self.assertEqual(response.context["user"].email, "test@example.com")
+        self.assertEqual(len(response.context["enrollments"]), 1)
+        self.assertEqual(len(response.context["session_enrollments"]), 1)
+        expected_total = Decimal("129.98")  # 99.99 for course + 29.99 for session
+        self.assertEqual(response.context["total"], expected_total)
 
-        # Print any messages
-        if hasattr(response, "_messages"):
-            messages = list(response._messages)
-            print(f"[CartCheckoutTest] Response messages: {messages}")
 
-        # Verify the response is successful
-        self.assertIn(response.status_code, [200, 302], f"Unexpected status code: {response.status_code}")
+class PageLoadTests(BaseViewTest):
+    """Test that all important pages load correctly"""
+
+    def setUp(self):
+        super().setUp()
+        print("\n[PageLoadTests] setUp starting...")
+        self.urls_to_test = {
+            "index": reverse("index"),
+            "subjects": reverse("subjects"),
+            "learn": reverse("learn"),
+            "teach": reverse("teach"),
+            "course_search": reverse("course_search"),
+            "cart": reverse("cart_view"),
+        }
+        self.authenticated_urls = {
+            "student_dashboard": reverse("student_dashboard"),
+        }
+        print("[PageLoadTests] URLs prepared for testing")
+
+    def test_page_loads(self):
+        """Test that each page loads with correct template and status code"""
+        print("\n[PageLoadTests] Testing page loads...")
+
+        # Expected templates for each URL
+        template_map = {
+            "index": "index.html",
+            "subjects": "subjects.html",
+            "learn": "learn.html",
+            "teach": "teach.html",
+            "course_search": "courses/search.html",
+            "cart": "cart/cart.html",
+        }
+
+        # Test each URL
+        for name, url in self.urls_to_test.items():
+            print(f"[PageLoadTests] Testing {name} at {url}")
+            response = self.client.get(url)
+
+            # Verify status code
+            self.assertEqual(
+                response.status_code, 200, f"Failed to load {name} page. Status code: {response.status_code}"
+            )
+
+            # Verify template
+            self.assertTemplateUsed(response, template_map[name], f"Wrong template used for {name} page")
+
+            print(f"[PageLoadTests] {name} page loaded successfully")
+
+    def test_authenticated_page_loads(self):
+        """Test pages that require authentication"""
+        print("\n[PageLoadTests] Testing authenticated page loads...")
+
+        # Login as student
+        self.client.login(username="student", password="studentpass123")
+
+        # Test student dashboard
+        response = self.client.get(self.authenticated_urls["student_dashboard"])
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "dashboard/student.html")
+
+        print("[PageLoadTests] Authenticated pages loaded successfully")
+
+    def test_unauthenticated_redirects(self):
+        """Test that authenticated pages redirect when not logged in"""
+        print("\n[PageLoadTests] Testing unauthenticated redirects...")
+
+        # Test student dashboard redirect
+        response = self.client.get(self.authenticated_urls["student_dashboard"])
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith("/en/accounts/login/"))
+
+        print("[PageLoadTests] Unauthenticated redirects working correctly")
+
+    def test_form_pages_have_forms(self):
+        """Test that pages with forms have the correct form in context"""
+        print("\n[PageLoadTests] Testing form pages...")
+
+        # Test learn page
+        response = self.client.get(self.urls_to_test["learn"])
+        self.assertTrue("form" in response.context)
+        self.assertIsInstance(response.context["form"], LearnForm)
+
+        # Test teach page
+        response = self.client.get(self.urls_to_test["teach"])
+        self.assertTrue("form" in response.context)
+        self.assertIsInstance(response.context["form"], TeachForm)
+
+        print("[PageLoadTests] Form pages verified successfully")

@@ -5,8 +5,6 @@ import time
 
 import requests
 import stripe
-from captcha.fields import CaptchaField
-from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login
@@ -27,7 +25,16 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .calendar_sync import generate_google_calendar_link, generate_ical_feed, generate_outlook_calendar_link
 from .decorators import teacher_required
-from .forms import CourseForm, CourseMaterialForm, ProfileUpdateForm, ReviewForm, SessionForm, TeacherSignupForm
+from .forms import (
+    CourseForm,
+    CourseMaterialForm,
+    LearnForm,
+    ProfileUpdateForm,
+    ReviewForm,
+    SessionForm,
+    TeacherSignupForm,
+    TeachForm,
+)
 from .marketing import (
     generate_social_share_content,
     get_course_analytics,
@@ -407,22 +414,6 @@ def get_wsgi_last_modified_time():
 
 def subjects(request):
     return render(request, "subjects.html")
-
-
-class LearnForm(forms.Form):
-    name = forms.CharField(max_length=100)
-    email = forms.EmailField()
-    subject = forms.CharField(max_length=200)
-    message = forms.CharField(widget=forms.Textarea)
-    captcha = CaptchaField()
-
-
-class TeachForm(forms.Form):
-    name = forms.CharField(max_length=100)
-    email = forms.EmailField()
-    expertise = forms.CharField(max_length=200)
-    experience = forms.CharField(widget=forms.Textarea)
-    captcha = CaptchaField()
 
 
 def about(request):

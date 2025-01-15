@@ -4,46 +4,40 @@
   <style>
       /* Container */
       .auth-container {
-          max-width: 400px;
+          max-width: 500px;
           margin: 2rem auto;
           padding: 2rem;
           border: 1px solid #e5e7eb;
-          /* Tailwind's border-gray-200 */
           background-color: #fff;
-          /* Tailwind's bg-white */
           border-radius: 0.5rem;
-          /* Tailwind's rounded-lg */
           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          /* Subtle shadow for depth */
       }
 
       /* Dark Mode for Container */
-      .auth-container.dark {
+      html.dark .auth-container {
           border-color: #374151;
-          /* Tailwind's border-gray-700 */
           background-color: #1f2937;
-          /* Tailwind's bg-gray-800 */
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
       }
 
       /* Headings */
       .auth-container h2 {
           font-size: 1.5rem;
-          /* Tailwind's text-2xl */
           font-weight: 600;
-          /* Tailwind's font-semibold */
           margin-bottom: 1.5rem;
-          /* Tailwind's mb-6 */
           color: #1f2937;
-          /* Tailwind's text-gray-800 */
           display: flex;
           align-items: center;
           justify-content: center;
           text-align: center;
       }
 
+      html.dark .auth-container h2 {
+          color: #f3f4f6;
+      }
+
       .auth-container h2 i {
           margin-right: 0.5rem;
-          /* Tailwind's mr-2 */
       }
 
       /* Forms */
@@ -51,19 +45,19 @@
           display: flex;
           flex-direction: column;
           gap: 1.5rem;
-          /* Tailwind's space-y-6 */
       }
 
       /* Labels */
       .auth-container label {
           display: block;
           font-size: 0.875rem;
-          /* Tailwind's text-sm */
           font-weight: 500;
           margin-bottom: 0.5rem;
-          /* Tailwind's mb-2 */
           color: #374151;
-          /* Tailwind's text-gray-700 */
+      }
+
+      html.dark .auth-container label {
+          color: #d1d5db;
       }
 
       /* Inputs */
@@ -73,15 +67,20 @@
           display: block;
           width: 100%;
           padding: 0.75rem;
-          /* Tailwind's p-3 */
           border: 1px solid #d1d5db;
-          /* Tailwind's border-gray-300 */
           border-radius: 0.375rem;
-          /* Tailwind's rounded */
           background-color: #fff;
-          /* Tailwind's bg-white */
+          color: #1f2937;
           outline: none;
           transition: box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
+      }
+
+      html.dark .auth-container input[type="email"],
+      html.dark .auth-container input[type="text"],
+      html.dark .auth-container input[type="password"] {
+          border-color: #4b5563;
+          background-color: #374151;
+          color: #f3f4f6;
       }
 
       .auth-container input[type="email"]:focus,
@@ -89,7 +88,6 @@
       .auth-container input[type="password"]:focus {
           border-color: transparent;
           box-shadow: 0 0 0 3px #14b8a6;
-          /* Tailwind's focus:ring-teal-300 */
       }
 
       /* Submit Button */
@@ -98,49 +96,61 @@
           align-items: center;
           justify-content: center;
           background-color: #f97316;
-          /* Tailwind's bg-orange-500 */
           color: #fff;
           font-weight: 600;
-          /* Tailwind's font-semibold */
           padding: 0.75rem 1.5rem;
-          /* Tailwind's px-6 py-3 */
           border-radius: 9999px;
-          /* Tailwind's rounded-full */
           transition: background-color 0.2s ease-in-out;
           cursor: pointer;
           border: none;
           text-transform: uppercase;
           letter-spacing: 0.05em;
+          width: 100%;
       }
 
       .auth-container button[type="submit"]:hover {
           background-color: #ea580c;
-          /* Tailwind's hover:bg-orange-600 */
       }
 
       .auth-container button[type="submit"] i {
           margin-right: 0.5rem;
-          /* Tailwind's mr-2 */
       }
 
       /* Footer Links */
       .auth-container .form-footer {
           margin-top: 1rem;
           font-size: 0.875rem;
-          /* Tailwind's text-sm */
           text-align: center;
           color: #6b7280;
-          /* Tailwind's text-gray-500 */
+      }
+
+      html.dark .auth-container .form-footer {
+          color: #9ca3af;
       }
 
       .auth-container .form-footer a {
           color: #f97316;
-          /* Tailwind's text-orange-500 */
           font-weight: 500;
       }
 
       .auth-container .form-footer a:hover {
           text-decoration: underline;
+      }
+
+      /* Error Messages */
+      .auth-container .alert {
+          padding: 0.75rem;
+          border-radius: 0.375rem;
+          margin-bottom: 1rem;
+          color: #991b1b;
+          background-color: #fee2e2;
+          border: 1px solid #fecaca;
+      }
+
+      html.dark .auth-container .alert {
+          color: #fecaca;
+          background-color: #7f1d1d;
+          border-color: #991b1b;
       }
   </style>
 {% endblock extra_head %}
