@@ -50,7 +50,7 @@ repos:
     hooks:
     -   id: django-test
         name: Django Tests
-        entry: poetry run python manage.py test --failfast
+        entry: bash -c 'if [ -z "$GITHUB_ACTIONS" ]; then poetry run python manage.py test --failfast; fi'
         language: system
         types: [python]
         pass_filenames: false
