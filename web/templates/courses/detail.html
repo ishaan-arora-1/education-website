@@ -102,6 +102,12 @@
                     </a>
                   {% endif %}
                 </div>
+                {% if course.allow_individual_sessions %}
+                  <div class="mb-4 text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    This course allows for individual session payments
+                  </div>
+                {% endif %}
                 {% if sessions %}
                   <div class="space-y-3">
                     {% for session in sessions %}
