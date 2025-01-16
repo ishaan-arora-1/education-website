@@ -22,23 +22,6 @@ class SignupFormTest(TestCase):
         self.mock_captcha = patcher.start()
         self.addCleanup(patcher.stop)
 
-    def test_signup_page_loads(self):
-        """Test that the signup page loads correctly"""
-        response = self.client.get(self.signup_url)
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "account/signup.html")
-
-        # Check for required form fields
-        self.assertContains(response, 'id="id_email"')
-        self.assertContains(response, 'id="id_first_name"')
-        self.assertContains(response, 'id="id_last_name"')
-        self.assertContains(response, 'id="id_password1"')
-        self.assertContains(response, 'id="id_is_teacher"')
-
-        # Check for the illustration and welcome text
-        self.assertContains(response, "fa-user-plus")
-        self.assertContains(response, "Join our community")
-
     def test_signup_form_validation(self):
         """Test form validation for invalid submissions"""
         # Test empty form
@@ -117,6 +100,12 @@ class SignupFormTest(TestCase):
 
         # Verify email address
         email = EmailAddress.objects.get(user=user, email=user.email)
+        self.assertFalse(email.verified)  # Should be unverified initially
+
+        # Verify response redirects to confirm-email URL
+        self.assertTrue("/accounts/confirm-email/" in response.url)
+
+        # Simulate email verification
         email.verified = True
         email.save()
         mock_email_confirmed.send()

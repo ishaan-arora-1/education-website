@@ -1560,7 +1560,6 @@ def get_or_create_cart(request):
 def cart_view(request):
     """View the shopping cart."""
     cart = get_or_create_cart(request)
-    print("[DEBUG] Stripe public key:", settings.STRIPE_PUBLISHABLE_KEY)
     return render(request, "cart/cart.html", {"cart": cart, "stripe_public_key": settings.STRIPE_PUBLISHABLE_KEY})
 
 
@@ -1631,7 +1630,6 @@ def create_cart_payment_intent(request):
 def checkout_success(request):
     """Handle successful checkout and payment confirmation."""
     payment_intent_id = request.GET.get("payment_intent")
-    print(f"[checkout_success] Starting checkout with payment_intent_id: {payment_intent_id}")
 
     if not payment_intent_id:
         messages.error(request, "No payment information found.")
@@ -1640,15 +1638,12 @@ def checkout_success(request):
     try:
         # Verify the payment intent
         payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
-        print(f"[checkout_success] Retrieved payment intent with status: {payment_intent.status}")
-        print(f"[checkout_success] Payment intent receipt_email: {payment_intent.receipt_email}")
 
         if payment_intent.status != "succeeded":
             messages.error(request, "Payment was not successful.")
             return redirect("cart_view")
 
         cart = get_or_create_cart(request)
-        print(f"[checkout_success] Cart items count: {cart.items.count()}")
 
         if not cart.items.exists():
             messages.error(request, "Cart is empty.")
@@ -1656,7 +1651,6 @@ def checkout_success(request):
 
         # Handle guest checkout
         if not request.user.is_authenticated:
-            print("[checkout_success] Processing guest checkout")
             email = payment_intent.receipt_email
             if not email:
                 messages.error(request, "No email provided for guest checkout.")
@@ -1672,7 +1666,6 @@ def checkout_success(request):
                 while User.objects.filter(username=username).exists():
                     username = f"{base_username}_{timestamp}_{get_random_string(4)}"
 
-                print(f"[checkout_success] Creating new user with username: {username}, email: {email}")
                 # Create the user
                 user = User.objects.create_user(
                     username=username,
@@ -1688,10 +1681,8 @@ def checkout_success(request):
                 # Send welcome email with password reset link
                 send_welcome_email(user)
 
-                print("[checkout_success] Logging in new user")
                 # Log in the new user
                 login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-                print(f"[checkout_success] User authenticated: {request.user.is_authenticated}")
         else:
             user = request.user
 
@@ -1742,15 +1733,13 @@ def checkout_success(request):
         )
 
     except stripe.error.StripeError as e:
-        print(f"[checkout_success] Stripe error: {str(e)}")
+        # send slack message
+        send_slack_message(f"Payment verification failed: {str(e)}")
         messages.error(request, f"Payment verification failed: {str(e)}")
         return redirect("cart_view")
     except Exception as e:
-        print(f"[checkout_success] Unexpected error: {str(e)}")
-        print(f"[checkout_success] Error type: {type(e)}")
-        import traceback
-
-        print(f"[checkout_success] Traceback: {traceback.format_exc()}")
+        # send slack message
+        send_slack_message(f"Failed to process checkout: {str(e)}")
         messages.error(request, f"Failed to process checkout: {str(e)}")
         return redirect("cart_view")
 

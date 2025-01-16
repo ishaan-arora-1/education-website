@@ -49,6 +49,11 @@ ALLOWED_HOSTS = [
     "alphaonelabs.com",
     "www.alphaonelabs.com",
 ]
+
+# Timezone settings
+TIME_ZONE = "America/New_York"
+USE_TZ = True
+
 CSRF_TRUSTED_ORIGINS = ["https://alphaonelabs.com", "https://www.alphaonelabs.com"]
 
 # Error handling

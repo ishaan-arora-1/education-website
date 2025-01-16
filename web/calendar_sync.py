@@ -150,7 +150,7 @@ def google_calendar_api():
         or None if credentials are not available.
     """
     creds = None
-    credentials_path = os.path.join(settings.BASE_DIR, "google_credentials.json")
+    credentials_path = os.environ.get("SERVICE_ACCOUNT_FILE", "google_credentials.json")
     token_path = os.path.join(settings.BASE_DIR, "token.json")
 
     # Load credentials from token.json if it exists
@@ -163,7 +163,6 @@ def google_calendar_api():
             creds.refresh(Request())
         else:
             if not os.path.exists(credentials_path):
-                logger.error("Missing google_credentials.json file")
                 return None
 
             flow = InstalledAppFlow.from_client_secrets_file(credentials_path, SCOPES)

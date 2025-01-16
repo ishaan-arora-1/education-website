@@ -57,20 +57,6 @@ class AdminTests(TestCase):
         # Build the admin URL using the settings
         admin_add_user_url = f"/en/{settings.ADMIN_URL}/auth/user/add/"
         response = self.client.post(admin_add_user_url, initial_data, follow=True)
-        print("Step 1 - Response status code:", response.status_code)
-        print("Step 1 - Response content:", response.content.decode())
-        print("Step 1 - Final redirect chain:", response.redirect_chain)
-
-        # Print form errors if any
-        if response.context and "form" in response.context:
-            form = response.context["form"]
-            print("Step 1 - Form errors:", form.errors)
-            if hasattr(form, "cleaned_data"):
-                print("Step 1 - Cleaned data:", form.cleaned_data)
-            if "adminform" in response.context:
-                print("Step 1 - Admin form errors:", response.context["adminform"].form.errors)
-                if hasattr(response.context["adminform"].form, "cleaned_data"):
-                    print("Step 1 - Admin cleaned data:", response.context["adminform"].form.cleaned_data)
 
         # Check if we got redirected to the user change page
         self.assertTrue(
