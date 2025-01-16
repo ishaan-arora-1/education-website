@@ -484,6 +484,8 @@ class CustomLoginForm(LoginForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        if cleaned_data is None:
+            return {}
 
         # Check if user exists and can log in
         if "login" in cleaned_data:
