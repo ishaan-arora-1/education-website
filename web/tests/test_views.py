@@ -11,6 +11,7 @@ from django.utils import timezone
 from web.forms import LearnForm, TeachForm
 from web.models import Course, Enrollment, Profile, Session, SessionAttendance, Subject
 from web.utils import get_or_create_cart
+from web.views import send_welcome_email
 
 
 @override_settings(STRIPE_SECRET_KEY="dummy_key")
@@ -227,6 +228,46 @@ class CartCheckoutTest(BaseViewTest):
         self.assertEqual(len(response.context["session_enrollments"]), 1)
         expected_total = Decimal("129.98")  # 99.99 for course + 29.99 for session
         self.assertEqual(response.context["total"], expected_total)
+
+    def test_send_welcome_email(self):
+        """Test that welcome email is sent correctly to new users"""
+        # Test case 1: Normal user with email
+        user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+        send_welcome_email(user)
+
+        # Check that one email was sent
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+
+        # Verify email properties
+        self.assertEqual(email.subject, "Welcome to Your New Learning Account")
+        self.assertEqual(email.to, ["test@example.com"])
+
+        # Get reset URL
+        reset_url = reverse("account_reset_password")
+
+        # Verify email content
+        self.assertIn("Welcome to Your Learning Journey!", email.body)
+        self.assertIn(f"Hello {user.username}", email.body)
+        self.assertIn(reset_url, email.body)
+        self.assertIn(user.username, email.body)
+        self.assertIn(user.email, email.body)
+
+        # Verify HTML content
+        self.assertTrue(hasattr(email, "alternatives"))
+        html_content = email.alternatives[0][0]
+        self.assertIn("Welcome to Your Learning Journey!", html_content)
+        self.assertIn(f"Hello {user.username}", html_content)
+        self.assertIn(reset_url, html_content)
+        self.assertIn(user.username, html_content)
+        self.assertIn(user.email, html_content)
+
+        # Test case 2: User without email
+        mail.outbox = []  # Clear the outbox
+        user_no_email = User.objects.create_user(username="nomail", password="testpass123")
+        with self.assertRaises(ValueError):
+            send_welcome_email(user_no_email)
+        self.assertEqual(len(mail.outbox), 0)  # No email should be sent
 
 
 class PageLoadTests(BaseViewTest):
