@@ -1757,7 +1757,7 @@ def checkout_success(request):
 
 def send_welcome_email(user):
     """Send welcome email to newly created users after guest checkout."""
-    reset_url = reverse("password_reset")
+    reset_url = reverse("account_reset_password")
     context = {
         "user": user,
         "reset_url": reset_url,
