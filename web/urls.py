@@ -8,6 +8,7 @@ from . import admin_views, views
 # Non-prefixed URLs
 urlpatterns = [
     path("i18n/", include("django.conf.urls.i18n")),  # Language selection URLs
+    path("captcha/", include("captcha.urls")),  # CAPTCHA URLs should not be language-prefixed
 ]
 
 # Language-prefixed URLs
@@ -49,7 +50,6 @@ urlpatterns += i18n_patterns(
     path("github_update/", views.github_update, name="github_update"),
     path(f"{settings.ADMIN_URL}/dashboard/", admin_views.admin_dashboard, name="admin_dashboard"),
     path(f"{settings.ADMIN_URL}/", admin.site.urls),
-    path("captcha/", include("captcha.urls")),
     path("subjects/", views.subjects, name="subjects"),
     # Progress tracking URLs
     path(
