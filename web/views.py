@@ -12,10 +12,9 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
-from django.db import IntegrityError, models, transaction
+from django.db import models, transaction
 from django.db.models import Avg, Count, Q
 from django.http import FileResponse, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -50,7 +49,6 @@ from .models import (
     Achievement,
     BlogComment,
     BlogPost,
-    Cart,
     CartItem,
     Course,
     CourseMaterial,
@@ -68,6 +66,7 @@ from .models import (
     StudyGroup,
 )
 from .notifications import notify_session_reminder, notify_teacher_new_enrollment, send_enrollment_confirmation
+from .utils import get_or_create_cart
 
 GOOGLE_CREDENTIALS_PATH = os.path.join(settings.BASE_DIR, "google_credentials.json")
 
@@ -1544,19 +1543,6 @@ def custom_429(request, exception=None):
     return render(request, "429.html", status=429)
 
 
-def get_or_create_cart(request):
-    """Helper function to get or create a cart for both logged in and guest users."""
-    if request.user.is_authenticated:
-        cart, created = Cart.objects.get_or_create(user=request.user)
-    else:
-        session_key = request.session.session_key
-        if not session_key:
-            request.session.create()
-            session_key = request.session.session_key
-        cart, created = Cart.objects.get_or_create(session_key=session_key)
-    return cart
-
-
 def cart_view(request):
     """View the shopping cart."""
     cart = get_or_create_cart(request)
@@ -1564,33 +1550,33 @@ def cart_view(request):
 
 
 def add_course_to_cart(request, course_id):
-    """Add a course to the shopping cart."""
+    """Add a course to the cart."""
     course = get_object_or_404(Course, id=course_id)
     cart = get_or_create_cart(request)
 
-    try:
-        CartItem.objects.create(cart=cart, course=course)
+    # Try to get or create the cart item
+    cart_item, created = CartItem.objects.get_or_create(cart=cart, course=course, defaults={"session": None})
+
+    if created:
         messages.success(request, f"{course.title} added to cart.")
-    except ValidationError as e:
-        messages.error(request, str(e))
-    except IntegrityError:
-        messages.warning(request, "This item is already in your cart.")
+    else:
+        messages.info(request, f"{course.title} is already in your cart.")
 
     return redirect("cart_view")
 
 
 def add_session_to_cart(request, session_id):
-    """Add an individual session to the shopping cart."""
+    """Add an individual session to the cart."""
     session = get_object_or_404(Session, id=session_id)
     cart = get_or_create_cart(request)
 
-    try:
-        CartItem.objects.create(cart=cart, session=session)
-        messages.success(request, f"Session '{session.title}' added to cart.")
-    except ValidationError as e:
-        messages.error(request, str(e))
-    except IntegrityError:
-        messages.warning(request, "This session is already in your cart.")
+    # Try to get or create the cart item
+    cart_item, created = CartItem.objects.get_or_create(cart=cart, session=session, defaults={"course": None})
+
+    if created:
+        messages.success(request, f"{session.title} added to cart.")
+    else:
+        messages.info(request, f"{session.title} is already in your cart.")
 
     return redirect("cart_view")
 
