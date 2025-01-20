@@ -143,6 +143,7 @@ urlpatterns += i18n_patterns(
     path("terms/", views.terms, name="terms"),
     path("stripe/connect/onboarding/", views.stripe_connect_onboarding, name="stripe_connect_onboarding"),
     path("stripe/connect/webhook/", views.stripe_connect_webhook, name="stripe_connect_webhook"),
+    path("courses/<slug:slug>/calendar/", views.get_course_calendar, name="course_calendar"),
     prefix_default_language=True,
 )
 

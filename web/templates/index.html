@@ -89,10 +89,21 @@
               </div>
               <form method="post" action="{% url 'add_course_to_cart' course.id %}">
                 {% csrf_token %}
-                <button type="submit"
-                        class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-3 py-1 rounded-full flex items-center w-full justify-center">
-                  <i class="fa-solid fa-cart-plus mr-2"></i> Add to Cart
-                </button>
+                {% if course.invite_only %}
+                  <div class="text-xs text-indigo-600 dark:text-indigo-400 mt-1 text-center">
+                    <i class="fas fa-lock mr-1"></i>
+                    Invite Only
+                  </div>
+                {% else %}
+                  <form method="post" action="{% url 'add_course_to_cart' course.id %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-3 py-1 rounded-full flex items-center w-full justify-center">
+                      <i class="fa-solid fa-cart-plus mr-2"></i>
+                      Add to Cart
+                    </button>
+                  </form>
+                {% endif %}
               </form>
             </div>
           {% empty %}

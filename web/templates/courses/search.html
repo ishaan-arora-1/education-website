@@ -64,15 +64,25 @@
                        width="24"
                        height="24" />
                 {% endif %}
-                <span class="text-sm">{{ course.teacher.get_full_name|default:course.teacher.username }}</span>
+                <div class="text-sm mb-2">
+                  <span class="text-sm">{{ course.teacher.get_full_name|default:course.teacher.username }}</span>
+                </div>
               </div>
-              <form method="post" action="{% url 'add_course_to_cart' course.id %}">
-                {% csrf_token %}
-                <button type="submit"
-                        class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-3 py-1 rounded-full flex items-center w-full justify-center">
-                  <i class="fa-solid fa-cart-plus mr-2"></i> Add to Cart
-                </button>
-              </form>
+              {% if course.invite_only %}
+                <div class="text-xs text-indigo-600 dark:text-indigo-400 mt-1 text-center">
+                  <i class="fas fa-lock mr-1"></i>
+                  Invite Only
+                </div>
+              {% else %}
+                <form method="post" action="{% url 'add_course_to_cart' course.id %}">
+                  {% csrf_token %}
+                  <button type="submit"
+                          class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-3 py-1 rounded-full flex items-center w-full justify-center">
+                    <i class="fa-solid fa-cart-plus mr-2"></i>
+                    Add to Cart
+                  </button>
+                </form>
+              {% endif %}
             </div>
           {% empty %}
             <p>

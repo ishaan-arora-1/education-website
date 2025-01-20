@@ -1410,6 +1410,7 @@ def blog_list(request):
     tags = BlogPost.objects.values_list("tags", flat=True).distinct()
     # Split comma-separated tags and get unique values
     unique_tags = sorted(set(tag.strip() for tags_str in tags if tags_str for tag in tags_str.split(",")))
+
     return render(request, "blog/list.html", {"blog_posts": blog_posts, "tags": unique_tags})
 
 
@@ -1920,3 +1921,58 @@ def create_forum_category(request):
         form = ForumCategoryForm()
 
     return render(request, "web/forum/create_category.html", {"form": form})
+
+
+def get_course_calendar(request, slug):
+    """AJAX endpoint to get calendar data for a course."""
+    course = get_object_or_404(Course, slug=slug)
+    today = timezone.now().date()
+    calendar_weeks = []
+
+    # Get current month and year from query parameters
+    year = int(request.GET.get("year", today.year))
+    month = int(request.GET.get("month", today.month))
+    current_month = timezone.datetime(year, month, 1).date()
+
+    # Get previous and next month for navigation
+    if month == 1:
+        prev_month = {"year": year - 1, "month": 12}
+    else:
+        prev_month = {"year": year, "month": month - 1}
+
+    if month == 12:
+        next_month = {"year": year + 1, "month": 1}
+    else:
+        next_month = {"year": year, "month": month + 1}
+
+    # Get sessions for the current month
+    month_sessions = course.sessions.filter(start_time__year=year, start_time__month=month).order_by("start_time")
+
+    # Generate calendar data
+    cal = calendar.monthcalendar(year, month)
+
+    for week in cal:
+        calendar_week = []
+        for day in week:
+            if day == 0:
+                calendar_week.append({"date": None, "has_session": False, "is_today": False})
+            else:
+                date = timezone.datetime(year, month, day).date()
+                sessions_on_day = [s for s in month_sessions if s.start_time.date() == date]
+                calendar_week.append(
+                    {
+                        "date": date.isoformat() if date else None,
+                        "has_session": bool(sessions_on_day),
+                        "is_today": date == today,
+                    }
+                )
+        calendar_weeks.append(calendar_week)
+
+    data = {
+        "calendar_weeks": calendar_weeks,
+        "current_month": current_month.strftime("%B %Y"),
+        "prev_month": prev_month,
+        "next_month": next_month,
+    }
+
+    return JsonResponse(data)
