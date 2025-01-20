@@ -196,6 +196,7 @@ class CourseForm(forms.ModelForm):
             "prerequisites",
             "price",
             "allow_individual_sessions",
+            "invite_only",
             "max_students",
             "subject",
             "level",
@@ -215,6 +216,9 @@ class CourseForm(forms.ModelForm):
             "price": TailwindNumberInput(attrs={"min": "0", "step": "0.01"}),
             "allow_individual_sessions": TailwindCheckboxInput(
                 attrs={"help_text": ("Allow students to register for individual sessions")}
+            ),
+            "invite_only": TailwindCheckboxInput(
+                attrs={"help_text": ("If enabled, students can only enroll with an invitation")}
             ),
             "max_students": TailwindNumberInput(attrs={"min": "1"}),
             "subject": TailwindSelect(),

@@ -57,16 +57,25 @@
                 </span>
               </div>
               {% if not is_enrolled %}
-                <form method="post"
-                      action="{% url 'add_course_to_cart' course.id %}"
-                      class="mt-2">
-                  {% csrf_token %}
-                  <button type="submit"
-                          class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-cart-plus mr-2"></i>
-                    Add to Cart
-                  </button>
-                </form>
+                {% if course.invite_only %}
+                  <div class="flex items-center justify-between text-indigo-600 dark:text-indigo-400">
+                    <span class="text-sm">
+                      <i class="fas fa-lock mr-1"></i>
+                      Invite Only
+                    </span>
+                  </div>
+                {% else %}
+                  <form method="post"
+                        action="{% url 'add_course_to_cart' course.id %}"
+                        class="mt-2">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center">
+                      <i class="fas fa-cart-plus mr-2"></i>
+                      Add to Cart
+                    </button>
+                  </form>
+                {% endif %}
               {% endif %}
             </div>
             <!-- Teacher Info -->
@@ -176,16 +185,25 @@
                               {% endif %}
                             {% endif %}
                           {% elif course.allow_individual_sessions and session.price and not is_enrolled %}
-                            <form method="post"
-                                  action="{% url 'add_session_to_cart' session.id %}"
-                                  class="inline">
-                              {% csrf_token %}
-                              <button type="submit"
-                                      class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium w-full">
-                                <i class="fas fa-cart-plus mr-1"></i>
-                                Add to Cart
-                              </button>
-                            </form>
+                            {% if course.invite_only %}
+                              <div class="flex items-center justify-between text-indigo-600 dark:text-indigo-400">
+                                <span class="text-sm">
+                                  <i class="fas fa-lock mr-1"></i>
+                                  Invite Only
+                                </span>
+                              </div>
+                            {% else %}
+                              <form method="post"
+                                    action="{% url 'add_session_to_cart' session.id %}"
+                                    class="inline">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium w-full">
+                                  <i class="fas fa-cart-plus mr-1"></i>
+                                  Add to Cart
+                                </button>
+                              </form>
+                            {% endif %}
                           {% endif %}
                           {% if session.is_virtual and session.meeting_link %}
                             <a href="{{ session.meeting_link }}"
@@ -213,18 +231,19 @@
                 <div class="flex items-center justify-between mb-3">
                   <h3 class="text-sm font-semibold">Session Calendar</h3>
                   <div class="flex items-center space-x-4">
-                    <a href="?year={{ prev_month.year }}&month={{ prev_month.month }}"
-                       class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">
+                    <button onclick="loadCalendar({{ prev_month.year }}, {{ prev_month.month }})"
+                            class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">
                       <i class="fas fa-chevron-left"></i>
-                    </a>
-                    <span class="text-sm font-medium">{{ current_month|date:"F Y" }}</span>
-                    <a href="?year={{ next_month.year }}&month={{ next_month.month }}"
-                       class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">
+                    </button>
+                    <span class="text-sm font-medium" id="current-month">{{ current_month|date:"F Y" }}</span>
+                    <button onclick="loadCalendar({{ next_month.year }}, {{ next_month.month }})"
+                            class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">
                       <i class="fas fa-chevron-right"></i>
-                    </a>
+                    </button>
                   </div>
                 </div>
-                <div class="bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 overflow-hidden">
+                <div id="calendar-container"
+                     class="bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 overflow-hidden">
                   <div class="grid grid-cols-7 text-center text-xs font-medium border-b dark:border-gray-700">
                     <div class="py-2">Sun</div>
                     <div class="py-2">Mon</div>
@@ -234,13 +253,15 @@
                     <div class="py-2">Fri</div>
                     <div class="py-2">Sat</div>
                   </div>
-                  <div class="grid grid-cols-7 text-center text-sm">
+                  <div class="grid grid-cols-7 text-center text-sm" id="calendar-grid">
                     {% for week in calendar_weeks %}
                       {% for day in week %}
                         <div class="p-2 border-b border-r dark:border-gray-700 {% if day.date == today %}bg-gray-100 dark:bg-gray-700{% endif %}">
-                          {% if day.in_month %}
+                          {% if day.date %}
                             <div class="relative">
-                              <span class="{% if day.has_session %}font-bold text-teal-600 dark:text-teal-400{% endif %}">{{ day.date.day }}</span>
+                              <span class="{% if day.has_session %}font-bold text-teal-600 dark:text-teal-400{% endif %}">
+                                {{ day.date|date:"j" }}
+                              </span>
                               {% if day.has_session %}
                                 <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-teal-500 dark:bg-teal-400 rounded-full">
                                 </div>
@@ -372,4 +393,47 @@
        class="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg">
     <span x-text="message"></span>
   </div>
+  <script>
+      function loadCalendar(year, month) {
+          fetch(`/courses/{{ course.slug }}/calendar/?year=${year}&month=${month}`)
+              .then(response => response.json())
+              .then(data => {
+                  // Update month display
+                  document.getElementById('current-month').textContent = data.current_month;
+
+                  // Update calendar grid
+                  const grid = document.getElementById('calendar-grid');
+                  let html = '';
+
+                  data.calendar_weeks.forEach(week => {
+                      week.forEach(day => {
+                          const today = day.is_today ? 'bg-gray-100 dark:bg-gray-700' : '';
+                          html += `
+              <div class="p-2 border-b border-r dark:border-gray-700 ${today}">
+                ${day.date ? `
+                  <div class="relative">
+                    <span class="${day.has_session ? 'font-bold text-teal-600 dark:text-teal-400' : ''}">
+                      ${new Date(day.date).getDate()}
+                    </span>
+                    ${day.has_session ? `
+                      <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-teal-500 dark:bg-teal-400 rounded-full"></div>
+                    ` : ''}
+                  </div>
+                ` : ''}
+              </div>
+            `;
+                      });
+                  });
+
+                  grid.innerHTML = html;
+
+                  // Update navigation buttons
+                  const prevButton = grid.parentElement.previousElementSibling.querySelector('button:first-child');
+                  const nextButton = grid.parentElement.previousElementSibling.querySelector('button:last-child');
+                  prevButton.onclick = () => loadCalendar(data.prev_month.year, data.prev_month.month);
+                  nextButton.onclick = () => loadCalendar(data.next_month.year, data.next_month.month);
+              })
+              .catch(error => console.error('Error loading calendar:', error));
+      }
+  </script>
 {% endblock content %}

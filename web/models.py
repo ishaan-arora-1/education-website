@@ -132,6 +132,9 @@ class Course(models.Model):
     allow_individual_sessions = models.BooleanField(
         default=False, help_text="Allow students to register for individual sessions"
     )
+    invite_only = models.BooleanField(
+        default=False, help_text="If enabled, students can only enroll with an invitation"
+    )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="draft")
     max_students = models.IntegerField(validators=[MinValueValidator(1)])
     created_at = models.DateTimeField(auto_now_add=True)
