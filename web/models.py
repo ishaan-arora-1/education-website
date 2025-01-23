@@ -770,12 +770,16 @@ class EventCalendar(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.share_token:
-            # Generate a unique token
             self.share_token = "".join(random.choices(string.ascii_letters + string.digits, k=32))
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.title} - {self.creator.username}"
+        return f"{self.title} - {self.month+1}/{self.year}"
+
+    @property
+    def unique_participants_count(self):
+        """Count unique participants by name"""
+        return self.time_slots.values("name").distinct().count()
 
 
 class TimeSlot(models.Model):
