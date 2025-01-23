@@ -9,7 +9,6 @@ import requests
 import stripe
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -2086,7 +2085,6 @@ def get_calendar_data(request, share_token):
     return JsonResponse(data)
 
 
-@staff_member_required
 def system_status(request):
     """Check system status including SendGrid API connectivity."""
     from django.conf import settings
