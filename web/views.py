@@ -2093,7 +2093,7 @@ def system_status(request):
     }
 
     # Check SendGrid
-    sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
+    sendgrid_api_key = os.getenv("SENDGRID_PASSWORD")
     if sendgrid_api_key:
         status["sendgrid"]["api_key_configured"] = True
         try:
