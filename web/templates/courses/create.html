@@ -63,19 +63,10 @@
   </div>
   <script>
       document.addEventListener('DOMContentLoaded', function() {
-          // Initialize EasyMDE for markdown fields
-          document.querySelectorAll('.markdown-editor textarea').forEach(textarea => {
-              new EasyMDE({
-                  element: textarea,
-                  spellChecker: false,
-                  status: false
-              });
-          });
-
           // Add form submission handler
           const form = document.getElementById('createCourseForm');
           form.addEventListener('submit', function(e) {
-              // Log form data
+              // Log form data for debugging
               const formData = new FormData(form);
               console.log('Form data:');
               for (let [key, value] of formData.entries()) {
@@ -85,7 +76,14 @@
               // Check if any required fields are empty
               let hasEmptyRequired = false;
               form.querySelectorAll('[required]').forEach(field => {
-                  if (!field.value) {
+                  // For markdown editor fields, check the underlying textarea
+                  if (field.closest('.markdown-editor')) {
+                      const editor = field.closest('.markdown-editor').querySelector('.CodeMirror').CodeMirror;
+                      if (!editor.getValue().trim()) {
+                          console.log('Empty required markdown field:', field.name);
+                          hasEmptyRequired = true;
+                      }
+                  } else if (!field.value.trim()) {
                       console.log('Empty required field:', field.name);
                       hasEmptyRequired = true;
                   }
@@ -93,8 +91,39 @@
 
               if (hasEmptyRequired) {
                   e.preventDefault();
-                  alert('Please fill in all required fields');
+                  // Show error message in a more mobile-friendly way
+                  const errorDiv = document.createElement('div');
+                  errorDiv.className = 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 p-4 rounded-lg mb-4';
+                  errorDiv.textContent = 'Please fill in all required fields';
+                  form.insertBefore(errorDiv, form.firstChild);
+
+                  // Scroll to error message
+                  errorDiv.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'center'
+                  });
+
+                  // Remove error message after 3 seconds
+                  setTimeout(() => errorDiv.remove(), 3000);
               }
+          });
+
+          // Initialize EasyMDE with mobile-friendly options
+          document.querySelectorAll('.markdown-editor textarea').forEach(textarea => {
+              new EasyMDE({
+                  element: textarea,
+                  spellChecker: false,
+                  status: false,
+                  toolbar: [
+                      'bold', 'italic', 'heading', '|',
+                      'quote', 'unordered-list', 'ordered-list', '|',
+                      'link', 'preview', 'guide'
+                  ],
+                  minHeight: '100px',
+                  maxHeight: '400px',
+                  placeholder: textarea.getAttribute('placeholder') || 'Enter your content here...',
+                  autoDownloadFontAwesome: false
+              });
           });
 
           // Watch for theme changes and update editor theme
@@ -147,6 +176,42 @@
 
       .dark .editor-statusbar {
           color: #9ca3af;
+      }
+
+      /* Mobile-specific styles */
+      @media (max-width: 640px) {
+          .editor-toolbar {
+              flex-wrap: wrap;
+              justify-content: center;
+          }
+
+          .editor-toolbar button {
+              padding: 6px 8px;
+          }
+
+          .CodeMirror-scroll {
+              min-height: 150px;
+              max-height: 300px;
+          }
+
+          /* Make form inputs larger on mobile for better touch targets */
+          input[type="text"],
+          input[type="number"],
+          input[type="email"],
+          select,
+          textarea {
+              font-size: 16px !important;
+              padding: 8px 12px !important;
+              min-height: 44px;
+          }
+
+          /* Adjust button sizes for better touch targets */
+          button[type="submit"],
+          .cancel-button {
+              padding: 12px 20px !important;
+              font-size: 16px !important;
+              min-height: 44px;
+          }
       }
   </style>
 {% endblock content %}
