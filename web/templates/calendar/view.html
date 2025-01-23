@@ -482,7 +482,8 @@
       }
 
       function getColorShade(count) {
-          const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          // Check if the html element has the 'dark' class instead of using media query
+          const isDark = document.documentElement.classList.contains('dark');
           const maxCount = 5;
           const hue = 0; // red
           const saturation = 100;
@@ -501,7 +502,7 @@
               const lightnessStart = 95;
               const lightnessEnd = 50;
 
-              if (count === 0) return ''; // Default light mode background
+              if (count === 0) return '#ffffff'; // Default light mode background
               const ratio = Math.min(count, maxCount) / maxCount;
               const lightness = lightnessStart - ratio * (lightnessStart - lightnessEnd);
               return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
