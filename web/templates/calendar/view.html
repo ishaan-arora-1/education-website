@@ -258,8 +258,8 @@
       const INITIAL_YEAR = parseInt("{{ calendar.year }}");
 
       // Global variables for date tracking
-      const currentMonth = INITIAL_MONTH;
-      const currentYear = INITIAL_YEAR;
+      let currentMonth = INITIAL_MONTH;
+      let currentYear = INITIAL_YEAR;
       let firstDay;
       let totalDays;
       const availabilityData = {};
@@ -282,9 +282,12 @@
               return;
           }
 
-          // Set default date in date picker to today
+          // Set default date in date picker to today's date in the calendar's month/year
           const dateInput = document.getElementById('selectedDate');
-          dateInput.valueAsDate = new Date();
+          const today = new Date();
+          today.setFullYear(currentYear);
+          today.setMonth(currentMonth);
+          dateInput.valueAsDate = today;
 
           // Month names for display
           const monthNames = [
@@ -479,9 +482,6 @@
               const dayNum = parseInt(day.querySelector('.day-number').textContent);
               const slots = availabilityData[dayNum] || [];
 
-              // Update the day number to show full date
-              day.querySelector('.day-number').textContent = formatDate(dayNum);
-
               // Update availability tags
               const tagsContainer = day.querySelector('.availability-tags');
               tagsContainer.innerHTML = '';
@@ -503,14 +503,14 @@
           const maxCount = 5;
 
           if (isDark) {
-              // Dark mode: go from darker to lighter blue
+              // Dark mode: go from darker to lighter red
               if (count === 0) return '#374151'; // Default dark mode background
-              const shades = ['#1e40af', '#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa'];
+              const shades = ['#991b1b', '#b91c1c', '#dc2626', '#ef4444', '#f87171'];
               return shades[Math.min(count - 1, maxCount - 1)];
           } else {
-              // Light mode: go from lighter to darker blue
+              // Light mode: go from lighter to darker pink/red
               if (count === 0) return '#ffffff'; // Default light mode background
-              const shades = ['#dbeafe', '#bfdbfe', '#93c5fd', '#60a5fa', '#3b82f6'];
+              const shades = ['#ffe4e6', '#fecdd3', '#fda4af', '#fb7185', '#f43f5e'];
               return shades[Math.min(count - 1, maxCount - 1)];
           }
       }

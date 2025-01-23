@@ -20,8 +20,21 @@
         <p class="text-gray-600 dark:text-gray-300">Fill out the form below to create your new course.</p>
       </div>
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <form method="post" enctype="multipart/form-data" class="space-y-6">
+        <form method="post"
+              enctype="multipart/form-data"
+              class="space-y-6"
+              id="createCourseForm">
           {% csrf_token %}
+          {% if form.errors %}
+            <div class="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 p-4 rounded-lg mb-4">
+              <ul>
+                {% for field in form %}
+                  {% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+              </ul>
+            </div>
+          {% endif %}
           {% for field in form %}
             <div class="space-y-2">
               <label for="{{ field.id_for_label }}" class="block text-sm font-medium">{{ field.label }}</label>
@@ -55,18 +68,33 @@
               new EasyMDE({
                   element: textarea,
                   spellChecker: false,
-                  status: ['lines', 'words', 'cursor'],
-                  maxHeight: '400px',
-                  minHeight: '200px',
-                  toolbar: [
-                      'bold', 'italic', 'heading', '|',
-                      'quote', 'unordered-list', 'ordered-list', '|',
-                      'link', 'image', '|',
-                      'preview', 'side-by-side', 'fullscreen', '|',
-                      'guide'
-                  ],
-                  theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+                  status: false
               });
+          });
+
+          // Add form submission handler
+          const form = document.getElementById('createCourseForm');
+          form.addEventListener('submit', function(e) {
+              // Log form data
+              const formData = new FormData(form);
+              console.log('Form data:');
+              for (let [key, value] of formData.entries()) {
+                  console.log(key + ': ' + value);
+              }
+
+              // Check if any required fields are empty
+              let hasEmptyRequired = false;
+              form.querySelectorAll('[required]').forEach(field => {
+                  if (!field.value) {
+                      console.log('Empty required field:', field.name);
+                      hasEmptyRequired = true;
+                  }
+              });
+
+              if (hasEmptyRequired) {
+                  e.preventDefault();
+                  alert('Please fill in all required fields');
+              }
           });
 
           // Watch for theme changes and update editor theme
