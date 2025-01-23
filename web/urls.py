@@ -150,6 +150,7 @@ urlpatterns += i18n_patterns(
     path("calendar/<str:share_token>/add-slot", views.add_time_slot, name="add_time_slot"),
     path("calendar/<str:share_token>/remove-slot", views.remove_time_slot, name="remove_time_slot"),
     path("calendar/<str:share_token>/data", views.get_calendar_data, name="get_calendar_data"),
+    path("status/", views.system_status, name="system_status"),
     prefix_default_language=True,
 )
 

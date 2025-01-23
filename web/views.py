@@ -9,6 +9,7 @@ import requests
 import stripe
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -2083,3 +2084,43 @@ def get_calendar_data(request, share_token):
     }
 
     return JsonResponse(data)
+
+
+@staff_member_required
+def system_status(request):
+    """Check system status including SendGrid API connectivity."""
+    from django.conf import settings
+    from sendgrid import SendGridAPIClient
+
+    status = {
+        "sendgrid": {
+            "status": "unknown",
+            "message": "",
+            "api_key_configured": bool(getattr(settings, "SENDGRID_API_KEY", None)),
+        },
+        "timestamp": timezone.now(),
+    }
+
+    # Check SendGrid
+    if status["sendgrid"]["api_key_configured"]:
+        try:
+            # Initialize SendGrid client
+            sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
+
+            # Test API connectivity by getting account information
+            response = sg.client.account.get()
+
+            if response.status_code == 200:
+                status["sendgrid"]["status"] = "ok"
+                status["sendgrid"]["message"] = "Successfully connected to SendGrid API"
+            else:
+                status["sendgrid"]["status"] = "error"
+                status["sendgrid"]["message"] = f"Unexpected response: {response.status_code}"
+        except Exception as e:
+            status["sendgrid"]["status"] = "error"
+            status["sendgrid"]["message"] = str(e)
+    else:
+        status["sendgrid"]["status"] = "error"
+        status["sendgrid"]["message"] = "SendGrid API key not configured"
+
+    return render(request, "status.html", {"status": status})

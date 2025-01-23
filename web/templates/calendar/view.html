@@ -109,6 +109,7 @@
           border-radius: 8px;
           padding: 20px;
           box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+          border: 1px solid #e5e7eb;
       }
 
       .calendar-header {
@@ -126,7 +127,7 @@
 
       .day {
           background-color: #ffffff;
-          border: 1px solid #e0e0e0;
+          border: 1px solid #e5e7eb;
           border-radius: 4px;
           padding: 10px;
           text-align: center;
@@ -134,22 +135,22 @@
           min-height: 80px;
           position: relative;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-          transition: transform 0.1s ease;
+          transition: all 0.2s ease;
       }
 
       .day:hover {
-          background-color: #f1f8ff;
-          transform: scale(1.05);
+          background-color: #f3f4f6;
+          transform: scale(1.02);
       }
 
       .day.inactive {
-          color: #aaa;
+          color: #9ca3af;
           pointer-events: none;
-          background-color: #f0f0f0;
+          background-color: #f9fafb;
       }
 
       .day.selected-day {
-          outline: 2px solid #4f93ce;
+          outline: 2px solid #0ea5e9;
           outline-offset: -2px;
       }
 
@@ -167,7 +168,7 @@
       }
 
       .availability-tags span {
-          background: #333;
+          background: #0ea5e9;
           color: #fff;
           padding: 2px 6px;
           border-radius: 12px;
@@ -181,60 +182,73 @@
           font-size: 1.1rem;
           font-weight: 500;
           margin-bottom: 5px;
-          color: #333;
+          color: #111827;
       }
 
-      @media (prefers-color-scheme: dark) {
-          .calendar-container {
-              background: #1a1a1a;
-              border: 1px solid #404040;
-          }
+      .dark .calendar-container {
+          background: #1f2937;
+          border-color: #374151;
+      }
 
-          .day {
-              background-color: #2d2d2d;
-              border-color: #404040;
-              color: #e0e0e0;
-          }
+      .dark .day {
+          background-color: #374151;
+          border-color: #4b5563;
+          color: #e5e7eb;
+      }
 
-          .day:hover {
-              background-color: #3d3d3d;
-          }
+      .dark .day:hover {
+          background-color: #4b5563;
+      }
 
-          .day.inactive {
-              background-color: #262626;
-              color: #666;
-          }
+      .dark .day.inactive {
+          background-color: #1f2937;
+          color: #6b7280;
+      }
 
-          .day-number {
-              color: #e0e0e0;
-          }
+      .dark .day-number {
+          color: #e5e7eb;
+      }
 
-          .availability-tags span {
-              background: #4f93ce;
-          }
+      .dark .availability-tags span {
+          background: #0ea5e9;
       }
 
       #selectedTimes .selected-time-slot {
-          background: #f5f5f5;
+          background: #f9fafb;
           padding: 10px;
           margin: 5px 0;
           border-radius: 4px;
           display: flex;
           justify-content: space-between;
           align-items: center;
+          border: 1px solid #e5e7eb;
+      }
+
+      .dark #selectedTimes .selected-time-slot {
+          background: #374151;
+          border-color: #4b5563;
       }
 
       #selectedTimes .selected-time-slot button {
           background: none;
           border: none;
-          color: #dc3545;
+          color: #ef4444;
           cursor: pointer;
           padding: 5px;
           border-radius: 4px;
+          transition: all 0.2s ease;
       }
 
       #selectedTimes .selected-time-slot button:hover {
-          background-color: rgba(220, 53, 69, 0.1);
+          background-color: rgba(239, 68, 68, 0.1);
+      }
+
+      .dark #selectedTimes .selected-time-slot button {
+          color: #f87171;
+      }
+
+      .dark #selectedTimes .selected-time-slot button:hover {
+          background-color: rgba(248, 113, 113, 0.1);
       }
   </style>
   <script>
@@ -465,6 +479,9 @@
               const dayNum = parseInt(day.querySelector('.day-number').textContent);
               const slots = availabilityData[dayNum] || [];
 
+              // Update the day number to show full date
+              day.querySelector('.day-number').textContent = formatDate(dayNum);
+
               // Update availability tags
               const tagsContainer = day.querySelector('.availability-tags');
               tagsContainer.innerHTML = '';
@@ -482,30 +499,19 @@
       }
 
       function getColorShade(count) {
-          // Check if the html element has the 'dark' class instead of using media query
           const isDark = document.documentElement.classList.contains('dark');
           const maxCount = 5;
-          const hue = 0; // red
-          const saturation = 100;
 
           if (isDark) {
-              // Dark mode: go from darker to lighter red
-              const lightnessStart = 20;
-              const lightnessEnd = 60;
-
-              if (count === 0) return '#2d2d2d'; // Default dark mode background
-              const ratio = Math.min(count, maxCount) / maxCount;
-              const lightness = lightnessStart + ratio * (lightnessEnd - lightnessStart);
-              return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+              // Dark mode: go from darker to lighter blue
+              if (count === 0) return '#374151'; // Default dark mode background
+              const shades = ['#1e40af', '#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa'];
+              return shades[Math.min(count - 1, maxCount - 1)];
           } else {
-              // Light mode: go from lighter to darker red
-              const lightnessStart = 95;
-              const lightnessEnd = 50;
-
+              // Light mode: go from lighter to darker blue
               if (count === 0) return '#ffffff'; // Default light mode background
-              const ratio = Math.min(count, maxCount) / maxCount;
-              const lightness = lightnessStart - ratio * (lightnessStart - lightnessEnd);
-              return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+              const shades = ['#dbeafe', '#bfdbfe', '#93c5fd', '#60a5fa', '#3b82f6'];
+              return shades[Math.min(count - 1, maxCount - 1)];
           }
       }
 
@@ -521,7 +527,7 @@
                         <div>
                             <div class="font-medium text-gray-900 dark:text-white">${slot.name}</div>
                             <div class="text-sm text-gray-500 dark:text-gray-400">
-                                Day ${day} (${slot.startTime}-${slot.endTime})
+                                ${formatDate(parseInt(day))} (${formatTime(slot.startTime)} - ${formatTime(slot.endTime)})
                             </div>
                         </div>
                         <button onclick="removeTimeSlot('${slot.name}', ${day})">
@@ -531,6 +537,93 @@
                   container.appendChild(slotDiv);
               });
           });
+      }
+
+      function formatDate(day) {
+          const date = new Date(currentYear, currentMonth, day);
+          return date.toLocaleDateString('en-US', {
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric'
+          });
+      }
+
+      function formatTime(time) {
+          const [hours, minutes] = time.split(':');
+          const date = new Date();
+          date.setHours(hours);
+          date.setMinutes(minutes);
+          return date.toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+          });
+      }
+
+      function updateCalendarUI(data) {
+          const container = document.getElementById('calendar-container');
+          container.innerHTML = '';
+
+          // Group slots by day
+          const slotsByDay = {};
+          data.slots.forEach(slot => {
+              if (!slotsByDay[slot.day]) {
+                  slotsByDay[slot.day] = [];
+              }
+              slotsByDay[slot.day].push(slot);
+          });
+
+          // Create day elements
+          for (let day = 1; day <= totalDays; day++) {
+              const dayElement = document.createElement('div');
+              dayElement.className = 'day p-4 border border-gray-200 dark:border-gray-700 rounded-lg';
+
+              // Add date header
+              const dateHeader = document.createElement('div');
+              dateHeader.className = 'font-semibold mb-2 text-gray-900 dark:text-white';
+              dateHeader.textContent = formatDate(day);
+              dayElement.appendChild(dateHeader);
+
+              // Add slots for this day
+              if (slotsByDay[day]) {
+                  slotsByDay[day].forEach(slot => {
+                      const slotElement = document.createElement('div');
+                      slotElement.className = 'mb-2 p-2 rounded ' + getColorShade(slot.name);
+
+                      const timeRange = document.createElement('div');
+                      timeRange.className = 'text-sm font-medium';
+                      timeRange.textContent = `${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}`;
+
+                      const nameElement = document.createElement('div');
+                      nameElement.className = 'text-sm';
+                      nameElement.textContent = slot.name;
+
+                      slotElement.appendChild(timeRange);
+                      slotElement.appendChild(nameElement);
+
+                      if (isCreator) {
+                          const removeButton = document.createElement('button');
+                          removeButton.className = 'text-xs text-red-500 hover:text-red-700 mt-1';
+                          removeButton.textContent = 'Remove';
+                          removeButton.onclick = () => removeTimeSlot(slot.name, day);
+                          slotElement.appendChild(removeButton);
+                      }
+
+                      dayElement.appendChild(slotElement);
+                  });
+              }
+
+              // Add "Add Time Slot" button for creator
+              if (isCreator) {
+                  const addButton = document.createElement('button');
+                  addButton.className = 'text-sm text-blue-500 hover:text-blue-700';
+                  addButton.textContent = '+ Add Time Slot';
+                  addButton.onclick = () => showAddSlotForm(day);
+                  dayElement.appendChild(addButton);
+              }
+
+              container.appendChild(dayElement);
+          }
       }
 
       // Initialize calendar and load data
