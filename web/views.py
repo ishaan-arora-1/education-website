@@ -2087,36 +2087,31 @@ def get_calendar_data(request, share_token):
 
 def system_status(request):
     """Check system status including SendGrid API connectivity."""
-    from django.conf import settings
-    from sendgrid import SendGridAPIClient
-
     status = {
-        "sendgrid": {
-            "status": "unknown",
-            "message": "",
-            "api_key_configured": bool(getattr(settings, "SENDGRID_API_KEY", None)),
-        },
+        "sendgrid": {"status": "unknown", "message": "", "api_key_configured": False},
         "timestamp": timezone.now(),
     }
 
     # Check SendGrid
-    if status["sendgrid"]["api_key_configured"]:
+    sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
+    if sendgrid_api_key:
+        status["sendgrid"]["api_key_configured"] = True
         try:
-            # Initialize SendGrid client
-            sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
-
-            # Test API connectivity by getting account information
-            response = sg.client.account.get()
-
+            print("Checking SendGrid API...")
+            response = requests.get(
+                "https://api.sendgrid.com/v3/user/account",
+                headers={"Authorization": f"Bearer {sendgrid_api_key}"},
+                timeout=5,
+            )
             if response.status_code == 200:
                 status["sendgrid"]["status"] = "ok"
                 status["sendgrid"]["message"] = "Successfully connected to SendGrid API"
             else:
                 status["sendgrid"]["status"] = "error"
                 status["sendgrid"]["message"] = f"Unexpected response: {response.status_code}"
-        except Exception as e:
+        except requests.exceptions.RequestException as e:
             status["sendgrid"]["status"] = "error"
-            status["sendgrid"]["message"] = str(e)
+            status["sendgrid"]["message"] = f"API Error: {str(e)}"
     else:
         status["sendgrid"]["status"] = "error"
         status["sendgrid"]["message"] = "SendGrid API key not configured"
