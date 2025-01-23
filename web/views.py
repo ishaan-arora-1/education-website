@@ -219,9 +219,6 @@ def profile(request):
 
 @login_required
 def create_course(request):
-    if not request.user.profile.is_teacher:
-        return HttpResponseForbidden()
-
     if request.method == "POST":
         form = CourseForm(request.POST, request.FILES)
         if form.is_valid():

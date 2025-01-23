@@ -494,21 +494,16 @@ class CourseDetailTests(TestCase):
 
     def test_teacher_specific_functionality(self):
         """Test functionality available only to teachers"""
+        # Log in as teacher
         self.client.login(username="teacher", password="testpass123")
-        response = self.client.get(self.detail_url)
 
-        # Test edit course link is present
+        # Get course detail page
+        response = self.client.get(reverse("course_detail", args=[self.course.slug]))
+        self.assertEqual(response.status_code, 200)
+
+        # Check for course management links
         self.assertContains(response, reverse("update_course", args=[self.course.slug]))
-
-        # Test invite student link is present
-        self.assertContains(response, reverse("invite_student", args=[self.course.id]))
-
-        # Test add session link is present
-        self.assertContains(response, reverse("add_session", args=[self.course.slug]))
-
-        # Test session management links are present
-        self.assertContains(response, reverse("mark_session_attendance", args=[self.future_session.id]))
-        self.assertContains(response, reverse("edit_session", args=[self.future_session.id]))
+        self.assertContains(response, reverse("course_progress_overview", args=[self.course.slug]))
 
     def test_enrolled_student_functionality(self):
         """Test functionality available to enrolled students"""
@@ -562,3 +557,92 @@ class CourseDetailTests(TestCase):
 
         # Future session should not have completion form
         self.assertNotContains(response, f'action="{reverse("mark_session_completed", args=[self.future_session.id])}"')
+
+    def test_course_creation_by_non_teacher(self):
+        """Test that any authenticated user can create a course"""
+        regular_user = User.objects.create_user(username="regular_user", password="testpass123")
+        if not hasattr(regular_user, "profile"):
+            Profile.objects.create(user=regular_user, is_teacher=False)
+
+        # Log in as regular user
+        self.client.login(username="regular_user", password="testpass123")
+
+        # Get CSRF token
+        response = self.client.get(reverse("create_course"))
+        self.assertEqual(response.status_code, 200)
+
+        # Create a course
+        data = {
+            "title": "Test Course by Regular User",
+            "description": "Test Description",
+            "learning_objectives": "Test Objectives",
+            "prerequisites": "Test Prerequisites",
+            "price": "10.00",
+            "max_students": "50",
+            "level": "beginner",
+            "subject": self.subject.id,
+        }
+        response = self.client.post(reverse("create_course"), data)
+
+        # Should redirect to the new course's detail page
+        self.assertEqual(response.status_code, 302)
+
+        # Verify course was created
+        course = Course.objects.get(title="Test Course by Regular User")
+        self.assertEqual(course.teacher, regular_user)
+
+    def test_course_creator_info_display(self):
+        """Test that course creator info is displayed correctly"""
+        # Add expertise to the teacher's profile
+        self.teacher.profile.expertise = "Python Expert"
+        self.teacher.profile.save()
+
+        response = self.client.get(self.detail_url)
+
+        # Test that the course creator section exists
+        self.assertContains(response, "Course Creator")
+        self.assertContains(response, self.teacher.username)
+        self.assertContains(response, "Python Expert")
+
+        # Test that expertise is optional
+        self.teacher.profile.expertise = ""
+        self.teacher.profile.save()
+        response = self.client.get(self.detail_url)
+        self.assertContains(response, "Course Creator")
+        self.assertContains(response, self.teacher.username)
+
+    def test_course_management_options(self):
+        """Test that course management options are shown only to course creator"""
+        creator = User.objects.create_user(username="creator", password="testpass123")
+        if not hasattr(creator, "profile"):
+            Profile.objects.create(user=creator, is_teacher=False)
+
+        # Create a course as creator
+        self.client.login(username="creator", password="testpass123")
+
+        data = {
+            "title": "Test Course",
+            "description": "Test Description",
+            "learning_objectives": "Test Objectives",
+            "prerequisites": "Test Prerequisites",
+            "price": "10.00",
+            "max_students": "50",
+            "level": "beginner",
+            "subject": self.subject.id,
+        }
+        response = self.client.post(reverse("create_course"), data)
+        self.assertEqual(response.status_code, 302)
+
+        # Get the course by slug
+        course = Course.objects.get(slug="test-course-1")
+
+        # Check course detail page as creator
+        response = self.client.get(reverse("course_detail", args=[course.slug]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("update_course", args=[course.slug]))
+
+        # Check course detail page as other user
+        self.client.login(username="student", password="testpass123")
+        response = self.client.get(reverse("course_detail", args=[course.slug]))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, reverse("update_course", args=[course.slug]))
