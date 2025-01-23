@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block content %}
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+        <div class="p-6">
+          <h1 class="text-2xl font-semibold text-center text-gray-900 dark:text-white mb-6">Create Event Calendar</h1>
+          <form id="createCalendarForm" class="space-y-6">
+            <div>
+              <label for="title"
+                     class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <i class="fas fa-calendar-alt text-gray-400 mr-2"></i>Event Title
+              </label>
+              <input type="text"
+                     id="title"
+                     name="title"
+                     required
+                     placeholder="Enter event title"
+                     class="mt-1 block w-full rounded-md border-0 py-2 px-3 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-orange-500 dark:bg-gray-700 sm:text-sm" />
+            </div>
+            <div>
+              <label for="description"
+                     class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <i class="fas fa-align-left text-gray-400 mr-2"></i>Description
+              </label>
+              <textarea id="description"
+                        name="description"
+                        rows="3"
+                        placeholder="Describe your event"
+                        class="mt-1 block w-full rounded-md border-0 py-2 px-3 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-orange-500 dark:bg-gray-700 sm:text-sm"></textarea>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="month"
+                       class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <i class="fas fa-calendar-day text-gray-400 mr-2"></i>Month
+                </label>
+                <select id="month"
+                        name="month"
+                        required
+                        class="mt-1 block w-full rounded-md border-0 py-2 px-3 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-orange-500 dark:bg-gray-700 sm:text-sm">
+                  <option value="0">January</option>
+                  <option value="1">February</option>
+                  <option value="2">March</option>
+                  <option value="3">April</option>
+                  <option value="4">May</option>
+                  <option value="5">June</option>
+                  <option value="6">July</option>
+                  <option value="7">August</option>
+                  <option value="8">September</option>
+                  <option value="9">October</option>
+                  <option value="10">November</option>
+                  <option value="11">December</option>
+                </select>
+              </div>
+              <div>
+                <label for="year"
+                       class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <i class="fas fa-calendar text-gray-400 mr-2"></i>Year
+                </label>
+                <input type="number"
+                       id="year"
+                       name="year"
+                       required
+                       class="mt-1 block w-full rounded-md border-0 py-2 px-3 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-orange-500 dark:bg-gray-700 sm:text-sm" />
+              </div>
+            </div>
+            <div class="pt-4">
+              <button type="submit"
+                      class="w-full flex justify-center items-center px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-colors">
+                <i class="fas fa-calendar-plus mr-2"></i>
+                <span id="submitText">Create Calendar</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+      document.addEventListener('DOMContentLoaded', function() {
+          // Set default month and year
+          const now = new Date();
+          document.getElementById('month').value = now.getMonth();
+          document.getElementById('year').value = now.getFullYear();
+
+          document.getElementById('createCalendarForm').addEventListener('submit', async function(e) {
+              e.preventDefault();
+              const submitBtn = this.querySelector('button[type="submit"]');
+              const submitText = document.getElementById('submitText');
+
+              // Disable button and show loading state
+              submitBtn.disabled = true;
+              submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+              submitText.innerHTML = '<span class="inline-block animate-spin mr-2">↻</span>Creating...';
+
+              const formData = new FormData(this);
+
+              try {
+                  const response = await fetch('{% url "create_calendar" %}', {
+                      method: 'POST',
+                      body: formData,
+                      headers: {
+                          'X-CSRFToken': '{{ csrf_token }}'
+                      }
+                  });
+
+                  const data = await response.json();
+
+                  if (data.success) {
+                      window.location.href = `/calendar/${data.share_token}`;
+                  } else {
+                      throw new Error(data.error || 'Failed to create calendar');
+                  }
+              } catch (error) {
+                  console.error('Error:', error);
+                  // Show error message
+                  const errorDiv = document.createElement('div');
+                  errorDiv.className = 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 p-4 rounded-lg mb-4';
+                  errorDiv.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i>${error.message || 'An error occurred while creating the calendar'}`;
+
+                  const form = document.getElementById('createCalendarForm');
+                  form.insertBefore(errorDiv, form.firstChild);
+
+                  // Reset button state
+                  submitBtn.disabled = false;
+                  submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                  submitText.innerHTML = '<i class="fas fa-calendar-plus mr-2"></i>Create Calendar';
+
+                  // Remove error message after 5 seconds
+                  setTimeout(() => {
+                      errorDiv.remove();
+                  }, 5000);
+              }
+          });
+      });
+  </script>
+{% endblock content %}

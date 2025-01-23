@@ -144,6 +144,12 @@ urlpatterns += i18n_patterns(
     path("stripe/connect/onboarding/", views.stripe_connect_onboarding, name="stripe_connect_onboarding"),
     path("stripe/connect/webhook/", views.stripe_connect_webhook, name="stripe_connect_webhook"),
     path("courses/<slug:slug>/calendar/", views.get_course_calendar, name="course_calendar"),
+    # Calendar URLs
+    path("calendar/create/", views.create_calendar, name="create_calendar"),
+    path("calendar/<str:share_token>/", views.view_calendar, name="view_calendar"),
+    path("calendar/<str:share_token>/add-slot", views.add_time_slot, name="add_time_slot"),
+    path("calendar/<str:share_token>/remove-slot", views.remove_time_slot, name="remove_time_slot"),
+    path("calendar/<str:share_token>/data", views.get_calendar_data, name="get_calendar_data"),
     prefix_default_language=True,
 )
 

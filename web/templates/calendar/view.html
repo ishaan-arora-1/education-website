@@ -1,0 +1,532 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block content %}
+  <div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ calendar.title }}</h1>
+      <button onclick="copyShareLink()"
+              class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-colors">
+        <i class="fas fa-share-alt mr-2"></i>Share Calendar
+      </button>
+    </div>
+    {% if calendar.description %}
+      <div class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 p-4 rounded-lg mb-6">
+        <i class="fas fa-info-circle mr-2"></i>{{ calendar.description }}
+      </div>
+    {% endif %}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Calendar Grid -->
+      <div class="lg:col-span-2">
+        <div class="calendar-container">
+          <div class="calendar-header">
+            <h2 class="text-xl font-semibold" id="monthYear"></h2>
+          </div>
+          <div class="calendar-days">
+            <div class="text-sm font-medium text-gray-500">Sun</div>
+            <div class="text-sm font-medium text-gray-500">Mon</div>
+            <div class="text-sm font-medium text-gray-500">Tue</div>
+            <div class="text-sm font-medium text-gray-500">Wed</div>
+            <div class="text-sm font-medium text-gray-500">Thu</div>
+            <div class="text-sm font-medium text-gray-500">Fri</div>
+            <div class="text-sm font-medium text-gray-500">Sat</div>
+          </div>
+          <div class="calendar-days" id="calendar">
+            <!-- Calendar cells will be inserted here -->
+          </div>
+        </div>
+      </div>
+      <!-- Time Selection Panel -->
+      <div class="lg:col-span-1">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+          <div class="p-6">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Choose Your Times</h2>
+            <!-- Error Alert -->
+            <div id="formError"
+                 class="hidden bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 p-4 rounded-lg mb-4"></div>
+            <form class="space-y-4">
+              <div>
+                <label for="userName"
+                       class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <i class="fas fa-user text-gray-400 mr-2"></i>Your Name
+                </label>
+                <input type="text"
+                       id="userName"
+                       placeholder="Enter your name"
+                       required
+                       class="mt-1 block w-full rounded-md border-0 py-2 px-3 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-orange-500 dark:bg-gray-700 sm:text-sm" />
+              </div>
+              <div>
+                <label for="selectedDate"
+                       class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <i class="fas fa-calendar-day text-gray-400 mr-2"></i>Date
+                </label>
+                <input type="date"
+                       id="selectedDate"
+                       required
+                       class="mt-1 block w-full rounded-md border-0 py-2 px-3 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-orange-500 dark:bg-gray-700 sm:text-sm" />
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label for="startTime"
+                         class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <i class="fas fa-clock text-gray-400 mr-2"></i>Start
+                  </label>
+                  <input type="time"
+                         id="startTime"
+                         required
+                         class="mt-1 block w-full rounded-md border-0 py-2 px-3 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-orange-500 dark:bg-gray-700 sm:text-sm" />
+                </div>
+                <div>
+                  <label for="endTime"
+                         class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <i class="fas fa-clock text-gray-400 mr-2"></i>End
+                  </label>
+                  <input type="time"
+                         id="endTime"
+                         required
+                         class="mt-1 block w-full rounded-md border-0 py-2 px-3 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-orange-500 dark:bg-gray-700 sm:text-sm" />
+                </div>
+              </div>
+              <button type="button"
+                      onclick="addTimeSlot()"
+                      class="w-full flex justify-center items-center px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-colors">
+                <i class="fas fa-plus mr-2"></i>Add Time Slot
+              </button>
+            </form>
+            <div class="mt-6 space-y-3" id="selectedTimes">
+              <!-- Selected time slots will appear here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <style>
+      .calendar-container {
+          background: #fff;
+          border-radius: 8px;
+          padding: 20px;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      .calendar-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10px;
+      }
+
+      .calendar-days {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 5px;
+      }
+
+      .day {
+          background-color: #ffffff;
+          border: 1px solid #e0e0e0;
+          border-radius: 4px;
+          padding: 10px;
+          text-align: center;
+          cursor: pointer;
+          min-height: 80px;
+          position: relative;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+          transition: transform 0.1s ease;
+      }
+
+      .day:hover {
+          background-color: #f1f8ff;
+          transform: scale(1.05);
+      }
+
+      .day.inactive {
+          color: #aaa;
+          pointer-events: none;
+          background-color: #f0f0f0;
+      }
+
+      .day.selected-day {
+          outline: 2px solid #4f93ce;
+          outline-offset: -2px;
+      }
+
+      .availability-tags {
+          position: absolute;
+          bottom: 5px;
+          left: 5px;
+          right: 5px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 3px;
+          font-size: 0.75rem;
+          justify-content: center;
+          pointer-events: none;
+      }
+
+      .availability-tags span {
+          background: #333;
+          color: #fff;
+          padding: 2px 6px;
+          border-radius: 12px;
+          max-width: calc(100% - 4px);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+      }
+
+      .day-number {
+          font-size: 1.1rem;
+          font-weight: 500;
+          margin-bottom: 5px;
+          color: #333;
+      }
+
+      @media (prefers-color-scheme: dark) {
+          .calendar-container {
+              background: #1a1a1a;
+          }
+
+          .day {
+              background-color: #2d2d2d;
+              border-color: #404040;
+          }
+
+          .day:hover {
+              background-color: #3d3d3d;
+          }
+
+          .day.inactive {
+              background-color: #262626;
+              color: #666;
+          }
+
+          .day-number {
+              color: #e0e0e0;
+          }
+
+          .availability-tags span {
+              background: #4f93ce;
+          }
+      }
+
+      #selectedTimes .selected-time-slot {
+          background: #f5f5f5;
+          padding: 10px;
+          margin: 5px 0;
+          border-radius: 4px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+      }
+
+      #selectedTimes .selected-time-slot button {
+          background: none;
+          border: none;
+          color: #dc3545;
+          cursor: pointer;
+          padding: 5px;
+          border-radius: 4px;
+      }
+
+      #selectedTimes .selected-time-slot button:hover {
+          background-color: rgba(220, 53, 69, 0.1);
+      }
+  </style>
+  <script>
+      // Initialize calendar variables from Django template
+      const CALENDAR_TOKEN = "{{ calendar.share_token }}";
+      const INITIAL_MONTH = parseInt("{{ calendar.month }}");
+      const INITIAL_YEAR = parseInt("{{ calendar.year }}");
+
+      // Global variables for date tracking
+      const currentMonth = INITIAL_MONTH;
+      const currentYear = INITIAL_YEAR;
+      let firstDay;
+      let totalDays;
+      const availabilityData = {};
+
+      function showError(message) {
+          const errorEl = document.getElementById('formError');
+          errorEl.textContent = message;
+          errorEl.classList.remove('hidden');
+          setTimeout(() => {
+              errorEl.classList.add('hidden');
+          }, 3000);
+      }
+
+      function initializeCalendar() {
+          const calendarEl = document.getElementById('calendar');
+          const monthYearEl = document.getElementById('monthYear');
+
+          if (!calendarEl || !monthYearEl) {
+              console.error('Required elements not found');
+              return;
+          }
+
+          // Set default date in date picker to today
+          const dateInput = document.getElementById('selectedDate');
+          dateInput.valueAsDate = new Date();
+
+          // Month names for display
+          const monthNames = [
+              'January', 'February', 'March', 'April', 'May', 'June',
+              'July', 'August', 'September', 'October', 'November', 'December'
+          ];
+
+          // Display the current month/year in header
+          monthYearEl.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+          // Calculate first day and total days
+          firstDay = new Date(currentYear, currentMonth, 1).getDay();
+          totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+          // Clear existing calendar
+          calendarEl.innerHTML = '';
+
+          // Add empty cells for days before the first day of the month
+          for (let i = 0; i < firstDay; i++) {
+              const emptyCell = document.createElement('div');
+              emptyCell.className = 'day inactive';
+              calendarEl.appendChild(emptyCell);
+          }
+
+          // Create each day cell
+          for (let day = 1; day <= totalDays; day++) {
+              const dayCell = document.createElement('div');
+              dayCell.className = 'day';
+              dayCell.innerHTML = `
+                    <div class="day-number">${day}</div>
+                    <div class="availability-tags"></div>
+                `;
+              dayCell.addEventListener('click', () => selectDay(day, dayCell));
+              calendarEl.appendChild(dayCell);
+          }
+
+          // Fill in remaining cells to complete the grid
+          const totalCells = Math.ceil((firstDay + totalDays) / 7) * 7;
+          for (let i = firstDay + totalDays; i < totalCells; i++) {
+              const emptyCell = document.createElement('div');
+              emptyCell.className = 'day inactive';
+              calendarEl.appendChild(emptyCell);
+          }
+
+          // Update display with any existing data
+          updateCalendarDisplay();
+      }
+
+      // Load initial data
+      async function loadCalendarData() {
+          try {
+              const response = await fetch(`/en/calendar/${CALENDAR_TOKEN}/data`);
+              const data = await response.json();
+
+              // Convert the slots data into our format
+              data.slots.forEach(slot => {
+                  if (!availabilityData[slot.day]) {
+                      availabilityData[slot.day] = [];
+                  }
+                  availabilityData[slot.day].push({
+                      name: slot.name,
+                      startTime: slot.start_time,
+                      endTime: slot.end_time
+                  });
+              });
+
+              updateCalendarDisplay();
+              displaySelectedTimes();
+          } catch (error) {
+              console.error('Error loading calendar data:', error);
+              showError('Error loading calendar data');
+          }
+      }
+
+      async function addTimeSlot() {
+          const name = document.getElementById('userName').value;
+          const date = document.getElementById('selectedDate').value;
+          const startTime = document.getElementById('startTime').value;
+          const endTime = document.getElementById('endTime').value;
+
+          if (!name || !date || !startTime || !endTime) {
+              showError('Please fill in all fields');
+              return;
+          }
+
+          if (startTime >= endTime) {
+              showError('End time must be after start time');
+              return;
+          }
+
+          const dateObj = new Date(date + 'T00:00:00');
+          const selectedMonth = dateObj.getMonth();
+
+          if (selectedMonth !== currentMonth) {
+              showError('Please select a date in the current month');
+              return;
+          }
+
+          const dayNum = dateObj.getDate();
+
+          try {
+              const response = await fetch(`/en/calendar/${CALENDAR_TOKEN}/add-slot`, {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/x-www-form-urlencoded',
+                      'X-CSRFToken': '{{ csrf_token }}'
+                  },
+                  body: new URLSearchParams({
+                      name,
+                      day: dayNum,
+                      start_time: startTime,
+                      end_time: endTime
+                  })
+              });
+
+              const data = await response.json();
+              if (data.success) {
+                  // Reload calendar data
+                  loadCalendarData();
+                  // Clear form
+                  document.getElementById('userName').value = '';
+                  document.getElementById('startTime').value = '';
+                  document.getElementById('endTime').value = '';
+              } else {
+                  showError(data.error || 'Failed to add time slot');
+              }
+          } catch (error) {
+              console.error('Error:', error);
+              showError('An error occurred while adding the time slot');
+          }
+      }
+
+      async function removeTimeSlot(name, day) {
+          try {
+              const response = await fetch(`/en/calendar/${CALENDAR_TOKEN}/remove-slot`, {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/x-www-form-urlencoded',
+                      'X-CSRFToken': '{{ csrf_token }}'
+                  },
+                  body: new URLSearchParams({
+                      name,
+                      day
+                  })
+              });
+
+              if (response.ok) {
+                  loadCalendarData();
+              }
+          } catch (error) {
+              console.error('Error:', error);
+              showError('An error occurred while removing the time slot');
+          }
+      }
+
+      function copyShareLink() {
+          const link = window.location.href;
+          navigator.clipboard.writeText(link).then(() => {
+              const shareBtn = document.querySelector('button[onclick="copyShareLink()"]');
+              const originalText = shareBtn.innerHTML;
+              shareBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
+              setTimeout(() => {
+                  shareBtn.innerHTML = originalText;
+              }, 2000);
+          }).catch(() => {
+              showError('Failed to copy link. Please copy it manually: ' + link);
+          });
+      }
+
+      function selectDay(dayNum, dayElement) {
+          // Remove previous selection
+          const prevSelected = document.querySelector('.day.selected-day');
+          if (prevSelected) {
+              prevSelected.classList.remove('selected-day');
+          }
+
+          // Add selection to clicked day
+          dayElement.classList.add('selected-day');
+
+          // Update date input
+          const dateInput = document.getElementById('selectedDate');
+          const selectedDate = new Date(currentYear, currentMonth, dayNum);
+          dateInput.valueAsDate = selectedDate;
+      }
+
+      function updateCalendarDisplay() {
+          const days = document.querySelectorAll('.day:not(.inactive)');
+          days.forEach(day => {
+              const dayNum = parseInt(day.querySelector('.day-number').textContent);
+              const slots = availabilityData[dayNum] || [];
+
+              // Update availability tags
+              const tagsContainer = day.querySelector('.availability-tags');
+              tagsContainer.innerHTML = '';
+
+              const uniqueNames = [...new Set(slots.map(slot => slot.name))];
+              uniqueNames.forEach(name => {
+                  const tag = document.createElement('span');
+                  tag.textContent = name;
+                  tagsContainer.appendChild(tag);
+              });
+
+              // Update background color based on number of people
+              day.style.backgroundColor = getColorShade(slots.length);
+          });
+      }
+
+      function getColorShade(count) {
+          // Let's assume beyond 5, it's still our darkest shade
+          const maxCount = 5;
+          // We'll go from 95% lightness (light pink) to 50% lightness (dark red)
+          const hue = 0; // red
+          const saturation = 100;
+          const lightnessStart = 95;
+          const lightnessEnd = 50;
+
+          if (count === 0) return ''; // No one: default background
+          // Keep count capped to maxCount
+          const ratio = Math.min(count, maxCount) / maxCount;
+          // Interpolate lightness
+          const lightness = lightnessStart - ratio * (lightnessStart - lightnessEnd);
+          return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+      }
+
+      function displaySelectedTimes() {
+          const container = document.getElementById('selectedTimes');
+          container.innerHTML = '';
+
+          Object.entries(availabilityData).forEach(([day, slots]) => {
+              slots.forEach(slot => {
+                  const slotDiv = document.createElement('div');
+                  slotDiv.className = 'selected-time-slot';
+                  slotDiv.innerHTML = `
+                        <div>
+                            <div class="font-medium text-gray-900 dark:text-white">${slot.name}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">
+                                Day ${day} (${slot.startTime}-${slot.endTime})
+                            </div>
+                        </div>
+                        <button onclick="removeTimeSlot('${slot.name}', ${day})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                  container.appendChild(slotDiv);
+              });
+          });
+      }
+
+      // Initialize calendar and load data
+      document.addEventListener('DOMContentLoaded', function() {
+          console.log('DOM loaded, initializing calendar...');
+          initializeCalendar();
+          loadCalendarData();
+      });
+
+      // Also try to initialize immediately
+      console.log('Trying immediate initialization...');
+      initializeCalendar();
+      loadCalendarData();
+  </script>
+{% endblock content %}

@@ -360,6 +360,77 @@
               <!-- Course Description -->
               <div class="markdown-content space-y-6 text-gray-800 dark:text-gray-200">
                 <div class="space-y-4">
+                  <!-- Course Materials -->
+                  <div class="mt-8">
+                    <div class="flex justify-between items-center mb-4">
+                      <h2 class="text-xl font-bold">Course Materials</h2>
+                      {% if user == course.teacher %}
+                        <a href="{% url 'upload_material' course.slug %}"
+                           class="bg-teal-500 hover:bg-teal-600 text-white px-3 py-1 rounded-lg transition duration-200 text-sm">
+                          <i class="fas fa-plus mr-1"></i>Add Material
+                        </a>
+                      {% endif %}
+                    </div>
+                    {% if course.materials.exists %}
+                      <div class="grid gap-4">
+                        {% for material in course.materials.all %}
+                          <div class="bg-white dark:bg-gray-700 rounded-lg p-4 shadow">
+                            <div class="flex justify-between items-start">
+                              <div>
+                                <h3 class="font-semibold">
+                                  {% if is_enrolled or not material.requires_enrollment %}
+                                    {% if material.external_url %}
+                                      <a href="{{ material.external_url }}"
+                                         target="_blank"
+                                         class="text-blue-600 hover:text-blue-800 dark:text-blue-400">
+                                        {{ material.title }}
+                                        <i class="fas fa-external-link-alt ml-1 text-sm"></i>
+                                      </a>
+                                    {% else %}
+                                      <a href="{% url 'download_material' course.slug material.id %}"
+                                         class="text-blue-600 hover:text-blue-800 dark:text-blue-400">
+                                        {{ material.title }}
+                                        <i class="fas fa-download ml-1 text-sm"></i>
+                                      </a>
+                                    {% endif %}
+                                  {% else %}
+                                    {{ material.preview_content }}
+                                    <span class="ml-2 text-sm text-gray-500">(Enroll to access)</span>
+                                  {% endif %}
+                                </h3>
+                                {% if material.description %}
+                                  <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">{{ material.description }}</p>
+                                {% endif %}
+                              </div>
+                              {% if user == course.teacher %}
+                                <div class="flex space-x-2">
+                                  <a href="{% url 'delete_material' course.slug material.id %}"
+                                     class="text-red-600 hover:text-red-800 dark:text-red-400">
+                                    <i class="fas fa-trash"></i>
+                                  </a>
+                                </div>
+                              {% endif %}
+                            </div>
+                            <div class="flex items-center mt-2 text-sm text-gray-500 dark:text-gray-400">
+                              <span class="flex items-center">
+                                <i class="fas {% if material.material_type == 'video' %}fa-video{% elif material.material_type == 'image' %}fa-image{% elif material.material_type == 'document' %}fa-file-alt{% elif material.material_type == 'presentation' %}fa-file-powerpoint{% elif material.material_type == 'exercise' %}fa-tasks{% elif material.material_type == 'quiz' %}fa-question-circle{% else %}fa-file{% endif %} mr-1"></i>
+                                {{ material.get_material_type_display }}
+                              </span>
+                              {% if material.session %}
+                                <span class="mx-2">•</span>
+                                <span class="flex items-center">
+                                  <i class="far fa-calendar-alt mr-1"></i>
+                                  Session: {{ material.session.title }}
+                                </span>
+                              {% endif %}
+                            </div>
+                          </div>
+                        {% endfor %}
+                      </div>
+                    {% else %}
+                      <p class="text-gray-600 dark:text-gray-400">No materials available yet.</p>
+                    {% endif %}
+                  </div>
                   <!-- Schedule -->
                   <div>
                     <h2 class="text-xl font-bold mb-2">Schedule</h2>

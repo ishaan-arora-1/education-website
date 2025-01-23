@@ -583,7 +583,7 @@ class Migration(migrations.Migration):
                         max_length=20,
                     ),
                 ),
-                ("file", models.FileField(upload_to="course_materials/%Y/%m/%d/")),
+                ("file", models.FileField(upload_to="course_materials/")),
                 ("order", models.PositiveIntegerField(default=0)),
                 ("is_downloadable", models.BooleanField(default=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),

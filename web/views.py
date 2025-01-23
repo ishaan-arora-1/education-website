@@ -14,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
-from django.db import models, transaction
+from django.db import IntegrityError, models, transaction
 from django.db.models import Avg, Count, Q
 from django.http import FileResponse, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -23,6 +23,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET, require_POST
 
 from .calendar_sync import generate_google_calendar_link, generate_ical_feed, generate_outlook_calendar_link
 from .decorators import teacher_required
@@ -54,6 +55,7 @@ from .models import (
     CourseMaterial,
     CourseProgress,
     Enrollment,
+    EventCalendar,
     ForumCategory,
     ForumReply,
     ForumTopic,
@@ -64,6 +66,7 @@ from .models import (
     SessionAttendance,
     SessionEnrollment,
     StudyGroup,
+    TimeSlot,
 )
 from .notifications import notify_session_reminder, notify_teacher_new_enrollment, send_enrollment_confirmation
 from .utils import get_or_create_cart
@@ -131,15 +134,31 @@ def index(request):
 @login_required
 def profile(request):
     if request.method == "POST":
-        form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Your profile has been updated successfully!")
+        if "avatar" in request.FILES:
+            # Handle avatar upload
+            request.user.profile.avatar = request.FILES["avatar"]
+            request.user.profile.save()
             return redirect("profile")
-        else:
-            messages.error(request, "Please correct the errors below.")
+
+        form = ProfileUpdateForm(request.POST, instance=request.user)
+        if form.is_valid():
+            user = form.save()
+            user.profile.bio = form.cleaned_data["bio"]
+            user.profile.expertise = form.cleaned_data["expertise"]
+            user.profile.save()
+            messages.success(request, "Profile updated successfully!")
+            return redirect("profile")
     else:
-        form = ProfileUpdateForm(instance=request.user)
+        form = ProfileUpdateForm(
+            initial={
+                "username": request.user.username,
+                "email": request.user.email,
+                "first_name": request.user.first_name,
+                "last_name": request.user.last_name,
+                "bio": request.user.profile.bio,
+                "expertise": request.user.profile.expertise,
+            }
+        )
 
     context = {
         "form": form,
@@ -190,6 +209,10 @@ def profile(request):
                 "avg_progress": avg_progress,
             }
         )
+
+    # Add created calendars with prefetched time slots
+    created_calendars = request.user.created_calendars.prefetch_related("time_slots").order_by("-created_at")
+    context["created_calendars"] = created_calendars
 
     return render(request, "profile.html", context)
 
@@ -1973,6 +1996,90 @@ def get_course_calendar(request, slug):
         "current_month": current_month.strftime("%B %Y"),
         "prev_month": prev_month,
         "next_month": next_month,
+    }
+
+    return JsonResponse(data)
+
+
+@login_required
+def create_calendar(request):
+    if request.method == "POST":
+        title = request.POST.get("title")
+        description = request.POST.get("description")
+        try:
+            month = int(request.POST.get("month"))
+            year = int(request.POST.get("year"))
+
+            # Validate month is between 0-11
+            if not 0 <= month <= 11:
+                return JsonResponse({"success": False, "error": "Month must be between 0 and 11"}, status=400)
+
+            calendar = EventCalendar.objects.create(
+                title=title, description=description, creator=request.user, month=month, year=year
+            )
+
+            return JsonResponse({"success": True, "calendar_id": calendar.id, "share_token": calendar.share_token})
+        except (ValueError, TypeError):
+            return JsonResponse({"success": False, "error": "Invalid month or year"}, status=400)
+
+    return render(request, "calendar/create.html")
+
+
+def view_calendar(request, share_token):
+    calendar = get_object_or_404(EventCalendar, share_token=share_token)
+    return render(request, "calendar/view.html", {"calendar": calendar})
+
+
+@require_POST
+def add_time_slot(request, share_token):
+    calendar = get_object_or_404(EventCalendar, share_token=share_token)
+
+    try:
+        name = request.POST.get("name")
+        day = int(request.POST.get("day"))
+        start_time = request.POST.get("start_time")
+        end_time = request.POST.get("end_time")
+
+        # Create the time slot
+        TimeSlot.objects.create(calendar=calendar, name=name, day=day, start_time=start_time, end_time=end_time)
+
+        return JsonResponse({"success": True})
+    except IntegrityError:
+        return JsonResponse({"success": False, "error": "You already have a time slot for this day"}, status=400)
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+
+@require_POST
+def remove_time_slot(request, share_token):
+    calendar = get_object_or_404(EventCalendar, share_token=share_token)
+    name = request.POST.get("name")
+    day = int(request.POST.get("day"))
+
+    TimeSlot.objects.filter(calendar=calendar, name=name, day=day).delete()
+
+    return JsonResponse({"success": True})
+
+
+@require_GET
+def get_calendar_data(request, share_token):
+    calendar = get_object_or_404(EventCalendar, share_token=share_token)
+    slots = TimeSlot.objects.filter(calendar=calendar)
+
+    data = {
+        "title": calendar.title,
+        "description": calendar.description,
+        "month": calendar.month,
+        "year": calendar.year,
+        "slots": [
+            {
+                "name": slot.name,
+                "day": slot.day,
+                "start_time": slot.start_time.strftime("%H:%M"),
+                "end_time": slot.end_time.strftime("%H:%M"),
+            }
+            for slot in slots
+        ],
     }
 
     return JsonResponse(data)

@@ -1,4 +1,6 @@
 import os
+import random
+import string
 from io import BytesIO
 
 from allauth.account.signals import user_signed_up
@@ -252,7 +254,8 @@ class Session(models.Model):
 
 class CourseMaterial(models.Model):
     MATERIAL_TYPES = [
-        ("video", "Video Lesson"),
+        ("video", "Video"),
+        ("image", "Image"),
         ("document", "Document"),
         ("presentation", "Presentation"),
         ("exercise", "Exercise"),
@@ -264,7 +267,8 @@ class CourseMaterial(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     material_type = models.CharField(max_length=20, choices=MATERIAL_TYPES)
-    file = models.FileField(upload_to="course_materials/%Y/%m/%d/")
+    file = models.FileField(upload_to="course_materials/", blank=True)
+    external_url = models.URLField(blank=True, help_text="URL for external content like YouTube videos")
     session = models.ForeignKey(
         Session,
         on_delete=models.SET_NULL,
@@ -274,6 +278,9 @@ class CourseMaterial(models.Model):
     )
     order = models.PositiveIntegerField(default=0)
     is_downloadable = models.BooleanField(default=True)
+    requires_enrollment = models.BooleanField(
+        default=True, help_text="If True, only enrolled students can access full content"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -283,16 +290,39 @@ class CourseMaterial(models.Model):
     def __str__(self):
         return f"{self.course.title} - {self.title}"
 
+    def clean(self):
+        if not self.file and not self.external_url:
+            raise ValidationError("Either a file or external URL must be provided")
+        if self.file and self.external_url:
+            raise ValidationError("Cannot have both file and external URL")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     @property
     def file_extension(self):
-        return os.path.splitext(self.file.name)[1].lower()
+        if self.file:
+            return os.path.splitext(self.file.name)[1].lower()
+        return ""
 
     @property
     def file_size(self):
+        if not self.file:
+            return 0
         try:
             return self.file.size
         except FileNotFoundError:
             return 0
+
+    @property
+    def preview_content(self):
+        """Returns limited content for non-enrolled users"""
+        if self.material_type == "video":
+            return self.title
+        elif self.material_type == "image":
+            return self.title
+        return self.title
 
 
 class Enrollment(models.Model):
@@ -721,3 +751,37 @@ class SessionEnrollment(models.Model):
 
     def __str__(self):
         return f"{self.student.email} - {self.session.title}"
+
+
+class EventCalendar(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_calendars")
+    created_at = models.DateTimeField(auto_now_add=True)
+    month = models.IntegerField()  # 0-11 for Jan-Dec
+    year = models.IntegerField()
+    share_token = models.CharField(max_length=32, unique=True)  # For sharing the calendar
+
+    def save(self, *args, **kwargs):
+        if not self.share_token:
+            # Generate a unique token
+            self.share_token = "".join(random.choices(string.ascii_letters + string.digits, k=32))
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.title} - {self.creator.username}"
+
+
+class TimeSlot(models.Model):
+    calendar = models.ForeignKey(EventCalendar, on_delete=models.CASCADE, related_name="time_slots")
+    name = models.CharField(max_length=100)
+    day = models.IntegerField()  # 1-31
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ["calendar", "name", "day"]  # One slot per person per day
+
+    def __str__(self):
+        return f"{self.name} - Day {self.day} ({self.start_time}-{self.end_time})"
