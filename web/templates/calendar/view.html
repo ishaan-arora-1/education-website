@@ -187,11 +187,13 @@
       @media (prefers-color-scheme: dark) {
           .calendar-container {
               background: #1a1a1a;
+              border: 1px solid #404040;
           }
 
           .day {
               background-color: #2d2d2d;
               border-color: #404040;
+              color: #e0e0e0;
           }
 
           .day:hover {
@@ -322,6 +324,9 @@
           try {
               const response = await fetch(`/en/calendar/${CALENDAR_TOKEN}/data`);
               const data = await response.json();
+
+              // Clear existing data before loading new data
+              Object.keys(availabilityData).forEach(key => delete availabilityData[key]);
 
               // Convert the slots data into our format
               data.slots.forEach(slot => {
@@ -477,20 +482,30 @@
       }
 
       function getColorShade(count) {
-          // Let's assume beyond 5, it's still our darkest shade
+          const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
           const maxCount = 5;
-          // We'll go from 95% lightness (light pink) to 50% lightness (dark red)
           const hue = 0; // red
           const saturation = 100;
-          const lightnessStart = 95;
-          const lightnessEnd = 50;
 
-          if (count === 0) return ''; // No one: default background
-          // Keep count capped to maxCount
-          const ratio = Math.min(count, maxCount) / maxCount;
-          // Interpolate lightness
-          const lightness = lightnessStart - ratio * (lightnessStart - lightnessEnd);
-          return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+          if (isDark) {
+              // Dark mode: go from darker to lighter red
+              const lightnessStart = 20;
+              const lightnessEnd = 60;
+
+              if (count === 0) return '#2d2d2d'; // Default dark mode background
+              const ratio = Math.min(count, maxCount) / maxCount;
+              const lightness = lightnessStart + ratio * (lightnessEnd - lightnessStart);
+              return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+          } else {
+              // Light mode: go from lighter to darker red
+              const lightnessStart = 95;
+              const lightnessEnd = 50;
+
+              if (count === 0) return ''; // Default light mode background
+              const ratio = Math.min(count, maxCount) / maxCount;
+              const lightness = lightnessStart - ratio * (lightnessStart - lightnessEnd);
+              return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+          }
       }
 
       function displaySelectedTimes() {
@@ -523,10 +538,5 @@
           initializeCalendar();
           loadCalendarData();
       });
-
-      // Also try to initialize immediately
-      console.log('Trying immediate initialization...');
-      initializeCalendar();
-      loadCalendarData();
   </script>
 {% endblock content %}
