@@ -23,7 +23,8 @@
         <form method="post"
               enctype="multipart/form-data"
               class="space-y-6"
-              id="createCourseForm">
+              id="createCourseForm"
+              novalidate>
           {% csrf_token %}
           {% if form.errors %}
             <div class="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 p-4 rounded-lg mb-4">
@@ -39,7 +40,8 @@
             <div class="space-y-2">
               <label for="{{ field.id_for_label }}" class="block text-sm font-medium">{{ field.label }}</label>
               {% if field.name in "description"|add:",learning_objectives"|add:",prerequisites" %}
-                <div class="markdown-editor">{{ field }}</div>
+                <div class="markdown-editor"
+                     data-required="{{ field.field.required|yesno:'true,false' }}">{{ field }}</div>
               {% else %}
                 {{ field }}
               {% endif %}
@@ -63,54 +65,12 @@
   </div>
   <script>
       document.addEventListener('DOMContentLoaded', function() {
-          // Add form submission handler
-          const form = document.getElementById('createCourseForm');
-          form.addEventListener('submit', function(e) {
-              // Log form data for debugging
-              const formData = new FormData(form);
-              console.log('Form data:');
-              for (let [key, value] of formData.entries()) {
-                  console.log(key + ': ' + value);
-              }
-
-              // Check if any required fields are empty
-              let hasEmptyRequired = false;
-              form.querySelectorAll('[required]').forEach(field => {
-                  // For markdown editor fields, check the underlying textarea
-                  if (field.closest('.markdown-editor')) {
-                      const editor = field.closest('.markdown-editor').querySelector('.CodeMirror').CodeMirror;
-                      if (!editor.getValue().trim()) {
-                          console.log('Empty required markdown field:', field.name);
-                          hasEmptyRequired = true;
-                      }
-                  } else if (!field.value.trim()) {
-                      console.log('Empty required field:', field.name);
-                      hasEmptyRequired = true;
-                  }
-              });
-
-              if (hasEmptyRequired) {
-                  e.preventDefault();
-                  // Show error message in a more mobile-friendly way
-                  const errorDiv = document.createElement('div');
-                  errorDiv.className = 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 p-4 rounded-lg mb-4';
-                  errorDiv.textContent = 'Please fill in all required fields';
-                  form.insertBefore(errorDiv, form.firstChild);
-
-                  // Scroll to error message
-                  errorDiv.scrollIntoView({
-                      behavior: 'smooth',
-                      block: 'center'
-                  });
-
-                  // Remove error message after 3 seconds
-                  setTimeout(() => errorDiv.remove(), 3000);
-              }
-          });
+          // Store references to all EasyMDE instances
+          const editors = new Map();
 
           // Initialize EasyMDE with mobile-friendly options
           document.querySelectorAll('.markdown-editor textarea').forEach(textarea => {
-              new EasyMDE({
+              const editor = new EasyMDE({
                   element: textarea,
                   spellChecker: false,
                   status: false,
@@ -124,6 +84,76 @@
                   placeholder: textarea.getAttribute('placeholder') || 'Enter your content here...',
                   autoDownloadFontAwesome: false
               });
+
+              // Store the editor instance
+              editors.set(textarea.name, editor);
+
+              // Add change handler to update the hidden textarea
+              editor.codemirror.on('change', () => {
+                  textarea.value = editor.value();
+              });
+          });
+
+          // Add form submission handler
+          const form = document.getElementById('createCourseForm');
+          form.addEventListener('submit', function(e) {
+              e.preventDefault();
+
+              // Check regular form fields
+              let hasErrors = false;
+              const errorMessages = [];
+
+              // Check non-markdown required fields
+              form.querySelectorAll('input[required], select[required], textarea[required]').forEach(field => {
+                  if (!field.closest('.markdown-editor') && !field.value.trim()) {
+                      hasErrors = true;
+                      errorMessages.push(`${field.labels[0]?.textContent || field.name} is required`);
+                  }
+              });
+
+              // Check markdown editors
+              document.querySelectorAll('.markdown-editor[data-required="true"]').forEach(container => {
+                  const textarea = container.querySelector('textarea');
+                  const editor = editors.get(textarea.name);
+                  if (!editor.value().trim()) {
+                      hasErrors = true;
+                      errorMessages.push(`${textarea.labels[0]?.textContent || textarea.name} is required`);
+                  }
+              });
+
+              if (hasErrors) {
+                  // Show error messages
+                  const errorDiv = document.createElement('div');
+                  errorDiv.className = 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 p-4 rounded-lg mb-4';
+                  errorDiv.innerHTML = '<ul>' + errorMessages.map(msg => `<li>${msg}</li>`).join('') + '</ul>';
+
+                  // Remove any existing error messages
+                  const existingError = form.querySelector('.bg-red-100');
+                  if (existingError) {
+                      existingError.remove();
+                  }
+
+                  form.insertBefore(errorDiv, form.firstChild);
+
+                  // Scroll to error message
+                  errorDiv.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'center'
+                  });
+
+                  return;
+              }
+
+              // Update all markdown editor values before submit
+              editors.forEach((editor, fieldName) => {
+                  const textarea = form.querySelector(`textarea[name="${fieldName}"]`);
+                  if (textarea) {
+                      textarea.value = editor.value();
+                  }
+              });
+
+              // Submit the form
+              form.submit();
           });
 
           // Watch for theme changes and update editor theme
