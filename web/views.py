@@ -105,8 +105,8 @@ def index(request):
     else:
         form = TeacherSignupForm()
 
-    # Get featured courses - newest courses with highest ratings
-    featured_courses = Course.objects.all().order_by("-created_at")[:3]
+    # Get featured courses - only published and featured courses
+    featured_courses = Course.objects.filter(status="published", is_featured=True).order_by("-created_at")[:3]
 
     context = {
         "form": form,
