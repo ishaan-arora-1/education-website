@@ -795,3 +795,22 @@ class TimeSlot(models.Model):
 
     def __str__(self):
         return f"{self.name} - Day {self.day} ({self.start_time}-{self.end_time})"
+
+
+class SearchLog(models.Model):
+    query = models.CharField(max_length=255)
+    results_count = models.IntegerField()
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    filters_applied = models.JSONField(default=dict, blank=True)
+    search_type = models.CharField(
+        max_length=20,
+        choices=[("course", "Course Search"), ("material", "Material Search"), ("forum", "Forum Search")],
+        default="course",
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.query} ({self.results_count} results)"

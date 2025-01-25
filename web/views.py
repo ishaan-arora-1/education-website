@@ -62,6 +62,7 @@ from .models import (
     PeerConnection,
     PeerMessage,
     Profile,
+    SearchLog,
     Session,
     SessionAttendance,
     SessionEnrollment,
@@ -608,6 +609,26 @@ def course_search(request):
     else:  # Default to newest
         courses = courses.order_by("-created_at")
 
+    # Get total count before pagination
+    total_results = courses.count()
+
+    # Log the search
+    if query or subject or level or min_price or max_price:
+        filters = {
+            "subject": subject,
+            "level": level,
+            "min_price": min_price,
+            "max_price": max_price,
+            "sort_by": sort_by,
+        }
+        SearchLog.objects.create(
+            query=query,
+            results_count=total_results,
+            user=request.user if request.user.is_authenticated else None,
+            filters_applied=filters,
+            search_type="course",
+        )
+
     # Pagination
     paginator = Paginator(courses, 12)  # Show 12 courses per page
     page_number = request.GET.get("page", 1)
@@ -623,6 +644,7 @@ def course_search(request):
         "sort_by": sort_by,
         "subject_choices": Course._meta.get_field("subject").choices,
         "level_choices": Course._meta.get_field("level").choices,
+        "total_results": total_results,
     }
 
     return render(request, "courses/search.html", context)
