@@ -7,7 +7,7 @@ from django.http import HttpResponseRedirect
 from django.urls import path, reverse
 from django.utils.html import format_html
 
-from .models import Cart, CartItem, Course, Enrollment, Profile, Review, Session, Subject
+from .models import Cart, CartItem, Course, Enrollment, Profile, Review, SearchLog, Session, Subject
 
 
 class ProfileInline(admin.StackedInline):
@@ -177,6 +177,22 @@ class CartItemAdmin(admin.ModelAdmin):
     search_fields = ("cart__user__username", "cart__user__email", "course__title", "session__title")
     readonly_fields = ("created_at", "updated_at")
     raw_id_fields = ("cart", "course", "session")
+
+
+@admin.register(SearchLog)
+class SearchLogAdmin(admin.ModelAdmin):
+    list_display = ("query", "results_count", "search_type", "user", "created_at")
+    list_filter = ("search_type", "created_at")
+    search_fields = ("query", "user__username", "user__email")
+    readonly_fields = ("created_at", "filters_applied")
+    ordering = ("-created_at",)
+    raw_id_fields = ("user",)
+
+    def has_add_permission(self, request):
+        return False  # Search logs should only be created through the search interface
+
+    def has_change_permission(self, request, obj=None):
+        return False  # Search logs should not be editable
 
 
 # Unregister the default User admin and register our custom one
