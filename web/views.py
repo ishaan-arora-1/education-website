@@ -2114,3 +2114,37 @@ def system_status(request):
         status["sendgrid"]["message"] = "SendGrid API key not configured"
 
     return render(request, "status.html", {"status": status})
+
+
+@login_required
+@teacher_required
+def message_enrolled_students(request, slug):
+    """Send an email to all enrolled students in a course."""
+    course = get_object_or_404(Course, slug=slug, teacher=request.user)
+
+    if request.method == "POST":
+        title = request.POST.get("title")
+        message = request.POST.get("message")
+
+        if title and message:
+            # Get all enrolled students
+            enrolled_students = User.objects.filter(
+                enrollments__course=course, enrollments__status="approved"
+            ).distinct()
+
+            # Send email to each student
+            for student in enrolled_students:
+                send_mail(
+                    subject=f"[{course.title}] {title}",
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[student.email],
+                    fail_silently=True,
+                )
+
+            messages.success(request, "Email sent successfully to all enrolled students!")
+            return redirect("course_detail", slug=slug)
+        else:
+            messages.error(request, "Both title and message are required!")
+
+    return render(request, "courses/message_students.html", {"course": course})
