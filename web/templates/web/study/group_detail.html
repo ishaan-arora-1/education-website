@@ -129,11 +129,19 @@
             {% for member in group.members.all %}
               <div class="p-4">
                 <div class="flex items-center">
-                  <img src="{% static 'web/images/default-avatar.png' %}"
-                       alt="Avatar"
-                       width="32"
-                       height="32"
-                       class="w-8 h-8 rounded-full mr-3" />
+                  {% if member.user.profile.avatar %}
+                    <img src="{{ member.user.profile.avatar.url }}"
+                         alt="{{ member.user.get_full_name|default:member.user.username }}"
+                         class="h-8 w-8 rounded-full mr-3"
+                         width="32"
+                         height="32" />
+                  {% else %}
+                    <img src="{% static 'images/default_teacher.png' %}"
+                         alt="{{ member.user.get_full_name|default:member.user.username }}"
+                         class="h-8 w-8 rounded-full mr-3"
+                         width="32"
+                         height="32" />
+                  {% endif %}
                   <div>
                     <div class="font-medium">
                       {{ member.get_full_name|default:member.username }}

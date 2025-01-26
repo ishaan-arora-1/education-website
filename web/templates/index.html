@@ -8,7 +8,7 @@
       <div class="md:w-3/4 space-y-6">
         <div class="space-y-4">
           <blockquote class="text-xl italic">
-            “Somewhere, something incredible is waiting to be known.”
+            "Somewhere, something incredible is waiting to be known."
             <span class="block text-right">- Carl Sagan</span>
           </blockquote>
           <p>
@@ -16,7 +16,7 @@
             meaningful connections between teachers and students. By bridging
             the gap between knowledge seekers and knowledge givers, we
             facilitate a dynamic educational experience that empowers everyone
-            involved. Whether you’re sharing expertise or searching for
+            involved. Whether you're sharing expertise or searching for
             guidance, Alpha One Labs helps turn curiosity into collaborative
             learning—because when passionate minds come together, new
             understanding is always within reach.
@@ -75,15 +75,15 @@
                 {% if course.teacher.profile.avatar %}
                   <img src="{{ course.teacher.profile.avatar.url }}"
                        alt="{{ course.teacher.get_full_name|default:course.teacher.username }}"
-                       class="h-6 w-6 rounded-full mr-2"
-                       width="24"
-                       height="24" />
+                       class="h-12 w-12 rounded-full mr-3"
+                       width="48"
+                       height="48" />
                 {% else %}
-                  <img src="{% static 'images/default-avatar.jpg' %}"
+                  <img src="{% static 'images/default_teacher.png' %}"
                        alt="{{ course.teacher.get_full_name|default:course.teacher.username }}"
-                       class="h-6 w-6 rounded-full mr-2"
-                       width="24"
-                       height="24" />
+                       class="h-12 w-12 rounded-full mr-3"
+                       width="48"
+                       height="48" />
                 {% endif %}
                 <span class="text-sm">{{ course.teacher.get_full_name|default:course.teacher.username }}</span>
               </div>

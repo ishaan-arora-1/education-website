@@ -89,9 +89,11 @@
                        width="48"
                        height="48" />
                 {% else %}
-                  <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                    <i class="fas fa-user text-gray-400"></i>
-                  </div>
+                  <img src="{% static 'images/default_teacher.png' %}"
+                       alt="{{ course.teacher.get_full_name }}"
+                       class="w-12 h-12 rounded-full"
+                       width="48"
+                       height="48" />
                 {% endif %}
                 <div>
                   <p class="font-medium">{{ course.teacher.get_full_name|default:course.teacher.username }}</p>

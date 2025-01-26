@@ -124,9 +124,11 @@
                              width="32"
                              height="32" />
                       {% else %}
-                        <div class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-                          <i class="fas fa-user text-gray-400"></i>
-                        </div>
+                        <img src="{% static 'images/default_teacher.png' %}"
+                             alt="{{ data.enrollment.student.get_full_name }}"
+                             class="h-8 w-8 rounded-full mr-3"
+                             width="32"
+                             height="32" />
                       {% endif %}
                       <div>
                         <div class="font-medium">{{ data.enrollment.student.get_full_name }}</div>

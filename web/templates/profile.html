@@ -26,9 +26,17 @@
                    height="128"
                    width="128" />
             {% else %}
-              <div class="w-32 h-32 rounded-full bg-orange-500 flex items-center justify-center text-white text-4xl mb-4">
-                {{ user.first_name|first|default:user.username|first|upper }}
-              </div>
+              {% if user.profile.is_teacher %}
+                <img src="{% static 'images/default_teacher.png' %}"
+                     alt="{{ user.username }}'s avatar"
+                     class="w-32 h-32 rounded-full object-cover mb-4"
+                     height="128"
+                     width="128" />
+              {% else %}
+                <div class="w-32 h-32 rounded-full bg-orange-500 flex items-center justify-center text-white text-4xl mb-4">
+                  {{ user.first_name|first|default:user.username|first|upper }}
+                </div>
+              {% endif %}
             {% endif %}
             <form method="post"
                   enctype="multipart/form-data"
