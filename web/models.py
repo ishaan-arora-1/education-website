@@ -114,6 +114,21 @@ class Subject(models.Model):
         super().save(*args, **kwargs)
 
 
+class WebRequest(models.Model):
+    ip_address = models.CharField(max_length=100, blank=True, default="")
+    user = models.CharField(max_length=150, blank=True, default="")
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+    agent = models.TextField(blank=True, default="")
+    count = models.BigIntegerField(default=1)
+    path = models.CharField(max_length=255, blank=True, default="")
+    referer = models.CharField(max_length=255, blank=True, default="")
+    course = models.ForeignKey("Course", on_delete=models.CASCADE, related_name="web_requests", null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.path} - {self.count} views"
+
+
 class Course(models.Model):
     STATUS_CHOICES = [
         ("draft", "Draft"),
