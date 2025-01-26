@@ -308,3 +308,5 @@ MARKDOWNX_MARKDOWN_EXTENSIONS = [
 MARKDOWNX_URLS_PATH = "/markdownx/markdownify/"
 MARKDOWNX_UPLOAD_URLS_PATH = "/markdownx/upload/"
 MARKDOWNX_MEDIA_PATH = "markdownx/"  # Path within MEDIA_ROOT
+
+USE_X_FORWARDED_HOST = True
