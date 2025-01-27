@@ -19,7 +19,7 @@ from django.db.models import Avg, Count, Q
 from django.http import FileResponse, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.views.decorators.csrf import csrf_exempt
@@ -2208,7 +2208,15 @@ def message_teacher(request, teacher_id):
                     html_message=html_message,
                 )
                 messages.success(request, "Your message has been sent successfully!")
-                return redirect("course_detail", slug=request.GET.get("next", ""))
+
+                # Get the next URL from query params, default to course search if not provided
+                next_url = request.GET.get("next")
+                if next_url:
+                    try:
+                        return redirect("course_detail", slug=next_url)
+                    except NoReverseMatch:
+                        pass
+                return redirect("course_search")
             except Exception as e:
                 messages.error(request, f"Failed to send message: {str(e)}")
                 return redirect("message_teacher", teacher_id=teacher_id)
