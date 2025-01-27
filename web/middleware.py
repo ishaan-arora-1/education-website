@@ -16,7 +16,12 @@ class GlobalExceptionMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        return self.get_response(request)
+        # Rewrite the hostname
+        request.META["HTTP_HOST"] = "alphaonelabs.com"
+
+        # Proceed with the request
+        response = self.get_response(request)
+        return response
 
     def process_exception(self, request, exception):
         from django.conf import settings
