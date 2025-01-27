@@ -197,12 +197,17 @@ class SearchLogAdmin(admin.ModelAdmin):
 
 @admin.register(WebRequest)
 class WebRequestAdmin(admin.ModelAdmin):
-    list_display = ("path", "ip_address", "user", "count", "course", "created", "modified")
+    list_display = ("path", "ip_address", "user", "count", "course", "get_agent", "created", "modified")
     list_filter = ("created", "modified")
     search_fields = ("path", "ip_address", "user", "agent", "referer")
     readonly_fields = ("created", "modified")
     ordering = ("-modified",)
     raw_id_fields = ("course",)
+
+    def get_agent(self, obj):
+        return obj.agent[:100] + "..." if len(obj.agent) > 100 else obj.agent
+
+    get_agent.short_description = "User Agent"
 
     def has_add_permission(self, request):
         return False  # WebRequests should only be created through middleware

@@ -67,7 +67,10 @@ class WebRequestMiddleware:
             logger.debug(f"Resolved URL: {request.path} to view: {resolver_match.url_name}")
 
             # Get client info with default empty strings
-            ip_address = request.META.get("REMOTE_ADDR", "")
+            # Get real IP from X-Forwarded-For if available
+            ip_address = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get(
+                "REMOTE_ADDR", ""
+            )
             user = request.user.username if request.user.is_authenticated else ""
             agent = request.META.get("HTTP_USER_AGENT", "")
             referer = request.META.get("HTTP_REFERER", "")
