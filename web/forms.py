@@ -675,15 +675,59 @@ class BlogPostForm(forms.ModelForm):
 
 
 class MessageTeacherForm(forms.Form):
-    name = forms.CharField(max_length=100, required=True)
-    email = forms.EmailField(required=True)
-    message = forms.CharField(widget=forms.Textarea, required=True)
-    captcha = forms.CharField(required=False)  # Will be required for non-authenticated users
+    name = forms.CharField(
+        max_length=100,
+        required=True,
+        widget=TailwindInput(
+            attrs={
+                "class": (
+                    "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 "
+                    "rounded-lg focus:ring-2 focus:ring-blue-500"
+                )
+            }
+        ),
+    )
+    email = forms.EmailField(
+        required=True,
+        widget=TailwindEmailInput(
+            attrs={
+                "class": (
+                    "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 "
+                    "rounded-lg focus:ring-2 focus:ring-blue-500"
+                )
+            }
+        ),
+    )
+    message = forms.CharField(
+        widget=TailwindTextarea(
+            attrs={
+                "class": (
+                    "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 "
+                    "rounded-lg focus:ring-2 focus:ring-blue-500"
+                ),
+                "rows": 5,
+            }
+        ),
+        required=True,
+    )
+    captcha = CaptchaField(
+        required=False,
+        widget=TailwindCaptchaTextInput(
+            attrs={
+                "class": (
+                    "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 "
+                    "rounded-lg focus:ring-2 focus:ring-blue-500"
+                )
+            }
+        ),
+    )
 
     def __init__(self, *args, **kwargs):
-        authenticated = kwargs.pop("authenticated", False)
+        user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
-        if authenticated:
+
+        # If user is authenticated, remove name, email and captcha fields
+        if user and user.is_authenticated:
             del self.fields["name"]
             del self.fields["email"]
             del self.fields["captcha"]
