@@ -86,8 +86,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
-    "web.middleware.GlobalExceptionMiddleware",
     "web.middleware.WebRequestMiddleware",
+    "web.middleware.GlobalExceptionMiddleware",
 ]
 
 ROOT_URLCONF = "web.urls"

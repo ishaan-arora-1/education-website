@@ -2051,18 +2051,18 @@ def view_calendar(request, share_token):
 
 @require_POST
 def add_time_slot(request, share_token):
-    calendar = get_object_or_404(EventCalendar, share_token=share_token)
-
     try:
-        name = request.POST.get("name")
-        day = int(request.POST.get("day"))
-        start_time = request.POST.get("start_time")
-        end_time = request.POST.get("end_time")
+        with transaction.atomic():
+            calendar = get_object_or_404(EventCalendar, share_token=share_token)
+            name = request.POST.get("name")
+            day = int(request.POST.get("day"))
+            start_time = request.POST.get("start_time")
+            end_time = request.POST.get("end_time")
 
-        # Create the time slot
-        TimeSlot.objects.create(calendar=calendar, name=name, day=day, start_time=start_time, end_time=end_time)
+            # Create the time slot
+            TimeSlot.objects.create(calendar=calendar, name=name, day=day, start_time=start_time, end_time=end_time)
 
-        return JsonResponse({"success": True})
+            return JsonResponse({"success": True})
     except IntegrityError:
         return JsonResponse({"success": False, "error": "You already have a time slot for this day"}, status=400)
     except Exception as e:

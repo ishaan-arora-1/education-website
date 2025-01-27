@@ -1,10 +1,14 @@
+import logging
 import traceback
 
+from django.http import Http404
 from django.shortcuts import render
 from django.urls import Resolver404, resolve
 
-from .models import WebRequest
+from .models import Course, WebRequest
 from .views import send_slack_message
+
+logger = logging.getLogger(__name__)
 
 
 class GlobalExceptionMiddleware:
@@ -47,50 +51,64 @@ class WebRequestMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        response = self.get_response(request)
+        # Skip tracking for static files
+        if request.path.startswith("/static/"):
+            logger.debug(f"Skipping tracking for static file: {request.path}")
+            return self.get_response(request)
 
         try:
-            # Get identifying information for the client
-            ip_address = request.META.get("REMOTE_ADDR")
-            user = request.user.username if request.user.is_authenticated else None
-            agent = request.META.get("HTTP_USER_AGENT")
-            referer = request.META.get("HTTP_REFERER")
+            # Try to resolve the URL to get the view name
+            resolver_match = resolve(request.path)
+            logger.debug(f"Resolved URL: {request.path} to view: {resolver_match.url_name}")
 
-            # Try to get existing web request for this client and path
-            web_request = WebRequest.objects.filter(
-                path=request.path, ip_address=ip_address, user=user, agent=agent
-            ).first()
+            # Get client info with default empty strings
+            ip_address = request.META.get("REMOTE_ADDR", "")
+            user = request.user.username if request.user.is_authenticated else ""
+            agent = request.META.get("HTTP_USER_AGENT", "")
+            referer = request.META.get("HTTP_REFERER", "")
 
-            # Check if this is a course detail page to associate the course
+            # Try to get course for course detail pages
             course = None
-            try:
-                resolved = resolve(request.path)
-                if resolved.url_name == "course_detail":
-                    course_slug = resolved.kwargs.get("slug")
-                    if course_slug:
-                        from .models import Course
+            if resolver_match.url_name == "course_detail":
+                logger.debug(f"Processing course detail page with slug: {resolver_match.kwargs.get('slug')}")
+                try:
+                    course = Course.objects.get(slug=resolver_match.kwargs["slug"])
+                    logger.debug(f"Found course: {course.title}")
+                except Course.DoesNotExist:
+                    logger.debug("Course not found, will create WebRequest without course association")
+                    # Don't return here, continue to create WebRequest without course
 
-                        course = Course.objects.get(slug=course_slug)
-            except (Resolver404, Course.DoesNotExist):
-                pass
+            # Get the response first
+            response = self.get_response(request)
+            logger.debug(f"Response status code: {response.status_code}")
 
-            if web_request:
-                # Increment count for existing request
-                web_request.count += 1
-                web_request.save()
-            else:
-                # Create new web request entry
-                WebRequest.objects.create(
-                    path=request.path,
+            # Only track successful responses and 404s
+            if response.status_code < 500:
+                # Create or update web request
+                web_request, created = WebRequest.objects.get_or_create(
                     ip_address=ip_address,
                     user=user,
                     agent=agent,
-                    referer=referer,
+                    path=request.path,
                     course=course,
-                    count=1,
+                    defaults={"referer": referer, "count": 1},
                 )
-        except Exception as e:
-            # Log the error but don't interrupt the response
-            print(f"Error in WebRequestMiddleware: {str(e)}")
 
-        return response
+                if not created:
+                    web_request.count += 1
+                    web_request.referer = referer  # Update referer
+                    web_request.save()
+                    logger.debug(f"Updated existing web request, new count: {web_request.count}")
+                else:
+                    logger.debug("Created new web request")
+
+            return response
+
+        except (Http404, Resolver404) as e:
+            # Let Django handle 404 errors
+            logger.debug(f"Caught 404 error: {str(e)}")
+            return self.get_response(request)
+        except Exception as e:
+            # For any other errors, let Django handle them
+            logger.error(f"Unexpected error in middleware: {str(e)}")
+            return self.get_response(request)
