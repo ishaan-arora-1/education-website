@@ -7,7 +7,7 @@ from django.http import HttpResponseRedirect
 from django.urls import path, reverse
 from django.utils.html import format_html
 
-from .models import Cart, CartItem, Course, Enrollment, Profile, Review, SearchLog, Session, Subject
+from .models import Cart, CartItem, Course, Enrollment, Profile, Review, SearchLog, Session, Subject, WebRequest
 
 
 class ProfileInline(admin.StackedInline):
@@ -193,6 +193,22 @@ class SearchLogAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False  # Search logs should not be editable
+
+
+@admin.register(WebRequest)
+class WebRequestAdmin(admin.ModelAdmin):
+    list_display = ("path", "ip_address", "user", "count", "course", "created", "modified")
+    list_filter = ("created", "modified")
+    search_fields = ("path", "ip_address", "user", "agent", "referer")
+    readonly_fields = ("created", "modified")
+    ordering = ("-modified",)
+    raw_id_fields = ("course",)
+
+    def has_add_permission(self, request):
+        return False  # WebRequests should only be created through middleware
+
+    def has_change_permission(self, request, obj=None):
+        return False  # WebRequests should not be editable
 
 
 # Unregister the default User admin and register our custom one
