@@ -9,7 +9,7 @@ import requests
 import stripe
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import get_user_model, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
@@ -34,6 +34,7 @@ from .forms import (
     ForumCategoryForm,
     InviteStudentForm,
     LearnForm,
+    MessageTeacherForm,
     ProfileUpdateForm,
     ReviewForm,
     SessionForm,
@@ -2170,3 +2171,55 @@ def message_enrolled_students(request, slug):
             messages.error(request, "Both title and message are required!")
 
     return render(request, "courses/message_students.html", {"course": course})
+
+
+def message_teacher(request, teacher_id):
+    """Send a message to a teacher."""
+    teacher = get_object_or_404(get_user_model(), id=teacher_id)
+    if not teacher.profile.is_teacher:
+        messages.error(request, "This user is not a teacher.")
+        return redirect("index")
+
+    if request.method == "POST":
+        form = MessageTeacherForm(request.POST, user=request.user)
+        if form.is_valid():
+            # Prepare email content
+            if request.user.is_authenticated:
+                sender_name = request.user.get_full_name() or request.user.username
+                sender_email = request.user.email
+            else:
+                sender_name = form.cleaned_data["name"]
+                sender_email = form.cleaned_data["email"]
+
+            # Send email to teacher
+            context = {
+                "sender_name": sender_name,
+                "sender_email": sender_email,
+                "message": form.cleaned_data["message"],
+            }
+            html_message = render_to_string("web/emails/teacher_message.html", context)
+
+            try:
+                send_mail(
+                    subject=f"New message from {sender_name}",
+                    message=form.cleaned_data["message"],
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[teacher.email],
+                    html_message=html_message,
+                )
+                messages.success(request, "Your message has been sent successfully!")
+                return redirect("course_detail", slug=request.GET.get("next", ""))
+            except Exception as e:
+                messages.error(request, f"Failed to send message: {str(e)}")
+                return redirect("message_teacher", teacher_id=teacher_id)
+    else:
+        form = MessageTeacherForm(user=request.user)
+
+    return render(
+        request,
+        "web/message_teacher.html",
+        {
+            "form": form,
+            "teacher": teacher,
+        },
+    )

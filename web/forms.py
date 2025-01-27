@@ -36,6 +36,7 @@ __all__ = [
     "InviteStudentForm",
     "ForumCategoryForm",
     "BlogPostForm",
+    "MessageTeacherForm",
 ]
 
 
@@ -671,3 +672,18 @@ class BlogPostForm(forms.ModelForm):
             ),
             "status": forms.Select(attrs={"class": input_classes}),
         }
+
+
+class MessageTeacherForm(forms.Form):
+    name = forms.CharField(max_length=100, required=True)
+    email = forms.EmailField(required=True)
+    message = forms.CharField(widget=forms.Textarea, required=True)
+    captcha = forms.CharField(required=False)  # Will be required for non-authenticated users
+
+    def __init__(self, *args, **kwargs):
+        authenticated = kwargs.pop("authenticated", False)
+        super().__init__(*args, **kwargs)
+        if authenticated:
+            del self.fields["name"]
+            del self.fields["email"]
+            del self.fields["captcha"]

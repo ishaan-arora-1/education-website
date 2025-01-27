@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Message from a student" />
+    <meta name="keywords" content="education, message, teacher" />
+    <title>New Message from {{ sender_name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .message-box {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .header {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #2563eb;
+            margin: 0;
+        }
+
+        .sender-info {
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        .message-content {
+            white-space: pre-wrap;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>New Message</h1>
+    </div>
+    <div class="sender-info">
+      <p>
+        <strong>From:</strong> {{ sender_name }}
+      </p>
+      <p>
+        <strong>Email:</strong> {{ sender_email }}
+      </p>
+    </div>
+    <div class="message-box">
+      <div class="message-content">{{ message }}</div>
+    </div>
+  </body>
+</html>

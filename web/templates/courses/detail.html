@@ -100,6 +100,11 @@
                   {% if course.teacher.profile.expertise %}
                     <p class="text-sm text-gray-600 dark:text-gray-400">{{ course.teacher.profile.expertise }}</p>
                   {% endif %}
+                  <a href="{% url 'message_teacher' course.teacher.id %}"
+                     class="inline-flex items-center mt-2 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400">
+                    <i class="fas fa-envelope mr-1"></i>
+                    Message Teacher
+                  </a>
                 </div>
               </div>
             </div>

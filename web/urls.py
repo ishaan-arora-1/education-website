@@ -40,6 +40,7 @@ urlpatterns += i18n_patterns(
     path("courses/<slug:slug>/update/", views.update_course, name="update_course"),
     path("courses/<slug:slug>/delete/", views.delete_course, name="delete_course"),
     path("courses/<slug:slug>/message-students/", views.message_enrolled_students, name="message_students"),
+    path("teachers/<int:teacher_id>/message/", views.message_teacher, name="message_teacher"),
     # Payment URLs
     path(
         "courses/<slug:slug>/create-payment-intent/",

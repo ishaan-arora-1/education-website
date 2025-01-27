@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .message-box {
+            background-color: #f5f5f5;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .sender-info {
+            margin-bottom: 20px;
+            color: #666;
+        }
+    </style>
+  </head>
+  <body>
+    <h2>New Message Received</h2>
+    <div class="sender-info">
+      <p>
+        <strong>From:</strong> {{ sender_name }} ({{ sender_email }})
+      </p>
+    </div>
+    <div class="message-box">{{ message|linebreaks }}</div>
+    <p>You can reply to this message by directly responding to this email.</p>
+  </body>
+</html>
