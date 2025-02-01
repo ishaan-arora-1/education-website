@@ -255,6 +255,11 @@ def course_detail(request, slug):
             ).values_list("session__id", flat=True)
             completed_sessions = course.sessions.filter(id__in=completed_sessions)
 
+    # Mark past sessions as completed for display
+    past_sessions = sessions.filter(end_time__lt=now)
+    future_sessions = sessions.filter(end_time__gte=now)
+    sessions = list(future_sessions) + list(past_sessions)  # Show future sessions first
+
     # Calendar data
     today = timezone.now().date()
 
@@ -1959,7 +1964,7 @@ def create_forum_category(request):
         if form.is_valid():
             category = form.save()
             messages.success(request, f"Forum category '{category.name}' created successfully!")
-            return redirect("forum_categories")
+            return redirect("forum_category", slug=category.slug)
     else:
         form = ForumCategoryForm()
 

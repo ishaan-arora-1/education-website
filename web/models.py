@@ -507,6 +507,11 @@ class ForumCategory(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
 
 class ForumTopic(models.Model):
     """Individual forum topics/threads."""
