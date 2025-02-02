@@ -17,9 +17,11 @@ from .models import (
     CourseMaterial,
     CourseProgress,
     Enrollment,
+    ForumCategory,
     ForumReply,
     ForumTopic,
     Notification,
+    Payment,
     Profile,
     Review,
     SearchLog,
@@ -301,6 +303,24 @@ class ForumReplyAdmin(admin.ModelAdmin):
     list_filter = ("is_solution", "created_at")
     search_fields = ("topic__title", "author__username", "content")
     raw_id_fields = ("topic", "author")
+
+
+@admin.register(ForumCategory)
+class ForumCategoryAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "order", "created_at")
+    list_filter = ("created_at", "updated_at")
+    search_fields = ("name", "description")
+    prepopulated_fields = {"slug": ("name",)}
+    ordering = ("order", "name")
+
+
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = ("enrollment", "session", "amount", "currency", "status", "created_at")
+    list_filter = ("status", "currency", "created_at")
+    search_fields = ("enrollment__student__username", "enrollment__course__title", "stripe_payment_intent_id")
+    raw_id_fields = ("enrollment", "session")
+    readonly_fields = ("created_at", "updated_at")
 
 
 # Unregister the default User admin and register our custom one
