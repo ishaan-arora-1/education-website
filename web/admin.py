@@ -1,8 +1,8 @@
-from allauth.account.models import EmailAddress
 from django.contrib import admin, messages
 from django.contrib.auth import login
-from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
+from django.db import models
 from django.http import HttpResponseRedirect
 from django.urls import path, reverse
 from django.utils.html import format_html
@@ -35,30 +35,23 @@ class ProfileAdmin(admin.ModelAdmin):
     )
 
 
-class CustomUserAdmin(UserAdmin):
+class CustomUserAdmin(BaseUserAdmin):
     inlines = (ProfileInline,)
-    list_display = (
-        "username",
-        "email",
-        "first_name",
-        "last_name",
-        "is_staff",
-        "is_active",
-        "get_is_teacher",
-        "get_email_verified",
-    )
+    list_display = ("username", "email", "first_name", "last_name", "is_staff", "get_enrollment_count")
 
-    def get_is_teacher(self, obj):
-        return obj.profile.is_teacher if hasattr(obj, "profile") else False
+    def get_enrollment_count(self, obj):
+        count = obj.enrollments.count()
+        if count > 0:
+            url = reverse("admin:web_enrollment_changelist") + f"?student__id__exact={obj.id}"
+            return format_html('<a href="{}">{} enrollments</a>', url, count)
+        return "0 enrollments"
 
-    get_is_teacher.short_description = "Is Teacher"
-    get_is_teacher.boolean = True
+    get_enrollment_count.short_description = "Enrollments"
+    get_enrollment_count.admin_order_field = "enrollments__count"
 
-    def get_email_verified(self, obj):
-        return EmailAddress.objects.filter(user=obj, verified=True).exists()
-
-    get_email_verified.short_description = "Email Verified"
-    get_email_verified.boolean = True
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.annotate(models.Count("enrollments"))
 
     def get_urls(self):
         urls = super().get_urls()
