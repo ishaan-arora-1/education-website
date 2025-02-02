@@ -7,7 +7,27 @@ from django.http import HttpResponseRedirect
 from django.urls import path, reverse
 from django.utils.html import format_html
 
-from .models import Cart, CartItem, Course, Enrollment, Profile, Review, SearchLog, Session, Subject, WebRequest
+from .models import (
+    Achievement,
+    BlogComment,
+    BlogPost,
+    Cart,
+    CartItem,
+    Course,
+    CourseMaterial,
+    CourseProgress,
+    Enrollment,
+    ForumReply,
+    ForumTopic,
+    Notification,
+    Profile,
+    Review,
+    SearchLog,
+    Session,
+    SessionAttendance,
+    Subject,
+    WebRequest,
+)
 
 
 class ProfileInline(admin.StackedInline):
@@ -207,6 +227,80 @@ class WebRequestAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False  # WebRequests should not be editable
+
+
+@admin.register(CourseMaterial)
+class CourseMaterialAdmin(admin.ModelAdmin):
+    list_display = ("title", "course", "material_type", "session", "order", "is_downloadable")
+    list_filter = ("material_type", "is_downloadable", "requires_enrollment", "created_at")
+    search_fields = ("title", "description", "course__title", "session__title")
+    ordering = ("course", "order", "created_at")
+    raw_id_fields = ("course", "session")
+
+
+@admin.register(CourseProgress)
+class CourseProgressAdmin(admin.ModelAdmin):
+    list_display = ("enrollment", "completion_percentage", "attendance_rate", "last_accessed")
+    list_filter = ("last_accessed",)
+    search_fields = ("enrollment__student__username", "enrollment__course__title")
+    raw_id_fields = ("enrollment", "completed_sessions")
+
+
+@admin.register(Achievement)
+class AchievementAdmin(admin.ModelAdmin):
+    list_display = ("student", "course", "achievement_type", "title", "awarded_at")
+    list_filter = ("achievement_type", "awarded_at")
+    search_fields = ("student__username", "course__title", "title", "description")
+    raw_id_fields = ("student", "course")
+
+
+@admin.register(SessionAttendance)
+class SessionAttendanceAdmin(admin.ModelAdmin):
+    list_display = ("session", "student", "status", "created_at")
+    list_filter = ("status", "created_at")
+    search_fields = ("session__title", "student__username", "notes")
+    raw_id_fields = ("session", "student")
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ("user", "title", "notification_type", "read", "created_at")
+    list_filter = ("notification_type", "read", "created_at")
+    search_fields = ("user__username", "title", "message")
+    raw_id_fields = ("user",)
+
+
+@admin.register(BlogPost)
+class BlogPostAdmin(admin.ModelAdmin):
+    list_display = ("title", "author", "status", "published_at", "created_at")
+    list_filter = ("status", "created_at", "published_at")
+    search_fields = ("title", "content", "author__username", "tags")
+    prepopulated_fields = {"slug": ("title",)}
+    raw_id_fields = ("author",)
+
+
+@admin.register(BlogComment)
+class BlogCommentAdmin(admin.ModelAdmin):
+    list_display = ("post", "author", "is_approved", "created_at")
+    list_filter = ("is_approved", "created_at")
+    search_fields = ("post__title", "author__username", "content")
+    raw_id_fields = ("post", "author", "parent")
+
+
+@admin.register(ForumTopic)
+class ForumTopicAdmin(admin.ModelAdmin):
+    list_display = ("title", "category", "author", "is_pinned", "is_locked", "views", "created_at")
+    list_filter = ("is_pinned", "is_locked", "created_at")
+    search_fields = ("title", "content", "author__username")
+    raw_id_fields = ("author", "category")
+
+
+@admin.register(ForumReply)
+class ForumReplyAdmin(admin.ModelAdmin):
+    list_display = ("topic", "author", "is_solution", "created_at")
+    list_filter = ("is_solution", "created_at")
+    search_fields = ("topic__title", "author__username", "content")
+    raw_id_fields = ("topic", "author")
 
 
 # Unregister the default User admin and register our custom one
