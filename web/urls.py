@@ -35,10 +35,12 @@ urlpatterns += i18n_patterns(
     path("courses/<slug:slug>/", views.course_detail, name="course_detail"),
     path("courses/<slug:course_slug>/enroll/", views.enroll_course, name="enroll"),
     path("courses/<slug:slug>/add-session/", views.add_session, name="add_session"),
+    path("courses/<slug:slug>/edit/", views.update_course, name="update_course"),
     path("sessions/<int:session_id>/edit/", views.edit_session, name="edit_session"),
     path("courses/<slug:slug>/add-review/", views.add_review, name="add_review"),
-    path("courses/<slug:slug>/update/", views.update_course, name="update_course"),
     path("courses/<slug:slug>/delete/", views.delete_course, name="delete_course"),
+    path("courses/<slug:slug>/add-session/", views.add_session, name="add_session"),
+    path("courses/<slug:slug>/confirm-rolled-sessions/", views.confirm_rolled_sessions, name="confirm_rolled_sessions"),
     path("courses/<slug:slug>/message-students/", views.message_enrolled_students, name="message_students"),
     path("teachers/<int:teacher_id>/message/", views.message_teacher, name="message_teacher"),
     # Payment URLs
@@ -109,6 +111,7 @@ urlpatterns += i18n_patterns(
     path("forum/", views.forum_categories, name="forum_categories"),
     path("forum/category/create/", views.create_forum_category, name="create_forum_category"),
     path("forum/category/<slug:slug>/", views.forum_category, name="forum_category"),
+    path("forum/category/<slug:category_slug>/create/", views.create_topic, name="create_topic"),
     path(
         "forum/<slug:category_slug>/<int:topic_id>/",
         views.forum_topic,

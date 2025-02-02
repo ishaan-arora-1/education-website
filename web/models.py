@@ -226,13 +226,37 @@ class Session(models.Model):
     end_time = models.DateTimeField()
     is_virtual = models.BooleanField(default=True)
     meeting_link = models.URLField(blank=True)
-    meeting_id = models.CharField(max_length=100, blank=True)  # For storing Google meeting ID
+    meeting_id = models.CharField(max_length=100, blank=True)
     location = models.CharField(max_length=200, blank=True)
     price = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True, help_text="Price for individual session registration"
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # Rollover fields
+    enable_rollover = models.BooleanField(
+        default=False, help_text="Enable automatic date rollover if no students are enrolled"
+    )
+    rollover_pattern = models.CharField(
+        max_length=20,
+        choices=[
+            ("daily", "Daily"),
+            ("weekly", "Weekly"),
+            ("monthly", "Monthly"),
+        ],
+        default="weekly",
+        blank=True,
+        help_text="How often to roll over the session dates",
+    )
+    original_start_time = models.DateTimeField(
+        null=True, blank=True, help_text="Original start time before any rollovers"
+    )
+    original_end_time = models.DateTimeField(null=True, blank=True, help_text="Original end time before any rollovers")
+    is_rolled_over = models.BooleanField(default=False, help_text="Whether this session has been rolled over")
+    teacher_confirmed = models.BooleanField(
+        default=False, help_text="Whether the teacher has confirmed the rolled over dates"
+    )
 
     class Meta:
         ordering = ["start_time"]
@@ -241,6 +265,11 @@ class Session(models.Model):
         return f"{self.course.title} - {self.title}"
 
     def save(self, *args, **kwargs):
+        # Store original times when first created
+        if not self.pk and not self.original_start_time and not self.original_end_time:
+            self.original_start_time = self.start_time
+            self.original_end_time = self.end_time
+
         # Handle virtual meeting creation/updates
         is_new = self._state.adding
         old_instance = None if is_new else Session.objects.get(pk=self.pk)
@@ -263,6 +292,35 @@ class Session(models.Model):
                 or old_instance.title != self.title
             ):
                 update_calendar_event(self)
+
+    def roll_forward(self):
+        """Roll the session forward based on the rollover pattern."""
+        if not self.enable_rollover or self.teacher_confirmed:
+            return False
+
+        now = timezone.now()
+        if self.start_time > now:
+            return False  # Don't roll forward future sessions
+
+        # Calculate new dates based on pattern
+        if self.rollover_pattern == "daily":
+            days_to_add = 1
+        elif self.rollover_pattern == "weekly":
+            days_to_add = 7
+        else:  # monthly
+            days_to_add = 30
+
+        # Calculate time difference between start and end
+        duration = self.end_time - self.start_time
+
+        # Roll forward until we get a future date
+        while self.start_time <= now:
+            self.start_time += timezone.timedelta(days=days_to_add)
+            self.end_time = self.start_time + duration
+
+        self.is_rolled_over = True
+        self.teacher_confirmed = False
+        return True
 
     def delete(self, *args, **kwargs):
         # Delete associated calendar event if exists

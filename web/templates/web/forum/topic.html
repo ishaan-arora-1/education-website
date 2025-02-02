@@ -56,7 +56,7 @@
         {% else %}
           <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
             <p class="text-gray-600 dark:text-gray-400 mb-4">Please log in to join the discussion.</p>
-            <a href="{% url 'login' %}?next={{ request.path }}"
+            <a href="{% url 'account_login' %}?next={{ request.path }}"
                class="inline-flex items-center bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded">
               <i class="fa-solid fa-sign-in-alt mr-2"></i>
               Log In to Reply

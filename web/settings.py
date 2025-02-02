@@ -54,7 +54,12 @@ ALLOWED_HOSTS = [
 TIME_ZONE = "America/New_York"
 USE_TZ = True
 
-CSRF_TRUSTED_ORIGINS = ["https://alphaonelabs.com", "https://www.alphaonelabs.com"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://alphaonelabs.com",
+    "https://www.alphaonelabs.com",
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+]
 
 # Error handling
 handler404 = "web.views.custom_404"
@@ -207,11 +212,11 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-MEDIA_ROOT = "/home/alphaonelabs99282llkb/web/media"
+if not DEBUG:
+    MEDIA_ROOT = "/home/alphaonelabs99282llkb/web/media"
+else:
+    MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
-
-# STATIC_ROOT = "/home/alphaonelabs99282llkb/web/static"
-STATIC_URL = "/static/"
 
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATICFILES_DIRS = [BASE_DIR / "static"]

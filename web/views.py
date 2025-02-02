@@ -2236,3 +2236,40 @@ def message_teacher(request, teacher_id):
             "teacher": teacher,
         },
     )
+
+
+@login_required
+def confirm_rolled_sessions(request, course_slug):
+    """View for teachers to confirm rolled over session dates."""
+    course = get_object_or_404(Course, slug=course_slug, teacher=request.user)
+
+    # Get all rolled over but unconfirmed sessions
+    rolled_sessions = course.sessions.filter(is_rolled_over=True, teacher_confirmed=False).order_by("start_time")
+
+    if request.method == "POST":
+        session_ids = request.POST.getlist("confirm_sessions")
+        if session_ids:
+            # Confirm selected sessions
+            course.sessions.filter(id__in=session_ids).update(teacher_confirmed=True)
+            messages.success(request, "Selected sessions have been confirmed.")
+
+            # Reset rollover status for unselected sessions
+            unselected_sessions = rolled_sessions.exclude(id__in=session_ids)
+            for session in unselected_sessions:
+                session.start_time = session.original_start_time
+                session.end_time = session.original_end_time
+                session.is_rolled_over = False
+                session.save()
+
+            messages.info(request, "Unselected sessions have been reset to their original dates.")
+
+        return redirect("course_detail", slug=course_slug)
+
+    return render(
+        request,
+        "courses/confirm_rolled_sessions.html",
+        {
+            "course": course,
+            "rolled_sessions": rolled_sessions,
+        },
+    )

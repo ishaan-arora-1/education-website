@@ -2,7 +2,11 @@
 
 {% load static %}
 {% load markdown_filters %}
+{% load session_filters %}
 
+{% block title %}
+  {{ course.title }}
+{% endblock title %}
 {% block extra_head %}
   <!-- Share dropdown -->
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -114,10 +118,22 @@
                 <div class="flex justify-between items-center mb-4">
                   <h2 class="text-lg font-bold">Course Sessions</h2>
                   {% if user == course.teacher %}
-                    <a href="{% url 'add_session' course.slug %}"
-                       class="bg-teal-500 hover:bg-teal-600 text-white px-3 py-1 rounded-lg transition duration-200 text-sm">
-                      <i class="fas fa-plus mr-1"></i>Add
-                    </a>
+                    <div class="flex space-x-2">
+                      <a href="{% url 'add_session' course.slug %}"
+                         class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition duration-200">
+                        <i class="fas fa-plus mr-1"></i>
+                        Add Session
+                      </a>
+                      {% with rolled_sessions=course.sessions.all %}
+                        {% if rolled_sessions|filter_rolled_over %}
+                          <a href="{% url 'confirm_rolled_sessions' course.slug %}"
+                             class="bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition duration-200">
+                            <i class="fas fa-clock mr-1"></i>
+                            Confirm Rolled Sessions
+                          </a>
+                        {% endif %}
+                      {% endwith %}
+                    </div>
                   {% endif %}
                 </div>
                 {% if course.allow_individual_sessions %}

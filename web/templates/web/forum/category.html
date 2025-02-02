@@ -22,7 +22,7 @@
           Create New Topic
         </a>
       {% else %}
-        <a href="{% url 'login' %}?next={% url 'create_topic' category.slug %}"
+        <a href="{% url 'account_login' %}?next={% url 'create_topic' category.slug %}"
            class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg flex items-center">
           <i class="fa-solid fa-sign-in-alt mr-2"></i>
           Login to Create Topic
@@ -83,7 +83,7 @@
               Create the First Topic
             </a>
           {% else %}
-            <a href="{% url 'login' %}?next={% url 'create_topic' category.slug %}"
+            <a href="{% url 'account_login' %}?next={% url 'create_topic' category.slug %}"
                class="inline-flex items-center bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg">
               <i class="fa-solid fa-sign-in-alt mr-2"></i>
               Login to Create Topic

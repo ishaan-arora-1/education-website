@@ -247,6 +247,8 @@ class SessionForm(forms.ModelForm):
             "meeting_link",
             "location",
             "price",
+            "enable_rollover",
+            "rollover_pattern",
         ]
         widgets = {
             "title": TailwindInput(),
@@ -263,10 +265,14 @@ class SessionForm(forms.ModelForm):
                     "help_text": ("Price for individual session registration"),
                 }
             ),
+            "enable_rollover": TailwindCheckboxInput(),
+            "rollover_pattern": TailwindSelect(),
         }
         help_texts = {
             "start_time": "Click to select the session start date and time",
             "end_time": "Click to select the session end date and time",
+            "enable_rollover": "Enable automatic date rollover if no students are enrolled",
+            "rollover_pattern": "How often to roll over the session dates",
         }
 
     def clean(self):
