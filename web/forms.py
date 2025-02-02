@@ -3,8 +3,8 @@ from captcha.fields import CaptchaField
 from django import forms
 from django.contrib.auth.models import User
 from django.db import IntegrityError
-from django.template.defaultfilters import slugify
 from django.utils.crypto import get_random_string
+from django.utils.text import slugify
 from markdownx.fields import MarkdownxFormField
 
 from .models import BlogPost, Course, CourseMaterial, ForumCategory, Profile, Review, Session, Subject
@@ -616,7 +616,7 @@ class ForumCategoryForm(forms.ModelForm):
 
     class Meta:
         model = ForumCategory
-        fields = ["name", "description", "icon"]
+        fields = ["name", "description", "icon", "slug"]
         widgets = {
             "name": forms.TextInput(
                 attrs={
@@ -647,10 +647,18 @@ class ForumCategoryForm(forms.ModelForm):
                     "placeholder": "fa-folder",
                 }
             ),
+            "slug": forms.HiddenInput(),
         }
         help_texts = {
             "icon": "Enter a Font Awesome icon class (e.g., fa-folder, fa-book, fa-code)",
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        name = cleaned_data.get("name")
+        if name:
+            cleaned_data["slug"] = slugify(name)
+        return cleaned_data
 
 
 class BlogPostForm(forms.ModelForm):
