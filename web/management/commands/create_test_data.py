@@ -185,6 +185,7 @@ class Command(BaseCommand):
                     description=f"Description for material {i+1}",
                     material_type=random.choice(material_types),
                     session=random.choice(sessions) if random.choice([True, False]) else None,
+                    external_url="https://example.com/default-material",  # Ensuring NOT NULL constraint
                 )
             self.stdout.write(f"Created materials for course: {course.title}")
 

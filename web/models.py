@@ -339,6 +339,7 @@ class CourseMaterial(models.Model):
         ("presentation", "Presentation"),
         ("exercise", "Exercise"),
         ("quiz", "Quiz"),
+        ("assignment", "Assignment"),  # Add 'assignment' as a valid choice
         ("other", "Other"),
     ]
 
