@@ -139,7 +139,7 @@ class Course(models.Model):
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, max_length=200)
     image = models.ImageField(
-        upload_to="course_images", help_text="Course image (will be resized to 300x150 pixels)", blank=True
+        upload_to="course_images", help_text="Course image (will be resized to 300x300 pixels)", blank=True
     )
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name="courses_teaching")
     description = MarkdownxField()
@@ -191,8 +191,16 @@ class Course(models.Model):
             # Convert to RGB if necessary
             if img.mode != "RGB":
                 img = img.convert("RGB")
-            # Resize image
-            img = img.resize((300, 150), Image.Resampling.LANCZOS)
+            # Crop image to a square format
+            width, height = img.size
+            min_dim = min(width, height)
+            left = (width - min_dim) / 2
+            top = (height - min_dim) / 2
+            right = (width + min_dim) / 2
+            bottom = (height - min_dim) / 2
+            img = img.crop((left, top, right, bottom))
+            # Resize the image to 300x300 pixels
+            img = img.resize((300, 300), Image.Resampling.LANCZOS)
             # Save the resized image
             buffer = BytesIO()
             img.save(buffer, format="JPEG", quality=90)
@@ -339,6 +347,7 @@ class CourseMaterial(models.Model):
         ("presentation", "Presentation"),
         ("exercise", "Exercise"),
         ("quiz", "Quiz"),
+        ("assignment", "Assignment"),  # Add 'assignment' as a valid choice
         ("other", "Other"),
     ]
 
