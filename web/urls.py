@@ -117,6 +117,7 @@ urlpatterns += i18n_patterns(
         views.forum_topic,
         name="forum_topic",
     ),
+    path("forum/topic/<int:topic_id>/edit/", views.edit_topic, name="edit_topic"),
     # Peer Networking URLs
     path("peers/", views.peer_connections, name="peer_connections"),
     path(

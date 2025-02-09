@@ -1978,6 +1978,34 @@ def create_forum_category(request):
     return render(request, "web/forum/create_category.html", {"form": form})
 
 
+@login_required
+def edit_topic(request, topic_id):
+    """Edit an existing forum topic."""
+    topic = get_object_or_404(ForumTopic, id=topic_id)
+
+    # Check if user is the author of the topic
+    if request.user != topic.author:
+        messages.error(request, "You don't have permission to edit this topic.")
+        return redirect("forum_topic", category_slug=topic.category.slug, topic_id=topic.id)
+
+    if request.method == "POST":
+        form = ForumTopicForm(request.POST)
+        if form.is_valid():
+            topic.title = form.cleaned_data["title"]
+            topic.content = form.cleaned_data["content"]
+            topic.save()
+            messages.success(request, "Topic updated successfully!")
+            return redirect("forum_topic", category_slug=topic.category.slug, topic_id=topic.id)
+    else:
+        form = ForumTopicForm(initial={"title": topic.title, "content": topic.content})
+
+    return render(
+        request,
+        "web/forum/create_topic.html",
+        {"form": form, "category": topic.category, "is_edit": True, "topic": topic},
+    )
+
+
 def get_course_calendar(request, slug):
     """AJAX endpoint to get calendar data for a course."""
     course = get_object_or_404(Course, slug=slug)
