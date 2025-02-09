@@ -199,7 +199,7 @@ class Course(models.Model):
             right = (width + min_dim) / 2
             bottom = (height - min_dim) / 2
             img = img.crop((left, top, right, bottom))
-            # Resize image to 300x300 pixels
+            # Resize the image to 300x300 pixels
             img = img.resize((300, 300), Image.Resampling.LANCZOS)
             # Save the resized image
             buffer = BytesIO()
