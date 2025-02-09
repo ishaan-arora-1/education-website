@@ -35,6 +35,7 @@ __all__ = [
     "TeachForm",
     "InviteStudentForm",
     "ForumCategoryForm",
+    "ForumTopicForm",
     "BlogPostForm",
     "MessageTeacherForm",
 ]
@@ -659,6 +660,37 @@ class ForumCategoryForm(forms.ModelForm):
         if name:
             cleaned_data["slug"] = slugify(name)
         return cleaned_data
+
+
+class ForumTopicForm(forms.Form):
+    title = forms.CharField(
+        max_length=200,
+        required=True,
+        widget=TailwindInput(
+            attrs={
+                "class": (
+                    "w-full border border-gray-300 dark:border-gray-600 rounded p-2 "
+                    "focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 "
+                    "dark:focus:ring-offset-gray-800 bg-white dark:bg-gray-800"
+                ),
+                "placeholder": "Enter your topic title",
+            }
+        ),
+    )
+    content = forms.CharField(
+        required=True,
+        widget=TailwindTextarea(
+            attrs={
+                "class": (
+                    "w-full border border-gray-300 dark:border-gray-600 rounded p-2 "
+                    "focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 "
+                    "dark:focus:ring-offset-gray-800 bg-white dark:bg-gray-800"
+                ),
+                "rows": 6,
+                "placeholder": "Write your topic content here...",
+            }
+        ),
+    )
 
 
 class BlogPostForm(forms.ModelForm):

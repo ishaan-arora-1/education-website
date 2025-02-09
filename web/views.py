@@ -32,6 +32,7 @@ from .forms import (
     CourseForm,
     CourseMaterialForm,
     ForumCategoryForm,
+    ForumTopicForm,
     InviteStudentForm,
     LearnForm,
     MessageTeacherForm,
@@ -1072,14 +1073,20 @@ def create_topic(request, category_slug):
     category = get_object_or_404(ForumCategory, slug=category_slug)
 
     if request.method == "POST":
-        title = request.POST.get("title")
-        content = request.POST.get("content")
-        if title and content:
-            topic = ForumTopic.objects.create(category=category, author=request.user, title=title, content=content)
+        form = ForumTopicForm(request.POST)
+        if form.is_valid():
+            topic = ForumTopic.objects.create(
+                category=category,
+                author=request.user,
+                title=form.cleaned_data["title"],
+                content=form.cleaned_data["content"],
+            )
             messages.success(request, "Topic created successfully!")
             return redirect("forum_topic", category_slug=category_slug, topic_id=topic.id)
+    else:
+        form = ForumTopicForm()
 
-    return render(request, "web/forum/create_topic.html", {"category": category})
+    return render(request, "web/forum/create_topic.html", {"category": category, "form": form})
 
 
 @login_required
