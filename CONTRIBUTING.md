@@ -6,7 +6,7 @@ This document provides guidelines and steps for contributing. Following these gu
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by our Code of Conduct. By participating, you are expected to uphold this code. Please report unacceptable behavior to [contact@alphaonelabs.com](mailto:contact@alphaonelabs.com).
+This project and everyone participating in it is governed by our Code of Conduct. By participating, you are expected to uphold this code. Please report unacceptable behavior to [info@alphaonelabs.com](mailto:info@alphaonelabs.com).
 
 ## Getting Started
 
@@ -33,6 +33,11 @@ Before you begin:
 3. Create a branch for your changes:
    ```bash
    git checkout -b feature/your-feature-name
+   ```
+4. Set up pre-commit hooks:
+   ```bash
+   pip install pre-commit
+   pre-commit install
    ```
 
 ## Making Changes
@@ -167,7 +172,111 @@ By contributing, you agree that your contributions will be licensed under the AG
 ## Questions or Need Help?
 
 - Create an issue for bugs or feature requests
-- Join our community chat (coming soon)
+- Join our [Slack community](https://join.slack.com/t/alphaonelabs/shared_invite/zt-1234567890) for:
+  - Real-time discussions with other contributors
+  - Direct access to core team members
+  - Community support and collaboration
+  - Announcements and updates
+  - Quick questions and answers
 - Email us at [contact@alphaonelabs.com](mailto:contact@alphaonelabs.com)
 
 Thank you for contributing to Alpha One Labs! 🎉
+
+### Pre-commit Hooks
+
+We use pre-commit hooks to ensure code quality and consistency. Our pre-commit configuration includes:
+
+1. **Code Formatting**:
+   - `black`: Python code formatter
+   - `isort`: Python import sorter
+   - `prettier`: JavaScript/HTML/CSS formatter
+
+2. **Linting**:
+   - `flake8`: Python linter
+   - `eslint`: JavaScript linter
+   - `pylint`: Python static code analyzer
+
+3. **Security**:
+   - `bandit`: Python security linter
+   - `detect-secrets`: Prevents committing secrets and credentials
+
+To manually run all pre-commit hooks:
+```bash
+pre-commit run --all-files
+```
+
+To update hooks to their latest versions:
+```bash
+pre-commit autoupdate
+```
+
+### CSS/Tailwind
+
+We use Tailwind CSS for styling our application. Follow these guidelines:
+
+1. **Class Organization**:
+   - Group related utilities (e.g., all spacing utilities together)
+   - Order utilities consistently: layout → typography → visual styles → interactivity
+   ```html
+   <!-- Good -->
+   <div class="flex items-center space-x-4 text-lg font-bold text-blue-600 hover:text-blue-800">
+
+   <!-- Bad -->
+   <div class="text-blue-600 flex space-x-4 hover:text-blue-800 items-center text-lg font-bold">
+   ```
+
+2. **Responsive Design**:
+   - Use mobile-first approach
+   - Apply responsive prefixes consistently
+   ```html
+   <div class="w-full md:w-1/2 lg:w-1/3">
+   ```
+
+3. **Dark Mode**:
+   - Always include dark mode variants
+   - Use semantic color naming
+   ```html
+   <div class="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+   ```
+
+4. **Custom Components**:
+   - Use @apply for repeated utility patterns
+   - Create component classes in `tailwind.config.js` for common patterns
+   ```css
+   @layer components {
+     .btn-primary {
+       @apply bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg;
+     }
+   }
+   ```
+
+5. **Theme Configuration**:
+   - Use theme colors defined in `tailwind.config.js`
+   - Extend theme using semantic naming
+   ```javascript
+   // tailwind.config.js
+   module.exports = {
+     theme: {
+       extend: {
+         colors: {
+           primary: colors.blue,
+           secondary: colors.gray,
+           accent: colors.teal,
+         }
+       }
+     }
+   }
+   ```
+
+6. **Performance**:
+   - Use JIT (Just-In-Time) mode
+   - Purge unused styles in production
+   - Keep utility combinations reasonable
+
+7. **Accessibility**:
+   - Include proper focus states
+   - Use sufficient color contrast
+   - Add hover/focus states for interactive elements
+   ```html
+   <button class="focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:outline-none">
+   ```
