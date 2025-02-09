@@ -145,6 +145,37 @@
             <i class="fas fa-arrow-right ml-2"></i>
           </a>
         </div>
+        <!-- GSoC Announcement -->
+        <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white shadow-lg my-8">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+              <div class="hidden sm:block">
+                <img src="{% static 'images/gsoc-logo.png' %}"
+                     alt="Google Summer of Code"
+                     class="h-16 w-16 object-contain"
+                     onerror="this.src='https://summerofcode.withgoogle.com/assets/media/gsoc-2024-badge.svg'" />
+              </div>
+              <div>
+                <h3 class="text-xl font-bold mb-2">Join us for Google Summer of Code 2025! 🚀</h3>
+                <p class="text-blue-100">
+                  Alpha One Labs has applied to participate in this year's Google Summer of Code. Check out our project ideas and get involved!
+                </p>
+              </div>
+            </div>
+            <a href="https://github.com/alphaonelabs/education-website/wiki/GSOC-2025-Ideas"
+               class="hidden sm:inline-flex items-center px-6 py-2 bg-white text-blue-600 rounded-full font-semibold hover:bg-blue-50 transition-colors duration-200 whitespace-nowrap">
+              <span>View Ideas</span>
+              <i class="fas fa-arrow-right ml-2"></i>
+            </a>
+          </div>
+          <div class="sm:hidden mt-4">
+            <a href="https://github.com/alphaonelabs/education-website/wiki/GSOC-2025-Ideas"
+               class="inline-flex items-center justify-center w-full px-6 py-2 bg-white text-blue-600 rounded-full font-semibold hover:bg-blue-50 transition-colors duration-200">
+              <span>View Ideas</span>
+              <i class="fas fa-arrow-right ml-2"></i>
+            </a>
+          </div>
+        </div>
         <!-- Two cards next to each other: For Learners & For Teachers -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- For Learners -->
@@ -288,6 +319,64 @@
           <a href="{% if latest_post %}{% url 'blog_detail' latest_post.slug %}{% else %}{% url 'blog' %}{% endif %}"
              class="text-orange-500 dark:text-orange-400 text-sm hover:underline inline-block mt-2">Read More →</a>
         </div>
+        <!-- Recent Contributors -->
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <h2 class="text-lg font-semibold mb-4 flex items-center">
+            <i class="fa-solid fa-code-pull-request text-purple-600 dark:text-purple-400 mr-2"></i>
+            Recent Contributors
+          </h2>
+          <div class="space-y-4" id="recent-contributors">
+            <!-- Contributors will be loaded via JavaScript -->
+            <div class="animate-pulse space-y-3">
+              {% for i in "123456789"|make_list %}
+                <div class="flex items-center space-x-3">
+                  <div class="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                  <div class="flex-1">
+                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                    <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mt-2"></div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        <script>
+            // Fetch recent contributors from GitHub API
+            fetch('https://api.github.com/repos/AlphaOneLabs/education-website/pulls?state=all&per_page=10')
+                .then(response => response.json())
+                .then(pulls => {
+                    const container = document.getElementById('recent-contributors');
+                    container.innerHTML = ''; // Clear loading state
+
+                    pulls.forEach(pull => {
+                        const date = new Date(pull.created_at).toLocaleDateString();
+                        const div = document.createElement('div');
+                        div.className = 'flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200';
+                        div.innerHTML = `
+                  <img src="${pull.user.avatar_url}" alt="${pull.user.login}" class="w-10 h-10 rounded-full" loading="lazy" />
+                  <div class="flex-1 min-w-0">
+                    <a href="${pull.html_url}" target="_blank" class="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-orange-500 dark:hover:text-orange-400 truncate block">
+                      ${pull.title}
+                    </a>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                      by <span class="font-medium">${pull.user.login}</span> · PR #${pull.number} · ${date}
+                    </p>
+                  </div>
+                `;
+                        container.appendChild(div);
+                    });
+                })
+                .catch(error => {
+                    const container = document.getElementById('recent-contributors');
+                    container.innerHTML = `
+                <div class="text-sm text-gray-600 dark:text-gray-400 text-center py-4">
+                  <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                  Failed to load recent contributors. Please try again later.
+                </div>
+              `;
+                    console.error('Error fetching contributors:', error);
+                });
+        </script>
       </div>
     </div>
   </main>
