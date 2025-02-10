@@ -31,6 +31,7 @@ from .forms import (
     BlogPostForm,
     CourseForm,
     CourseMaterialForm,
+    FeedbackForm,
     ForumCategoryForm,
     ForumTopicForm,
     InviteStudentForm,
@@ -41,6 +42,7 @@ from .forms import (
     SessionForm,
     TeacherSignupForm,
     TeachForm,
+    UserRegistrationForm,
 )
 from .marketing import (
     generate_social_share_content,
@@ -117,21 +119,29 @@ def index(request):
     return render(request, "index.html", context)
 
 
-# def register(request):
-#     if request.method == "POST":
-#         form = UserRegistrationForm(request.POST)
-#         if form.is_valid():
-#             user = form.save()
-#             # Get or create profile and set is_teacher
-#             profile, created = Profile.objects.get_or_create(user=user)
-#             profile.is_teacher = form.cleaned_data.get("is_teacher", False)
-#             profile.save()
+def signup(request):
+    """Handle user signup and referral processing."""
+    if request.method == "POST":
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save(request)
 
-#             messages.success(request, "Registration successful. Please login.")
-#             return redirect("login")
-#     else:
-#         form = UserRegistrationForm()
-#     return render(request, "registration/register.html", {"form": form})
+            # Handle referral if present in session
+            referrer_code = request.session.get("referrer_code")
+            if referrer_code:
+                handle_referral(user, referrer_code)
+                del request.session["referrer_code"]
+
+            return redirect("index")
+    else:
+        # Store referral code in session if present in URL
+        referrer_code = request.GET.get("ref")
+        if referrer_code:
+            request.session["referrer_code"] = referrer_code
+
+        form = UserRegistrationForm()
+
+    return render(request, "account/signup.html", {"form": form})
 
 
 @login_required
@@ -325,6 +335,7 @@ def course_detail(request, slug):
 
 @login_required
 def enroll_course(request, course_slug):
+    """Enroll in a course and handle referral rewards if applicable."""
     course = get_object_or_404(Course, slug=course_slug)
 
     # Check if user is already enrolled
@@ -337,21 +348,27 @@ def enroll_course(request, course_slug):
         messages.error(request, "This course is full.")
         return redirect("course_detail", slug=course_slug)
 
-    # For paid courses, create pending enrollment
+    # Check if this is the user's first enrollment and if they were referred
+    if not Enrollment.objects.filter(student=request.user).exists():
+        if hasattr(request.user.profile, "referred_by") and request.user.profile.referred_by:
+            referrer = request.user.profile.referred_by
+            if not referrer.is_teacher:  # Regular users get reward on first course enrollment
+                referrer.add_referral_earnings(5)
+                send_referral_reward_email(referrer.user, request.user, 5, "enrollment")
+
+    # Create enrollment
+    enrollment = Enrollment.objects.create(
+        student=request.user, course=course, status="pending" if course.price > 0 else "approved"
+    )
+
+    # For paid courses, create pending enrollment and redirect to payment
     if course.price > 0:
-        enrollment = Enrollment.objects.create(student=request.user, course=course, status="pending")
         messages.info(request, "Please complete the payment process to enroll in this course.")
         return redirect("course_detail", slug=course_slug)
 
-    # Create enrollment for free courses
-    enrollment = Enrollment.objects.create(student=request.user, course=course, status="approved")
-
-    # Send confirmation email
+    # For free courses, send notifications
     send_enrollment_confirmation(enrollment)
-
-    # Notify teacher
     notify_teacher_new_enrollment(enrollment)
-
     messages.success(request, "You have successfully enrolled in this course.")
     return redirect("course_detail", slug=course_slug)
 
@@ -706,7 +723,7 @@ def stripe_webhook(request):
 
 
 def handle_successful_payment(payment_intent):
-    """Handle successful payment by creating enrollment and sending notifications."""
+    """Handle successful payment by enrolling the user in the course."""
     # Get metadata from the payment intent
     course_id = payment_intent.metadata.get("course_id")
     user_id = payment_intent.metadata.get("user_id")
@@ -728,7 +745,7 @@ def handle_successful_payment(payment_intent):
 
 
 def handle_failed_payment(payment_intent):
-    """Handle failed payment by updating enrollment status."""
+    """Handle failed payment."""
     course_id = payment_intent.metadata.get("course_id")
     user_id = payment_intent.metadata.get("user_id")
 
@@ -740,6 +757,49 @@ def handle_failed_payment(payment_intent):
         enrollment.save()
     except (Course.DoesNotExist, User.DoesNotExist, Enrollment.DoesNotExist):
         pass  # Log error or handle appropriately
+
+
+def handle_referral(user, referrer_code):
+    """Handle referral rewards when a new user registers or enrolls."""
+    try:
+        referrer = Profile.objects.get(referral_code=referrer_code)
+
+        # Set the referrer
+        user.profile.referred_by = referrer
+        user.profile.save()
+
+        # If the referrer is a teacher, check if this is their first student
+        if referrer.is_teacher and referrer.total_referrals == 1:
+            referrer.add_referral_earnings(5)
+            send_referral_reward_email(referrer.user, user, 5, "first_student")
+
+        # For regular users, reward is given when the referred user enrolls
+        # This is handled in the enroll_course view
+    except Profile.DoesNotExist:
+        pass
+
+
+def send_referral_reward_email(user, referred_user, amount, reward_type):
+    """Send email notification about referral reward."""
+    subject = "You've earned a referral reward!"
+    if reward_type == "first_student":
+        message = (
+            f"Congratulations! You've earned ${amount} for getting your first student "
+            f"{referred_user.get_full_name()}!"
+        )
+    else:
+        message = (
+            f"Congratulations! You've earned ${amount} because {referred_user.get_full_name()} "
+            f"enrolled in their first course!"
+        )
+
+    send_mail(
+        subject,
+        message,
+        settings.DEFAULT_FROM_EMAIL,
+        [user.email],
+        fail_silently=True,
+    )
 
 
 @login_required
@@ -2308,3 +2368,25 @@ def confirm_rolled_sessions(request, course_slug):
             "rolled_sessions": rolled_sessions,
         },
     )
+
+
+def feedback(request):
+    if request.method == "POST":
+        form = FeedbackForm(request.POST)
+        if form.is_valid():
+            # Send feedback notification to admin
+            name = form.cleaned_data.get("name", "Anonymous")
+            email = form.cleaned_data.get("email", "Not provided")
+            description = form.cleaned_data["description"]
+
+            # Send to Slack if webhook URL is configured
+            if settings.SLACK_WEBHOOK_URL:
+                message = f"*New Feedback*\nFrom: {name}\nEmail: {email}\n\n{description}"
+                send_slack_message(message)
+
+            messages.success(request, "Thank you for your feedback! We appreciate your input.")
+            return redirect("feedback")
+    else:
+        form = FeedbackForm()
+
+    return render(request, "feedback.html", {"form": form})

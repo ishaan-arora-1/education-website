@@ -458,131 +458,70 @@
       {% endblock content %}
     {% endblock extra_body %}
     <!-- FOOTER -->
-    <footer class="w-full py-4 mt-auto border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-      <div class="max-w-[90rem] mx-auto px-4">
-        <!-- Mobile Footer -->
-        <div class="md:hidden">
-          <div class="grid grid-cols-2 gap-4 mb-4">
-            <a href="{% url 'forum_categories' %}"
-               class="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-              <i class="fa-solid fa-comments"></i>
-              <span>Forum</span>
-            </a>
+    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto">
+      <div class="container mx-auto px-4 py-8">
+        <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+          <!-- Quick Links -->
+          <div class="flex space-x-6">
             <a href="{% url 'blog' %}"
-               class="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-              <i class="fa-solid fa-blog"></i>
-              <span>Blog</span>
+               class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center">
+              <i class="fas fa-blog mr-2"></i>Blog
             </a>
-            <a href="https://x.com/alphaonelabs"
-               target="_blank"
-               rel="noopener noreferrer"
-               class="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-              <img src="{% static 'images/x-logo.svg' %}"
-                   alt="X (Twitter) Logo"
-                   class="w-4 h-4"
-                   width="16"
-                   height="16" />
-              <span>X</span>
+            <a href="{% url 'forum_categories' %}"
+               class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center">
+              <i class="fas fa-comments mr-2"></i>Forum
             </a>
-            <a href="https://instagram.com/alphaonelabs1"
-               target="_blank"
-               rel="noopener noreferrer"
-               class="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-              <i class="fa-brands fa-instagram"></i>
-              <span>Instagram</span>
-            </a>
-            <a href="https://www.facebook.com/alphaonelabs"
-               target="_blank"
-               rel="noopener noreferrer"
-               class="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-              <i class="fa-brands fa-facebook"></i>
-              <span>Facebook</span>
-            </a>
-            <a href="https://github.com/alphaonelabs"
-               target="_blank"
-               rel="noopener noreferrer"
-               class="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-              <i class="fa-brands fa-github"></i>
-              <span>GitHub</span>
-            </a>
-            <a href="{% url 'sitemap' %}"
-               class="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-              <i class="fa-solid fa-sitemap"></i>
-              <span>Sitemap</span>
+            <a href="{% url 'feedback' %}"
+               class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center">
+              <i class="fas fa-comment-dots mr-2"></i>Feedback
             </a>
             <a href="{% url 'terms' %}"
-               class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-              <i class="fa-solid fa-file-contract mr-2"></i>
-              <span>Terms</span>
+               class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center">
+              <i class="fas fa-file-contract mr-2"></i>Terms
+            </a>
+          </div>
+          <!-- Social Links -->
+          <div class="flex space-x-4">
+            <a href="https://twitter.com/alphaonelabs"
+               target="_blank"
+               rel="noopener"
+               class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
+              <img src="{% static 'images/x-logo.svg' %}"
+                   alt="X (Twitter) Logo"
+                   class="w-5 h-5 mt-1"
+                   width="20"
+                   height="20" />
+            </a>
+            <a href="https://instagram.com/alphaonelabs"
+               target="_blank"
+               rel="noopener"
+               class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
+              <i class="fab fa-instagram text-xl"></i>
+            </a>
+            <a href="https://facebook.com/alphaonelabs"
+               target="_blank"
+               rel="noopener"
+               class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
+              <i class="fab fa-facebook text-xl"></i>
+            </a>
+            <a href="https://youtube.com/alphaonelabs"
+               target="_blank"
+               rel="noopener"
+               class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
+              <i class="fab fa-youtube text-xl"></i>
+            </a>
+            <a href="https://github.com/AlphaOneLabs"
+               target="_blank"
+               rel="noopener"
+               class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
+              <i class="fab fa-github text-xl"></i>
             </a>
           </div>
         </div>
-        <!-- Desktop Footer -->
-        <div class="hidden md:flex flex-wrap justify-center items-center space-x-8 mb-4">
-          <a href="{% url 'forum_categories' %}"
-             class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-            <i class="fa-solid fa-comments mr-2"></i>
-            <span>Forum</span>
-          </a>
-          <a href="https://x.com/alphaonelabs"
-             target="_blank"
-             rel="noopener noreferrer"
-             class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-            <img src="{% static 'images/x-logo.svg' %}"
-                 alt="X (Twitter) Logo"
-                 class="inline-block w-4 h-4 mr-2"
-                 width="16"
-                 height="16" />
-            <span>X</span>
-          </a>
-          <a href="https://instagram.com/alphaonelabs1"
-             target="_blank"
-             rel="noopener noreferrer"
-             class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-            <i class="fa-brands fa-instagram mr-2"></i>
-            <span>Instagram</span>
-          </a>
-          <a href="https://facebook.com/alphaonelabs"
-             target="_blank"
-             rel="noopener noreferrer"
-             class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-            <i class="fa-brands fa-facebook mr-2"></i>
-            <span>Facebook</span>
-          </a>
-          <a href="https://youtube.com"
-             target="_blank"
-             rel="noopener noreferrer"
-             class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-            <i class="fa-brands fa-youtube mr-2"></i>
-            <span>YouTube</span>
-          </a>
-          <a href="{% url 'blog' %}"
-             class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-            <i class="fa-solid fa-blog mr-2"></i>
-            <span>Blog</span>
-          </a>
-          <a href="https://github.com/alphaonelabs"
-             target="_blank"
-             rel="noopener noreferrer"
-             class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-            <i class="fa-brands fa-github mr-2"></i>
-            <span>GitHub</span>
-          </a>
-          <a href="{% url 'sitemap' %}"
-             class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-            <i class="fa-solid fa-sitemap mr-2"></i>
-            <span>Sitemap</span>
-          </a>
-          <a href="{% url 'terms' %}"
-             class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-            <i class="fa-solid fa-file-contract mr-2"></i>
-            <span>Terms</span>
-          </a>
-        </div>
-        <!-- Last Updated -->
-        <div class="text-center text-gray-500 dark:text-gray-400 text-sm">
-          <i class="fa-regular fa-clock mr-1"></i>
-          Updated: {{ last_modified|date:"Y/m/d h:ia" }} • © {% now "Y" %} Alpha One Labs
+        <!-- Copyright -->
+        <div class="text-center mt-8 text-sm text-gray-500 dark:text-gray-400">
+          <p>&copy; {% now "Y" %} Alpha One Labs. All rights reserved.</p>
+          <p class="mt-1">Last updated:  {{ last_modified|date:"m/d/Y h:ia" }}</p>
         </div>
       </div>
     </footer>

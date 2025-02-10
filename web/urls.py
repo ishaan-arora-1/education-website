@@ -21,19 +21,18 @@ urlpatterns += i18n_patterns(
     path("blog/create/", views.create_blog_post, name="create_blog_post"),
     path("blog/<slug:slug>/", views.blog_detail, name="blog_detail"),
     # Authentication URLs
-    # path("login/", auth_views.LoginView.as_view(), name="login"),
-    # path("logout/", views.logout_view, name="logout"),
+    path("signup/", views.signup, name="account_signup"),
+    path("accounts/", include("allauth.urls")),
     path("profile/", views.profile, name="profile"),
     path("accounts/profile/", views.profile, name="accounts_profile"),
     # Dashboard URLs
     path("dashboard/student/", views.student_dashboard, name="student_dashboard"),
     path("dashboard/teacher/", views.teacher_dashboard, name="teacher_dashboard"),
     # Course Management
-    path("accounts/", include("allauth.urls")),
     path("courses/create/", views.create_course, name="create_course"),
     path("courses/search/", views.course_search, name="course_search"),
     path("courses/<slug:slug>/", views.course_detail, name="course_detail"),
-    path("courses/<slug:course_slug>/enroll/", views.enroll_course, name="enroll"),
+    path("courses/<slug:course_slug>/enroll/", views.enroll_course, name="enroll_course"),
     path("courses/<slug:slug>/add-session/", views.add_session, name="add_session"),
     path("courses/<slug:slug>/edit/", views.update_course, name="update_course"),
     path("sessions/<int:session_id>/edit/", views.edit_session, name="edit_session"),
@@ -147,6 +146,7 @@ urlpatterns += i18n_patterns(
     # Course Invitation URLs
     path("courses/<int:course_id>/invite/", views.invite_student, name="invite_student"),
     path("terms/", views.terms, name="terms"),
+    path("feedback/", views.feedback, name="feedback"),
     path("stripe/connect/onboarding/", views.stripe_connect_onboarding, name="stripe_connect_onboarding"),
     path("stripe/connect/webhook/", views.stripe_connect_webhook, name="stripe_connect_webhook"),
     path("courses/<slug:slug>/calendar/", views.get_course_calendar, name="course_calendar"),

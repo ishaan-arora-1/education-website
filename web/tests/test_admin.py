@@ -29,7 +29,7 @@ class AdminTests(TestCase):
         initial_user_count = User.objects.count()
         self.assertEqual(initial_user_count, 1)  # Just the admin user
 
-        # Step 1: Create the user with initial data
+        # Create the user with initial data
         initial_data = {
             "username": "testuser",
             "password1": "testpass123",
@@ -42,6 +42,7 @@ class AdminTests(TestCase):
             "is_superuser": "0",
             "date_joined_0": "2024-01-01",
             "date_joined_1": "00:00:00",
+            "initial-email": "testuser@example.com",
             "profile-TOTAL_FORMS": "1",
             "profile-INITIAL_FORMS": "0",
             "profile-MIN_NUM_FORMS": "0",
@@ -51,6 +52,19 @@ class AdminTests(TestCase):
             "profile-0-bio": "Test bio",
             "profile-0-expertise": "Test expertise",
             "profile-0-is_teacher": "1",
+            "profile-0-referral_earnings": "0",
+            "profile-0-commission_rate": "10.0",
+            "profile-0-referred_by": "",
+            # Email address inline formset
+            "emailaddress_set-TOTAL_FORMS": "1",
+            "emailaddress_set-INITIAL_FORMS": "0",
+            "emailaddress_set-MIN_NUM_FORMS": "0",
+            "emailaddress_set-MAX_NUM_FORMS": "1000",
+            "emailaddress_set-0-email": "testuser@example.com",
+            "emailaddress_set-0-verified": "1",
+            "emailaddress_set-0-primary": "1",
+            "emailaddress_set-0-id": "",
+            "emailaddress_set-0-user": "",
             "_save": "Save",
         }
 
@@ -61,10 +75,10 @@ class AdminTests(TestCase):
         # Check if we got redirected to the user change page
         self.assertTrue(
             any(redirect[0].endswith("/change/") for redirect in response.redirect_chain),
-            f"Expected redirect to change page not found in {response.redirect_chain}",
+            "Expected redirect to change page not found",
         )
 
-        # Verify the user was created - with better error handling
+        # Verify the user was created
         try:
             user = User.objects.get(username="testuser")
         except User.DoesNotExist:
@@ -79,3 +93,8 @@ class AdminTests(TestCase):
         self.assertEqual(user.profile.bio, "Test bio")
         self.assertEqual(user.profile.expertise, "Test expertise")
         self.assertTrue(user.profile.is_teacher)
+
+        # Verify email was set
+        self.assertEqual(user.email, "testuser@example.com")
+        email_exists = user.emailaddress_set.filter(email="testuser@example.com", verified=True, primary=True).exists()
+        self.assertTrue(email_exists)

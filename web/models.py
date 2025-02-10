@@ -1,6 +1,7 @@
 import os
 import random
 import string
+import time
 from io import BytesIO
 
 from allauth.account.signals import user_signed_up
@@ -43,10 +44,13 @@ class Notification(models.Model):
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    bio = models.TextField(blank=True, default="")
-    expertise = models.CharField(max_length=200, blank=True, default="")
-    is_teacher = models.BooleanField(default=False)
+    bio = models.TextField(max_length=500, blank=True)
+    expertise = models.CharField(max_length=200, blank=True)
     avatar = models.ImageField(upload_to="avatars/", blank=True, default="")
+    is_teacher = models.BooleanField(default=False)
+    referral_code = models.CharField(max_length=20, unique=True, blank=True)
+    referred_by = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True, related_name="referrals")
+    referral_earnings = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     stripe_account_id = models.CharField(max_length=100, blank=True)
     stripe_account_status = models.CharField(
         max_length=20,
@@ -71,11 +75,9 @@ class Profile(models.Model):
     def __str__(self):
         return f"{self.user.username}'s profile"
 
-    @property
-    def can_receive_payments(self):
-        return self.is_teacher and self.stripe_account_id and self.stripe_account_status == "verified"
-
     def save(self, *args, **kwargs):
+        if not self.referral_code:
+            self.referral_code = self.generate_referral_code()
         if self.avatar:
             img = Image.open(self.avatar)
             if img.mode != "RGB":
@@ -91,6 +93,36 @@ class Profile(models.Model):
             self.avatar.delete(save=False)  # Delete old image
             self.avatar.save(file_name, ContentFile(buffer.getvalue()), save=False)
         super().save(*args, **kwargs)
+
+    def generate_referral_code(self):
+        """Generate a unique referral code."""
+        max_attempts = 10
+        attempt = 0
+
+        while attempt < max_attempts:
+            code = "".join(random.choices(string.ascii_uppercase + string.digits, k=8))
+            if not Profile.objects.filter(referral_code=code).exists():
+                return code
+            attempt += 1
+
+        # If we've exhausted our attempts, generate a truly unique code using timestamp
+        timestamp = int(time.time())
+        code = f"{timestamp:x}".upper()[:8]
+        return code
+
+    @property
+    def total_referrals(self):
+        """Return the total number of successful referrals."""
+        return self.referrals.count()
+
+    def add_referral_earnings(self, amount):
+        """Add referral earnings to the user's balance."""
+        self.referral_earnings = self.referral_earnings + amount
+        self.save()
+
+    @property
+    def can_receive_payments(self):
+        return self.is_teacher and self.stripe_account_id and self.stripe_account_status == "verified"
 
 
 class Subject(models.Model):

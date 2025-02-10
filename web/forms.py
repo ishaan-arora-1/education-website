@@ -38,6 +38,7 @@ __all__ = [
     "ForumTopicForm",
     "BlogPostForm",
     "MessageTeacherForm",
+    "FeedbackForm",
 ]
 
 
@@ -777,3 +778,45 @@ class MessageTeacherForm(forms.Form):
             del self.fields["name"]
             del self.fields["email"]
             del self.fields["captcha"]
+
+
+class FeedbackForm(forms.Form):
+    name = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=TailwindInput(
+            attrs={
+                "placeholder": "Your name (optional)",
+                "class": (
+                    "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 "
+                    "rounded-lg focus:ring-2 focus:ring-blue-500"
+                ),
+            }
+        ),
+    )
+    email = forms.EmailField(
+        required=False,
+        widget=TailwindEmailInput(
+            attrs={
+                "placeholder": "Your email (optional)",
+                "class": (
+                    "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 "
+                    "rounded-lg focus:ring-2 focus:ring-blue-500"
+                ),
+            }
+        ),
+    )
+    description = forms.CharField(
+        widget=TailwindTextarea(
+            attrs={
+                "placeholder": "Your feedback...",
+                "rows": 4,
+                "class": (
+                    "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 "
+                    "rounded-lg focus:ring-2 focus:ring-blue-500"
+                ),
+            }
+        ),
+        required=True,
+    )
+    captcha = CaptchaField(widget=TailwindCaptchaTextInput)

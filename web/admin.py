@@ -1,3 +1,4 @@
+from allauth.account.models import EmailAddress
 from django.contrib import admin, messages
 from django.contrib.auth import login
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -36,6 +37,31 @@ class ProfileInline(admin.StackedInline):
     model = Profile
     can_delete = False
     verbose_name_plural = "Profile"
+    fields = (
+        "bio",
+        "expertise",
+        "avatar",
+        "is_teacher",
+        "referral_code",
+        "referred_by",
+        "referral_earnings",
+        "commission_rate",
+    )
+    raw_id_fields = ("referred_by",)
+
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+        formset.form.base_fields["referred_by"].required = False
+        formset.form.base_fields["referral_earnings"].initial = 0
+        formset.form.base_fields["commission_rate"].initial = 10.0
+        return formset
+
+
+class EmailAddressInline(admin.TabularInline):
+    model = EmailAddress
+    can_delete = True
+    verbose_name_plural = "Email Addresses"
+    extra = 1
 
 
 @admin.register(Profile)
@@ -58,8 +84,19 @@ class ProfileAdmin(admin.ModelAdmin):
 
 
 class CustomUserAdmin(BaseUserAdmin):
-    inlines = (ProfileInline,)
+    inlines = (ProfileInline, EmailAddressInline)
     list_display = ("username", "email", "first_name", "last_name", "is_staff", "get_enrollment_count")
+
+    # Add email to the add_fieldsets
+    add_fieldsets = (
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": ("username", "password1", "password2"),
+            },
+        ),
+    )
 
     def get_enrollment_count(self, obj):
         count = obj.enrollments.count()
@@ -123,6 +160,18 @@ class CustomUserAdmin(BaseUserAdmin):
 
     login_as_button.short_description = ""
     login_as_button.allow_tags = True
+
+    def save_model(self, request, obj, form, change):
+        creating = not change  # True if creating new user, False if editing
+        super().save_model(request, obj, form, change)
+
+        if creating:
+            # Get email from the form data
+            email = form.data.get("emailaddress_set-0-email")
+            if email:
+                # Set the user's email field only
+                obj.email = email
+                obj.save()
 
 
 class SessionInline(admin.TabularInline):
