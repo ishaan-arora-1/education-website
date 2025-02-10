@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% load static %}
-{% load markdownx %}
+{% load markdown_filters %}
 
 {% block title %}
   {{ post.title }}
@@ -36,7 +36,7 @@
             </div>
           {% endif %}
         </div>
-        {{ post.content|markdownx }}
+        {{ post.content|markdown }}
       </article>
       <!-- Comments Section -->
       <div class="border-t dark:border-gray-700 pt-8">

@@ -82,9 +82,9 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
     "allauth",
     "allauth.account",
-    "web",
     "captcha",
     "markdownx",
+    "web",
 ]
 
 if DEBUG and not TESTING:
