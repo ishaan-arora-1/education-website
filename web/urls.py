@@ -9,7 +9,6 @@ from . import admin_views, views
 urlpatterns = [
     path("i18n/", include("django.conf.urls.i18n")),  # Language selection URLs
     path("captcha/", include("captcha.urls")),  # CAPTCHA URLs should not be language-prefixed
-    path("admin/", admin.site.urls),
 ]
 
 if settings.DEBUG:
