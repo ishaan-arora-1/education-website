@@ -24,6 +24,7 @@ def reverse_charset_mysql(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
+    atomic = False  # Disable transaction wrapping
 
     dependencies = [
         ("web", "0017_add_referral_code_unique_constraint"),
