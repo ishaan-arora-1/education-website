@@ -138,8 +138,8 @@ class Command(BaseCommand):
                 is_virtual = random.choice([True, False])
                 session = Session.objects.create(
                     course=course,
-                    title=f"Session {i+1}",
-                    description=f"Description for session {i+1}",
+                    title=f"Session {i + 1}",
+                    description=f"Description for session {i + 1}",
                     start_time=start_time,
                     end_time=start_time + timedelta(hours=2),
                     price=Decimal(random.randint(20, 50)),
@@ -181,8 +181,8 @@ class Command(BaseCommand):
             for i in range(3):
                 CourseMaterial.objects.create(
                     course=course,
-                    title=f"Material {i+1}",
-                    description=f"Description for material {i+1}",
+                    title=f"Material {i + 1}",
+                    description=f"Description for material {i + 1}",
                     material_type=random.choice(material_types),
                     session=random.choice(sessions) if random.choice([True, False]) else None,
                     external_url="https://localhost/default-material",  # Ensuring NOT NULL constraint
@@ -219,7 +219,7 @@ class Command(BaseCommand):
         categories = []
         for i in range(3):
             category = ForumCategory.objects.create(
-                name=f"Category {i+1}", slug=f"category-{i+1}", description=f"Description for category {i+1}"
+                name=f"Category {i + 1}", slug=f"category-{i + 1}", description=f"Description for category {i + 1}"
             )
             categories.append(category)
 
@@ -227,8 +227,8 @@ class Command(BaseCommand):
             for j in range(3):
                 topic = ForumTopic.objects.create(
                     category=category,
-                    title=f"Topic {j+1}",
-                    content=f"Content for topic {j+1}",
+                    title=f"Topic {j + 1}",
+                    content=f"Content for topic {j + 1}",
                     author=random.choice(students + teachers),
                 )
 
@@ -273,8 +273,8 @@ class Command(BaseCommand):
         for teacher in teachers:
             for i in range(random.randint(1, 3)):
                 post = BlogPost.objects.create(
-                    title=f"Blog Post {i+1} by {teacher.username}",
-                    slug=f"blog-post-{i+1}-by-{teacher.username}",
+                    title=f"Blog Post {i + 1} by {teacher.username}",
+                    slug=f"blog-post-{i + 1}-by-{teacher.username}",
                     author=teacher,
                     content="# Test Content\n\nThis is a test blog post.",
                     status="published",

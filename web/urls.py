@@ -9,6 +9,7 @@ from . import admin_views, views
 urlpatterns = [
     path("i18n/", include("django.conf.urls.i18n")),  # Language selection URLs
     path("captcha/", include("captcha.urls")),  # CAPTCHA URLs should not be language-prefixed
+    path("admin/", admin.site.urls),
 ]
 
 if settings.DEBUG:
@@ -162,6 +163,10 @@ urlpatterns += i18n_patterns(
     path("calendar/<str:share_token>/remove-slot", views.remove_time_slot, name="remove_time_slot"),
     path("calendar/<str:share_token>/data", views.get_calendar_data, name="get_calendar_data"),
     path("status/", views.system_status, name="system_status"),
+    # Challenge URLs
+    path("challenges/", views.challenge_list, name="challenge_list"),
+    path("challenges/<int:week_number>/", views.challenge_detail, name="challenge_detail"),
+    path("challenges/<int:week_number>/submit/", views.challenge_submit, name="challenge_submit"),
     prefix_default_language=True,
 )
 

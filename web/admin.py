@@ -14,6 +14,8 @@ from .models import (
     BlogPost,
     Cart,
     CartItem,
+    Challenge,
+    ChallengeSubmission,
     Course,
     CourseMaterial,
     CourseProgress,
@@ -370,6 +372,16 @@ class PaymentAdmin(admin.ModelAdmin):
     search_fields = ("enrollment__student__username", "enrollment__course__title", "stripe_payment_intent_id")
     raw_id_fields = ("enrollment", "session")
     readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(Challenge)
+class ChallengeAdmin(admin.ModelAdmin):
+    list_display = ("week_number", "title", "start_date", "end_date")
+
+
+@admin.register(ChallengeSubmission)
+class ChallengeSubmissionAdmin(admin.ModelAdmin):
+    list_display = ("user", "challenge", "submitted_at")
 
 
 # Unregister the default User admin and register our custom one

@@ -187,6 +187,10 @@
             <a href="{% url 'subjects' %}" class="hover:underline flex items-center">
               <i class="fa-solid fa-list-check mr-1"></i> Subjects
             </a>
+            <a href="{% url 'challenge_list' %}"
+               class="hover:underline flex items-center">
+              <i class="fa-solid fa-trophy mr-1"></i> Challenges
+            </a>
           </div>
           <!-- Language and Dark Mode -->
           <div class="flex items-center space-x-2">
@@ -367,6 +371,11 @@
                  class="flex items-center space-x-2 px-4 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                 <i class="fa-solid fa-list-check"></i>
                 <span>Subjects</span>
+              </a>
+              <a href="{% url 'challenge_list' %}"
+                 class="flex items-center space-x-2 px-4 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                <i class="fa-solid fa-trophy"></i>
+                <span>Challenges</span>
               </a>
               <a href="{% url 'forum_categories' %}"
                  class="flex items-center space-x-2 px-4 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">

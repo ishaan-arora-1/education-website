@@ -30,6 +30,7 @@ from .calendar_sync import generate_google_calendar_link, generate_ical_feed, ge
 from .decorators import teacher_required
 from .forms import (
     BlogPostForm,
+    ChallengeSubmissionForm,
     CourseForm,
     CourseMaterialForm,
     FeedbackForm,
@@ -56,6 +57,8 @@ from .models import (
     BlogComment,
     BlogPost,
     CartItem,
+    Challenge,
+    ChallengeSubmission,
     Course,
     CourseMaterial,
     CourseProgress,
@@ -2554,3 +2557,30 @@ def content_dashboard(request):
             "user_stats": user_stats,
         },
     )
+
+
+def challenge_list(request):
+    challenges = Challenge.objects.order_by("week_number")
+    return render(request, "web/challenge_list.html", {"challenges": challenges})
+
+
+def challenge_detail(request, week_number):
+    challenge = get_object_or_404(Challenge, week_number=week_number)
+    submissions = ChallengeSubmission.objects.filter(challenge=challenge)
+    return render(request, "web/challenge_detail.html", {"challenge": challenge, "submissions": submissions})
+
+
+@login_required
+def challenge_submit(request, week_number):
+    challenge = get_object_or_404(Challenge, week_number=week_number)
+    if request.method == "POST":
+        form = ChallengeSubmissionForm(request.POST)
+        if form.is_valid():
+            submission = form.save(commit=False)
+            submission.user = request.user
+            submission.challenge = challenge
+            submission.save()
+            return redirect("challenge_detail", week_number=week_number)
+    else:
+        form = ChallengeSubmissionForm()
+    return render(request, "web/challenge_submit.html", {"challenge": challenge, "form": form})

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-4 text-center">Week {{ challenge.week_number }}: {{ challenge.title }}</h1>
+    <p class="text-lg mb-4">{{ challenge.description }}</p>
+    <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+      <strong>Challenge Period:</strong> {{ challenge.start_date }} to {{ challenge.end_date }}
+    </p>
+    {% if user.is_authenticated %}
+      <div class="text-center">
+        <a href="{% url 'challenge_submit' challenge.week_number %}"
+           class="inline-block bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition">Submit Your Result</a>
+      </div>
+    {% else %}
+      <p class="text-red-600 dark:text-red-400 text-center">Please log in to submit your result.</p>
+    {% endif %}
+    <h2 class="text-2xl font-semibold mt-8 mb-4">Submissions:</h2>
+    {% if submissions %}
+      <ul class="space-y-4">
+        {% for sub in submissions %}
+          <li class="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
+            <strong>{{ sub.user.username }}</strong> at {{ sub.submitted_at }}:
+            <p>{{ sub.submission_text }}</p>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No submissions yet.</p>
+    {% endif %}
+  </div>
+{% endblock %}
