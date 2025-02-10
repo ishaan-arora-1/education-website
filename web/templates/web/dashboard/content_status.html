@@ -1,0 +1,444 @@
+{% extends "base.html" %}
+
+{% load humanize %}
+
+{% block title %}Content Status Dashboard{% endblock %}
+{% block extra_head %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
+{% block content %}
+  <div class="container mx-auto px-4 py-8">
+    <!-- Overall Health Score -->
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200">Content Status Dashboard</h1>
+        <p class="text-gray-600 dark:text-gray-400 mt-2">Monitor and track content across all platforms</p>
+      </div>
+      <div class="flex items-center space-x-4">
+        <div class="text-right">
+          <span class="text-sm text-gray-600 dark:text-gray-400 block">Overall Health</span>
+          <div class="flex items-center mt-1">
+            <div class="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg {% if overall_score >= 80 %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% elif overall_score >= 60 %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% else %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% endif %}">
+              {{ overall_score }}%
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Platform Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Web Traffic Card -->
+      <div class="lg:col-span-3 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-3">
+            <div class="text-2xl text-gray-600 dark:text-gray-400">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Web Traffic</h2>
+              <div class="text-sm text-gray-500 dark:text-gray-400">Last 30 days</div>
+            </div>
+          </div>
+          {% if web_stats.date %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if web_stats.status == 'danger' %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% elif web_stats.status == 'warning' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% else %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% endif %}">
+              {{ web_stats.date|timesince }} ago
+            </span>
+          {% else %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+              No data
+            </span>
+          {% endif %}
+        </div>
+        <div class="grid grid-cols-2 gap-4 mb-6">
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium">Total Views</span>
+            <span>{{ web_stats.total_views|intcomma }}</span>
+          </div>
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium">Unique Visitors</span>
+            <span>{{ web_stats.unique_visitors|intcomma }}</span>
+          </div>
+        </div>
+        <div class="w-full h-64">
+          <canvas id="trafficChart"></canvas>
+        </div>
+      </div>
+      <!-- YouTube -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-3">
+            <div class="text-2xl text-gray-600 dark:text-gray-400">
+              <i class="fab fa-youtube"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">YouTube</h2>
+              <div class="text-sm text-gray-500 dark:text-gray-400">Threshold: 1 month</div>
+            </div>
+          </div>
+          {% if content_data.youtube %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if content_data.youtube.status == 'danger' %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% elif content_data.youtube.status == 'warning' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% else %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% endif %}">
+              {{ content_data.youtube.date|default:"No data" }}
+            </span>
+          {% else %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+              Not Connected
+            </span>
+          {% endif %}
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-4">
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium">Subscribers</span>
+            <span>{{ content_data.youtube.stats.subscribers|default:"N/A"|intcomma }}</span>
+          </div>
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium">Total Views</span>
+            <span>{{ content_data.youtube.stats.views|default:"N/A"|intcomma }}</span>
+          </div>
+        </div>
+      </div>
+      <!-- GitHub -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-3">
+            <div class="text-2xl text-gray-600 dark:text-gray-400">
+              <i class="fab fa-github"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">GitHub</h2>
+              <div class="text-sm text-gray-500 dark:text-gray-400">Threshold: 1 day</div>
+            </div>
+          </div>
+          {% if content_data.github %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if content_data.github.status == 'danger' %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% elif content_data.github.status == 'warning' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% else %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% endif %}">
+              {{ content_data.github.date|default:"No data" }}
+            </span>
+          {% else %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+              Not Connected
+            </span>
+          {% endif %}
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-4">
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium">Open PRs</span>
+            <span>{{ content_data.github.stats.open_prs|default:"N/A" }}</span>
+          </div>
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium">Commits</span>
+            <span>{{ content_data.github.stats.commits|default:"N/A"|intcomma }}</span>
+          </div>
+        </div>
+      </div>
+      <!-- SendGrid -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-3">
+            <div class="text-2xl text-gray-600 dark:text-gray-400">
+              <i class="fas fa-paper-plane"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">SendGrid</h2>
+              <div class="text-sm text-gray-500 dark:text-gray-400">Threshold: 1 week</div>
+            </div>
+          </div>
+          {% if content_data.sendgrid %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if content_data.sendgrid.status == 'danger' %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% elif content_data.sendgrid.status == 'warning' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% else %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% endif %}">
+              {{ content_data.sendgrid.date|default:"No data" }}
+            </span>
+          {% else %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+              Not Connected
+            </span>
+          {% endif %}
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-4">
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium">Sent</span>
+            <span>{{ content_data.sendgrid.stats.sent|default:"N/A"|intcomma }}</span>
+          </div>
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium">Open Rate</span>
+            <span>{{ content_data.sendgrid.stats.open_rate|default:"N/A" }}%</span>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-3">
+            <div class="text-2xl text-gray-600 dark:text-gray-400">
+              <i class="fab fa-facebook"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Facebook</h2>
+              <div class="text-sm text-gray-500 dark:text-gray-400">Threshold: 1 week</div>
+            </div>
+          </div>
+          {% if content_data.facebook %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if content_data.facebook.status == 'danger' %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% elif content_data.facebook.status == 'warning' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% else %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% endif %}">
+              {{ content_data.facebook.date|default:"No data" }}
+            </span>
+          {% else %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+              Not Connected
+            </span>
+          {% endif %}
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-4">
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium">Followers</span>
+            <span>{{ content_data.facebook.stats.followers|default:"N/A"|intcomma }}</span>
+          </div>
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium">Engagement</span>
+            <span>{{ content_data.facebook.stats.engagement|default:"N/A" }}%</span>
+          </div>
+        </div>
+      </div>
+      <!-- Instagram -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-3">
+            <div class="text-2xl text-gray-600 dark:text-gray-400">
+              <i class="fab fa-instagram"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Instagram</h2>
+              <div class="text-sm text-gray-500 dark:text-gray-400">Threshold: 1 day</div>
+            </div>
+          </div>
+          {% if content_data.instagram %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if content_data.instagram.status == 'danger' %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% elif content_data.instagram.status == 'warning' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% else %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% endif %}">
+              {{ content_data.instagram.date|default:"No data" }}
+            </span>
+          {% else %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+              Not Connected
+            </span>
+          {% endif %}
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-4">
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium">Followers</span>
+            <span>{{ content_data.instagram.stats.followers|default:"N/A"|intcomma }}</span>
+          </div>
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium">Engagement</span>
+            <span>{{ content_data.instagram.stats.engagement|default:"N/A" }}%</span>
+          </div>
+        </div>
+      </div>
+      <!-- X -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-3">
+            <div class="text-2xl text-gray-600 dark:text-gray-400">
+              <i class="fab fa-x-twitter"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">X</h2>
+              <div class="text-sm text-gray-500 dark:text-gray-400">Threshold: 1 day</div>
+            </div>
+          </div>
+          {% if content_data.x %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if content_data.x.status == 'danger' %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% elif content_data.x.status == 'warning' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% else %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% endif %}">
+              {{ content_data.x.date|default:"No data" }}
+            </span>
+          {% else %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+              Not Connected
+            </span>
+          {% endif %}
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-4">
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium">Followers</span>
+            <span>{{ content_data.x.stats.followers|default:"N/A"|intcomma }}</span>
+          </div>
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium">Engagement</span>
+            <span>{{ content_data.x.stats.engagement|default:"N/A" }}%</span>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-3">
+            <div class="text-2xl text-gray-600 dark:text-gray-400">
+              <i class="fas fa-blog"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Blog</h2>
+              <div class="text-sm text-gray-500 dark:text-gray-400">Threshold: 1 week</div>
+            </div>
+          </div>
+          {% if content_data.blog %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if content_data.blog.status == 'danger' %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% elif content_data.blog.status == 'warning' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% else %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% endif %}">
+              {{ content_data.blog.date|default:"No data" }}
+            </span>
+          {% else %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+              Not Connected
+            </span>
+          {% endif %}
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-4">
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium mb-1">Posts</span>
+            <span class="text-2xl font-bold text-gray-800 dark:text-gray-200">{{ content_data.blog.stats.posts|default:"N/A"|intcomma }}</span>
+          </div>
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium mb-1">Views</span>
+            <span class="text-2xl font-bold text-gray-800 dark:text-gray-200">{{ content_data.blog.stats.views|default:"N/A"|intcomma }}</span>
+          </div>
+        </div>
+      </div>
+      <!-- Forum -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-3">
+            <div class="text-2xl text-gray-600 dark:text-gray-400">
+              <i class="fas fa-comments"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Forum</h2>
+              <div class="text-sm text-gray-500 dark:text-gray-400">Threshold: 1 week</div>
+            </div>
+          </div>
+          {% if content_data.forum %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if content_data.forum.status == 'danger' %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% elif content_data.forum.status == 'warning' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% else %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% endif %}">
+              {{ content_data.forum.date|default:"No data" }}
+            </span>
+          {% else %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+              Not Connected
+            </span>
+          {% endif %}
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-4">
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium mb-1">Topics</span>
+            <span class="text-2xl font-bold text-gray-800 dark:text-gray-200">{{ content_data.forum.stats.topics|default:"N/A"|intcomma }}</span>
+          </div>
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium mb-1">Replies</span>
+            <span class="text-2xl font-bold text-gray-800 dark:text-gray-200">{{ content_data.forum.stats.replies|default:"N/A"|intcomma }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-3">
+            <div class="text-2xl text-gray-600 dark:text-gray-400">
+              <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Courses</h2>
+              <div class="text-sm text-gray-500 dark:text-gray-400">Threshold: 1 week</div>
+            </div>
+          </div>
+          {% if content_data.courses %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if content_data.courses.status == 'danger' %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% elif content_data.courses.status == 'warning' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% else %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% endif %}">
+              {{ content_data.courses.date|default:"No data" }}
+            </span>
+          {% else %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+              Not Connected
+            </span>
+          {% endif %}
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-4">
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium mb-1">Active</span>
+            <span class="text-2xl font-bold text-gray-800 dark:text-gray-200">{{ content_data.courses.stats.active|default:"N/A"|intcomma }}</span>
+          </div>
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium mb-1">Students</span>
+            <span class="text-2xl font-bold text-gray-800 dark:text-gray-200">{{ content_data.courses.stats.students|default:"N/A"|intcomma }}</span>
+          </div>
+        </div>
+      </div>
+      <!-- Users -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-3">
+            <div class="text-2xl text-gray-600 dark:text-gray-400">
+              <i class="fas fa-users"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Users</h2>
+              <div class="text-sm text-gray-500 dark:text-gray-400">Threshold: 1 week</div>
+            </div>
+          </div>
+          {% if content_data.users %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if content_data.users.status == 'danger' %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% elif content_data.users.status == 'warning' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% else %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% endif %}">
+              {{ content_data.users.date|default:"No data" }}
+            </span>
+          {% else %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+              Not Connected
+            </span>
+          {% endif %}
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-4">
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium mb-1">Total</span>
+            <span class="text-2xl font-bold text-gray-800 dark:text-gray-200">{{ content_data.users.stats.total|default:"N/A"|intcomma }}</span>
+          </div>
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium mb-1">Active</span>
+            <span class="text-2xl font-bold text-gray-800 dark:text-gray-200">{{ content_data.users.stats.active|default:"N/A"|intcomma }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+{% block extra_js %}
+  <script>
+      document.addEventListener('DOMContentLoaded', function() {
+          const ctx = document.getElementById('trafficChart').getContext('2d');
+          const trafficData = {
+              {
+                  traffic_data | safe
+              }
+          };
+
+          new Chart(ctx, {
+              type: 'line',
+              data: {
+                  labels: trafficData.map(d => d.date),
+                  datasets: [{
+                      label: 'Daily Views',
+                      data: trafficData.map(d => d.views),
+                      borderColor: getComputedStyle(document.documentElement).getPropertyValue('--color-blue-600'),
+                      backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--color-blue-100'),
+                      fill: true,
+                      tension: 0.4,
+                      borderWidth: 2,
+                      pointRadius: 3,
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                      legend: {
+                          display: false
+                      }
+                  },
+                  scales: {
+                      y: {
+                          beginAtZero: true,
+                          grid: {
+                              color: getComputedStyle(document.documentElement).getPropertyValue('--color-gray-200')
+                          }
+                      },
+                      x: {
+                          grid: {
+                              display: false
+                          }
+                      }
+                  }
+              }
+          });
+      });
+  </script>
+{% endblock %}

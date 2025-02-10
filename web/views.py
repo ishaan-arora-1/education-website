@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import time
+from datetime import timedelta
 from decimal import Decimal
 
 import requests
@@ -15,7 +16,7 @@ from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.db import IntegrityError, models, transaction
-from django.db.models import Avg, Count, Q
+from django.db.models import Avg, Count, Q, Sum
 from django.http import FileResponse, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -72,6 +73,7 @@ from .models import (
     SessionEnrollment,
     StudyGroup,
     TimeSlot,
+    WebRequest,
 )
 from .notifications import notify_session_reminder, notify_teacher_new_enrollment, send_enrollment_confirmation
 from .utils import get_or_create_cart
@@ -2390,3 +2392,138 @@ def feedback(request):
         form = FeedbackForm()
 
     return render(request, "feedback.html", {"form": form})
+
+
+def content_dashboard(request):
+    # Get current time and thresholds
+    now = timezone.now()
+    month_ago = now - timedelta(days=30)
+
+    def get_status(date, threshold_days=None):
+        if not date:
+            return "neutral"
+        if not threshold_days:
+            return "success"
+        threshold = now - timedelta(days=threshold_days)
+        if date >= threshold:
+            return "success"
+        elif date >= (threshold - timedelta(days=threshold_days)):
+            return "warning"
+        return "danger"
+
+    # Web traffic stats
+    web_stats = {
+        "total_views": WebRequest.objects.aggregate(total=Sum("count"))["total"] or 0,
+        "unique_visitors": WebRequest.objects.values("ip_address").distinct().count(),
+        "date": WebRequest.objects.order_by("-created").first().created if WebRequest.objects.exists() else None,
+    }
+    web_stats["status"] = get_status(web_stats["date"])
+
+    # Generate traffic data for chart (last 30 days)
+    traffic_data = []
+    for i in range(30):
+        date = now - timedelta(days=i)
+        day_views = WebRequest.objects.filter(created=date.date()).aggregate(total=Sum("count"))["total"] or 0
+        traffic_data.append({"date": date.strftime("%Y-%m-%d"), "views": day_views})
+    traffic_data.reverse()  # Most recent last for chart
+
+    # Blog stats
+    blog_stats = {
+        "posts": BlogPost.objects.filter(status="published").count(),
+        "views": (WebRequest.objects.filter(path__startswith="/blog/").aggregate(total=Sum("count"))["total"] or 0),
+        "date": (
+            BlogPost.objects.filter(status="published").order_by("-published_at").first().published_at
+            if BlogPost.objects.exists()
+            else None
+        ),
+    }
+    blog_stats["status"] = get_status(blog_stats["date"], 7)  # 1 week threshold
+
+    # Forum stats
+    forum_stats = {
+        "topics": ForumTopic.objects.count(),
+        "replies": ForumReply.objects.count(),
+        "date": ForumTopic.objects.order_by("-created_at").first().created_at if ForumTopic.objects.exists() else None,
+    }
+    forum_stats["status"] = get_status(forum_stats["date"], 1)  # 1 day threshold
+
+    # Course stats
+    course_stats = {
+        "active": Course.objects.filter(status="published").count(),
+        "students": Enrollment.objects.filter(status="approved").count(),
+        "date": Course.objects.order_by("-updated_at").first().updated_at if Course.objects.exists() else None,
+    }
+    course_stats["status"] = get_status(course_stats["date"], 30)  # 1 month threshold
+
+    # User stats
+    user_stats = {
+        "total": User.objects.count(),
+        "active": User.objects.filter(last_login__gte=month_ago).count(),
+        "date": User.objects.order_by("-date_joined").first().date_joined if User.objects.exists() else None,
+    }
+
+    def get_status(date, threshold_days):
+        if not date:
+            return "danger"
+        days_since = (now - date).days
+        if days_since > threshold_days * 2:
+            return "danger"
+        elif days_since > threshold_days:
+            return "warning"
+        return "success"
+
+    # Calculate overall health score
+    connected_platforms = 0
+    healthy_platforms = 0
+    platforms_data = [
+        (blog_stats["date"], 7),  # Blog: 1 week threshold
+        (forum_stats["date"], 7),  # Forum: 1 week threshold
+        (course_stats["date"], 7),  # Courses: 1 week threshold
+        (user_stats["date"], 7),  # Users: 1 week threshold
+    ]
+
+    for date, threshold in platforms_data:
+        if date:
+            connected_platforms += 1
+            if get_status(date, threshold) != "danger":
+                healthy_platforms += 1
+
+    overall_score = int((healthy_platforms / max(connected_platforms, 1)) * 100)
+
+    content_data = {
+        "blog": {
+            "stats": blog_stats,
+            "status": get_status(blog_stats["date"], 7),
+            "date": blog_stats["date"],
+        },
+        "forum": {
+            "stats": forum_stats,
+            "status": get_status(forum_stats["date"], 7),
+            "date": forum_stats["date"],
+        },
+        "courses": {
+            "stats": course_stats,
+            "status": get_status(course_stats["date"], 7),
+            "date": course_stats["date"],
+        },
+        "users": {
+            "stats": user_stats,
+            "status": get_status(user_stats["date"], 7),
+            "date": user_stats["date"],
+        },
+    }
+
+    return render(
+        request,
+        "web/dashboard/content_status.html",
+        {
+            "content_data": content_data,
+            "overall_score": overall_score,
+            "web_stats": web_stats,
+            "traffic_data": traffic_data,
+            "blog_stats": blog_stats,
+            "forum_stats": forum_stats,
+            "course_stats": course_stats,
+            "user_stats": user_stats,
+        },
+    )

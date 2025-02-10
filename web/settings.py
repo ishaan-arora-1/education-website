@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 
 import environ
@@ -18,6 +19,11 @@ if os.path.exists(env_file):
 else:
     print("No .env file found.")
 
+
+if "test" in sys.argv:
+    TESTING = True
+else:
+    TESTING = False
 
 # Debug settings
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
@@ -73,12 +79,16 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
+    "django.contrib.humanize",
     "allauth",
     "allauth.account",
     "web",
     "captcha",
     "markdownx",
 ]
+
+if DEBUG and not TESTING:
+    INSTALLED_APPS.append("django_browser_reload")
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -94,6 +104,9 @@ MIDDLEWARE = [
     "web.middleware.WebRequestMiddleware",
     "web.middleware.GlobalExceptionMiddleware",
 ]
+
+if DEBUG and not TESTING:
+    MIDDLEWARE.insert(-2, "django_browser_reload.middleware.BrowserReloadMiddleware")
 
 ROOT_URLCONF = "web.urls"
 
@@ -245,6 +258,22 @@ STRIPE_PUBLISHABLE_KEY = env("STRIPE_PUBLISHABLE_KEY", default="")
 STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default="")
 STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default="")
 
+# Social Media and Content API Settings
+MAILCHIMP_API_KEY = env.str("MAILCHIMP_API_KEY", default="")
+MAILCHIMP_LIST_ID = env.str("MAILCHIMP_LIST_ID", default="")
+
+INSTAGRAM_ACCESS_TOKEN = env.str("INSTAGRAM_ACCESS_TOKEN", default="")
+FACEBOOK_ACCESS_TOKEN = env.str("FACEBOOK_ACCESS_TOKEN", default="")
+
+GITHUB_ACCESS_TOKEN = env.str("GITHUB_ACCESS_TOKEN", default="")
+GITHUB_REPO = env.str("GITHUB_REPO", default="AlphaOneLabs/education-website")
+
+YOUTUBE_API_KEY = env.str("YOUTUBE_API_KEY", default="")
+YOUTUBE_CHANNEL_ID = env.str("YOUTUBE_CHANNEL_ID", default="")
+
+# Slack Integration
+SLACK_WEBHOOK_URL = env.str("SLACK_WEBHOOK_URL", default="")
+
 LANGUAGES = [
     ("en", "English"),
     ("es", "Spanish"),
@@ -296,9 +325,6 @@ if os.environ.get("DATABASE_URL"):
         GS_QUERYSTRING_AUTH = False
         GS_LOCATION = "media"  # Store files in a media directory in the bucket
 
-
-# Slack settings
-SLACK_WEBHOOK_URL = env.str("SLACK_WEBHOOK_URL", default="")
 
 # Admin URL Configuration
 ADMIN_URL = env.str("ADMIN_URL", default="a-dmin-url123")

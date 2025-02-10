@@ -41,3 +41,15 @@
 - Include proper ARIA labels where needed
 - Ensure sufficient color contrast
 - Add hover/focus states for interactive elements
+
+# file locations
+
+the setting.py file is in the web folder
+the urls.py file is in the web folder
+the views.py file is in the web folder
+the models.py file is in the web folder
+the tests are in the tests folder
+the admin.py file is in the web folder
+
+# testing
+always offer to write tests for any new or changed code

@@ -11,6 +11,9 @@ urlpatterns = [
     path("captcha/", include("captcha.urls")),  # CAPTCHA URLs should not be language-prefixed
 ]
 
+if settings.DEBUG:
+    urlpatterns.append(path("__reload__/", include("django_browser_reload.urls")))  # Browser reload URLs
+
 # Language-prefixed URLs
 urlpatterns += i18n_patterns(
     path("", views.index, name="index"),
@@ -28,6 +31,7 @@ urlpatterns += i18n_patterns(
     # Dashboard URLs
     path("dashboard/student/", views.student_dashboard, name="student_dashboard"),
     path("dashboard/teacher/", views.teacher_dashboard, name="teacher_dashboard"),
+    path("dashboard/content/", views.content_dashboard, name="content_dashboard"),
     # Course Management
     path("courses/create/", views.create_course, name="create_course"),
     path("courses/search/", views.course_search, name="course_search"),
