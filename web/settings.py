@@ -295,6 +295,7 @@ if os.environ.get("DATABASE_URL"):
     # Only add MySQL-specific options if using MySQL
     if DATABASES["default"]["ENGINE"] == "django.db.backends.mysql":
         DATABASES["default"]["OPTIONS"] = {
+            "charset": "utf8mb4",
             "sql_mode": (
                 "STRICT_TRANS_TABLES,"
                 "NO_ZERO_IN_DATE,"
@@ -302,6 +303,7 @@ if os.environ.get("DATABASE_URL"):
                 "ERROR_FOR_DIVISION_BY_ZERO,"
                 "NO_ENGINE_SUBSTITUTION"
             ),
+            "init_command": "SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'",
         }
 
     # Google Cloud Storage settings for media files in production
