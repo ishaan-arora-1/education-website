@@ -20,25 +20,38 @@ def update_charset_mysql(apps, schema_editor):
 
         # Update each table
         for table in tables:
+            # First convert the table
             cursor.execute(f"ALTER TABLE {table} CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
-            # Update text/varchar columns specifically
+
+            # Then get column information
             cursor.execute(
                 f"""
-                SELECT COLUMN_NAME
+                SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH
                 FROM INFORMATION_SCHEMA.COLUMNS
                 WHERE TABLE_NAME = '{table}'
                 AND (DATA_TYPE = 'varchar' OR DATA_TYPE = 'text' OR DATA_TYPE = 'longtext')
             """
             )
             columns = cursor.fetchall()
-            for (column,) in columns:
-                cursor.execute(
-                    f"""
-                    ALTER TABLE {table}
-                    MODIFY {column} {cursor.description[0][1]}
-                    CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
-                """
-                )
+
+            # Update each column with proper type definition
+            for column_name, data_type, max_length in columns:
+                if data_type == "varchar":
+                    cursor.execute(
+                        f"""
+                        ALTER TABLE {table}
+                        MODIFY {column_name} VARCHAR({max_length})
+                        CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                    """
+                    )
+                else:  # text or longtext
+                    cursor.execute(
+                        f"""
+                        ALTER TABLE {table}
+                        MODIFY {column_name} {data_type.upper()}
+                        CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                    """
+                    )
 
 
 def reverse_charset_mysql(apps, schema_editor):
