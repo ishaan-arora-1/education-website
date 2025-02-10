@@ -732,11 +732,15 @@ class BlogPost(models.Model):
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, max_length=200)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="blog_posts")
-    content = models.TextField()
+    content = MarkdownxField()
     excerpt = models.TextField(blank=True)
-    featured_image = models.ImageField(upload_to="blog/images/%Y/%m/%d/", blank=True)
+    featured_image = models.ImageField(
+        upload_to="blog/images/", blank=True, help_text="Featured image for the blog post"
+    )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="draft")
-    tags = models.CharField(max_length=200, blank=True, help_text="Comma-separated tags")
+    tags = models.CharField(
+        max_length=200, blank=True, help_text="Comma-separated tags (e.g., 'python, django, web development')"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     published_at = models.DateTimeField(null=True, blank=True)
@@ -753,6 +757,14 @@ class BlogPost(models.Model):
         if self.status == "published" and not self.published_at:
             self.published_at = timezone.now()
         super().save(*args, **kwargs)
+
+    @property
+    def reading_time(self):
+        """Estimate reading time in minutes."""
+        words_per_minute = 200
+        word_count = len(self.content.split())
+        minutes = word_count / words_per_minute
+        return max(1, round(minutes))
 
 
 class BlogComment(models.Model):

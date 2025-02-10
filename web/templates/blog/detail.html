@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 
+{% load static %}
+{% load markdownx %}
+
 {% block title %}
   {{ post.title }}
 {% endblock title %}
@@ -8,13 +11,32 @@
     <div class="max-w-3xl mx-auto">
       <!-- Blog Post Content -->
       <article class="prose dark:prose-invert lg:prose-lg max-w-none mb-12">
+        {% if post.featured_image %}
+          <div class="mb-8">
+            <img src="{{ post.featured_image.url }}"
+                 alt="{{ post.title }}"
+                 class="w-full h-auto rounded-lg shadow-lg"
+                 width="800"
+                 height="400" />
+          </div>
+        {% endif %}
         <h1>{{ post.title }}</h1>
         <div class="flex items-center text-gray-500 dark:text-gray-400 text-sm mb-8">
           <span>By {{ post.author.get_full_name|default:post.author.username }}</span>
           <span class="mx-2">•</span>
           <time datetime="{{ post.created_at|date:'Y-m-d' }}">{{ post.created_at|date:"F j, Y" }}</time>
+          <span class="mx-2">•</span>
+          <span><i class="far fa-clock mr-1"></i>{{ post.reading_time }} min read</span>
+          {% if post.tags %}
+            <span class="mx-2">•</span>
+            <div class="flex flex-wrap gap-2">
+              {% for tag in post.tags.split|slice:":3" %}
+                <span class="text-sm bg-gray-100 dark:bg-gray-700 rounded-full px-3 py-1">{{ tag|trim }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
         </div>
-        {{ post.content|safe }}
+        {{ post.content|markdownx }}
       </article>
       <!-- Comments Section -->
       <div class="border-t dark:border-gray-700 pt-8">
@@ -24,16 +46,14 @@
           <div class="mb-8">
             <form method="post" class="space-y-4">
               {% csrf_token %}
-              {% for field in form %}
-                <div>
-                  <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
-                  {{ field }}
-                  {% if field.help_text %}
-                    <small class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</small>
-                  {% endif %}
-                  {% if field.errors %}<div class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors }}</div>{% endif %}
-                </div>
-              {% endfor %}
+              <div>
+                <label for="content" class="block text-sm font-medium mb-2">Your Comment</label>
+                <textarea name="content"
+                          id="content"
+                          rows="4"
+                          class="w-full border border-gray-300 dark:border-gray-600 rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 bg-white dark:bg-gray-800"
+                          required></textarea>
+              </div>
               <button type="submit"
                       class="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
                 Post Comment
@@ -41,10 +61,14 @@
             </form>
           </div>
         {% else %}
-          <p class="mb-8 text-gray-600 dark:text-gray-400">
-            Please <a href="{% url 'login' %}"
-    class="text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300">log in</a> to post a comment.
-          </p>
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+            <p class="text-gray-600 dark:text-gray-400 mb-4">Please log in to join the discussion.</p>
+            <a href="{% url 'account_login' %}?next={{ request.path }}"
+               class="inline-flex items-center bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded">
+              <i class="fa-solid fa-sign-in-alt mr-2"></i>
+              Log In to Reply
+            </a>
+          </div>
         {% endif %}
         <!-- Comments List -->
         <div class="space-y-6">

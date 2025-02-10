@@ -1102,31 +1102,38 @@ def forum_category(request, slug):
 
 
 def forum_topic(request, category_slug, topic_id):
-    """Display a specific forum topic and its replies."""
-    category = get_object_or_404(ForumCategory, slug=category_slug)
-    topic = get_object_or_404(ForumTopic, id=topic_id, category=category)
-    replies = topic.replies.all()
+    """Display a forum topic and its replies."""
+    topic = get_object_or_404(ForumTopic, id=topic_id, category__slug=category_slug)
 
-    if request.method == "POST":
-        if not request.user.is_authenticated:
-            messages.error(request, "You must be logged in to post replies.")
-            return redirect("login")
-
-        content = request.POST.get("content")
-        if content:
-            ForumReply.objects.create(topic=topic, author=request.user, content=content)
-            messages.success(request, "Reply posted successfully!")
-            return redirect("forum_topic", category_slug=category_slug, topic_id=topic_id)
-
-    return render(
-        request,
-        "web/forum/topic.html",
-        {
-            "category": category,
-            "topic": topic,
-            "replies": replies,
-        },
+    # Get view count from WebRequest model
+    view_count = (
+        WebRequest.objects.filter(path=request.path).aggregate(total_views=models.Sum("count"))["total_views"] or 0
     )
+    topic.views = view_count
+    topic.save()
+
+    # Handle POST requests for replies, etc.
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "add_reply" and request.user.is_authenticated:
+            content = request.POST.get("content")
+            if content:
+                ForumReply.objects.create(topic=topic, author=request.user, content=content)
+                messages.success(request, "Reply added successfully.")
+                return redirect("forum_topic", category_slug=category_slug, topic_id=topic_id)
+        elif action == "delete_reply" and request.user.is_authenticated:
+            reply_id = request.POST.get("reply_id")
+            reply = get_object_or_404(ForumReply, id=reply_id, author=request.user)
+            reply.delete()
+            messages.success(request, "Reply deleted successfully.")
+            return redirect("forum_topic", category_slug=category_slug, topic_id=topic_id)
+        elif action == "delete_topic" and request.user == topic.author:
+            topic.delete()
+            messages.success(request, "Topic deleted successfully.")
+            return redirect("forum_category", slug=category_slug)
+
+    replies = topic.replies.select_related("author").order_by("created_at")
+    return render(request, "web/forum/topic.html", {"topic": topic, "replies": replies})
 
 
 @login_required
@@ -1531,6 +1538,16 @@ def blog_list(request):
     return render(request, "blog/list.html", {"blog_posts": blog_posts, "tags": unique_tags})
 
 
+def blog_tag(request, tag):
+    """View for filtering blog posts by tag."""
+    blog_posts = BlogPost.objects.filter(status="published", tags__icontains=tag).order_by("-published_at")
+    tags = BlogPost.objects.values_list("tags", flat=True).distinct()
+    # Split comma-separated tags and get unique values
+    unique_tags = sorted(set(tag.strip() for tags_str in tags if tags_str for tag in tags_str.split(",")))
+
+    return render(request, "blog/list.html", {"blog_posts": blog_posts, "tags": unique_tags, "current_tag": tag})
+
+
 @login_required
 def create_blog_post(request):
     if request.method == "POST":
@@ -1548,22 +1565,32 @@ def create_blog_post(request):
 
 
 def blog_detail(request, slug):
+    """Display a blog post and its comments."""
     post = get_object_or_404(BlogPost, slug=slug, status="published")
-    comments = post.comments.filter(is_approved=True, parent=None)
+    comments = post.comments.filter(is_approved=True).order_by("created_at")
 
-    if request.method == "POST" and request.user.is_authenticated:
-        content = request.POST.get("content")
-        if content:
-            BlogComment.objects.create(
-                post=post,
-                author=request.user,
-                content=content,
-                is_approved=True,  # Auto-approve for now
+    if request.method == "POST":
+        if not request.user.is_authenticated:
+            messages.error(request, "Please log in to comment.")
+            return redirect("account_login")
+
+        comment_content = request.POST.get("content")
+        if comment_content:
+            comment = BlogComment.objects.create(
+                post=post, author=request.user, content=comment_content, is_approved=True  # Auto-approve for now
             )
-            messages.success(request, "Comment posted successfully!")
+            messages.success(request, f"Comment #{comment.id} added successfully!")
             return redirect("blog_detail", slug=slug)
 
-    return render(request, "blog/detail.html", {"post": post, "comments": comments})
+    # Get view count from WebRequest
+    view_count = WebRequest.objects.filter(path=request.path).aggregate(total_views=Sum("count"))["total_views"] or 0
+
+    context = {
+        "post": post,
+        "comments": comments,
+        "view_count": view_count,
+    }
+    return render(request, "blog/detail.html", context)
 
 
 @login_required

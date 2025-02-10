@@ -20,8 +20,9 @@ urlpatterns += i18n_patterns(
     path("learn/", views.learn, name="learn"),
     path("teach/", views.teach, name="teach"),
     path("about/", views.about, name="about"),
-    path("blog/", views.blog_list, name="blog"),
+    path("blog/", views.blog_list, name="blog_list"),
     path("blog/create/", views.create_blog_post, name="create_blog_post"),
+    path("blog/tag/<str:tag>/", views.blog_tag, name="blog_tag"),
     path("blog/<slug:slug>/", views.blog_detail, name="blog_detail"),
     # Authentication URLs
     path("signup/", views.signup, name="account_signup"),
