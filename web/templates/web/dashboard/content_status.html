@@ -395,11 +395,7 @@
   <script>
       document.addEventListener('DOMContentLoaded', function() {
           const ctx = document.getElementById('trafficChart').getContext('2d');
-          const trafficData = {
-              {
-                  traffic_data | safe
-              }
-          };
+          const trafficData = JSON.parse('{{ traffic_data|safe }}');
 
           new Chart(ctx, {
               type: 'line',
@@ -408,8 +404,8 @@
                   datasets: [{
                       label: 'Daily Views',
                       data: trafficData.map(d => d.views),
-                      borderColor: getComputedStyle(document.documentElement).getPropertyValue('--color-blue-600'),
-                      backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--color-blue-100'),
+                      borderColor: '#2563eb',
+                      backgroundColor: '#dbeafe',
                       fill: true,
                       tension: 0.4,
                       borderWidth: 2,
@@ -428,7 +424,7 @@
                       y: {
                           beginAtZero: true,
                           grid: {
-                              color: getComputedStyle(document.documentElement).getPropertyValue('--color-gray-200')
+                              color: '#e5e7eb'
                           }
                       },
                       x: {

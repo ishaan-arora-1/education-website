@@ -2423,7 +2423,7 @@ def content_dashboard(request):
     traffic_data = []
     for i in range(30):
         date = now - timedelta(days=i)
-        day_views = WebRequest.objects.filter(created=date.date()).aggregate(total=Sum("count"))["total"] or 0
+        day_views = WebRequest.objects.filter(created__date=date.date()).aggregate(total=Sum("count"))["total"] or 0
         traffic_data.append({"date": date.strftime("%Y-%m-%d"), "views": day_views})
     traffic_data.reverse()  # Most recent last for chart
 
@@ -2451,7 +2451,7 @@ def content_dashboard(request):
     course_stats = {
         "active": Course.objects.filter(status="published").count(),
         "students": Enrollment.objects.filter(status="approved").count(),
-        "date": Course.objects.order_by("-updated_at").first().updated_at if Course.objects.exists() else None,
+        "date": Course.objects.order_by("-created_at").first().created_at if Course.objects.exists() else None,
     }
     course_stats["status"] = get_status(course_stats["date"], 30)  # 1 month threshold
 
@@ -2520,7 +2520,7 @@ def content_dashboard(request):
             "content_data": content_data,
             "overall_score": overall_score,
             "web_stats": web_stats,
-            "traffic_data": traffic_data,
+            "traffic_data": json.dumps(traffic_data),
             "blog_stats": blog_stats,
             "forum_stats": forum_stats,
             "course_stats": course_stats,
