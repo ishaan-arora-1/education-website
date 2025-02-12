@@ -33,6 +33,7 @@ from .widgets import (
 __all__ = [
     "UserRegistrationForm",
     "ProfileForm",
+    "ChallengeSubmissionForm",
     "CourseCreationForm",
     "CourseForm",
     "SessionForm",
@@ -49,7 +50,6 @@ __all__ = [
     "BlogPostForm",
     "MessageTeacherForm",
     "FeedbackForm",
-    "ChallengeSubmissionForm",
 ]
 
 
