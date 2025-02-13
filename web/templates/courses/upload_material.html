@@ -17,6 +17,9 @@
             <div>
               <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-2">{{ field.label }}</label>
               {{ field }}
+              {% if field.name == "external_url" %}
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">If this is a video URL, the title will be auto-detected.</p>
+              {% endif %}
               {% if field.help_text %}
                 <small class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ field.help_text }}</small>
               {% endif %}
@@ -37,4 +40,26 @@
       </div>
     </div>
   </div>
+  <script>
+      document.addEventListener("DOMContentLoaded", function() {
+          const externalUrlField = document.getElementById("id_external_url");
+          const titleField = document.getElementById("id_title");
+
+          externalUrlField.addEventListener("change", function() {
+              const url = externalUrlField.value;
+              if (url) {
+                  fetch(`/fetch-video-title/?url=${encodeURIComponent(url)}`)
+                      .then(response => response.json())
+                      .then(data => {
+                          if (data.title) {
+                              titleField.value = data.title;
+                          }
+                      })
+                      .catch(error => console.error("Error fetching video title:", error));
+              } else {
+                  titleField.value = "";
+              }
+          });
+      });
+  </script>
 {% endblock content %}

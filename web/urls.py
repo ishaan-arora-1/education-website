@@ -166,6 +166,7 @@ urlpatterns += i18n_patterns(
     path("challenges/<int:week_number>/", views.challenge_detail, name="challenge_detail"),
     path("challenges/<int:week_number>/submit/", views.challenge_submit, name="challenge_submit"),
     path("current-weekly-challenge/", views.current_weekly_challenge, name="current_weekly_challenge"),
+    path("fetch-video-title/", views.fetch_video_title, name="fetch_video_title"),
     prefix_default_language=True,
 )
 
