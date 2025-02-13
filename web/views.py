@@ -30,6 +30,7 @@ from .calendar_sync import generate_google_calendar_link, generate_ical_feed, ge
 from .decorators import teacher_required
 from .forms import (
     BlogPostForm,
+    ChallengeSubmissionForm,
     CourseForm,
     CourseMaterialForm,
     FeedbackForm,
@@ -56,6 +57,8 @@ from .models import (
     BlogComment,
     BlogPost,
     CartItem,
+    Challenge,
+    ChallengeSubmission,
     Course,
     CourseMaterial,
     CourseProgress,
@@ -114,9 +117,13 @@ def index(request):
     # Get featured courses - only published and featured courses
     featured_courses = Course.objects.filter(status="published", is_featured=True).order_by("-created_at")[:3]
 
+    # Get current weekly challenge
+    current_challenge = Challenge.objects.filter(start_date__lte=timezone.now(), end_date__gte=timezone.now()).first()
+
     context = {
         "form": form,
         "featured_courses": featured_courses,
+        "current_challenge": current_challenge,
     }
     return render(request, "index.html", context)
 
@@ -2554,3 +2561,59 @@ def content_dashboard(request):
             "user_stats": user_stats,
         },
     )
+
+
+def current_weekly_challenge(request):
+    current_challenge = Challenge.objects.filter(start_date__lte=timezone.now(), end_date__gte=timezone.now()).first()
+    # Check if the user has submitted the current challenge
+    user_submission = None
+    if request.user.is_authenticated and current_challenge:
+        user_submission = ChallengeSubmission.objects.filter(user=request.user, challenge=current_challenge).first()
+
+    return render(
+        request,
+        "web/current_weekly_challenge.html",
+        {
+            "current_challenge": current_challenge,
+            "user_submission": user_submission,  # Pass the user's submission to the template
+        },
+    )
+
+
+def challenge_detail(request, week_number):
+    challenge = get_object_or_404(Challenge, week_number=week_number)
+    submissions = ChallengeSubmission.objects.filter(challenge=challenge)
+    # Check if the current user has submitted this challenge
+    user_submission = None
+    if request.user.is_authenticated:
+        user_submission = ChallengeSubmission.objects.filter(user=request.user, challenge=challenge).first()
+
+    return render(
+        request,
+        "web/challenge_detail.html",
+        {"challenge": challenge, "submissions": submissions, "user_submission": user_submission},
+    )
+
+
+@login_required
+def challenge_submit(request, week_number):
+    challenge = get_object_or_404(Challenge, week_number=week_number)
+    # Check if the user has already submitted this challenge
+    existing_submission = ChallengeSubmission.objects.filter(user=request.user, challenge=challenge).first()
+
+    if existing_submission:
+        return redirect("challenge_detail", week_number=week_number)
+
+    if request.method == "POST":
+        form = ChallengeSubmissionForm(request.POST)
+        if form.is_valid():
+            submission = form.save(commit=False)
+            submission.user = request.user
+            submission.challenge = challenge
+            submission.save()
+            messages.success(request, "Your submission has been recorded!")
+            return redirect("challenge_detail", week_number=week_number)
+    else:
+        form = ChallengeSubmissionForm()
+
+    return render(request, "web/challenge_submit.html", {"challenge": challenge, "form": form})

@@ -7,7 +7,17 @@ from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 from markdownx.fields import MarkdownxFormField
 
-from .models import BlogPost, Course, CourseMaterial, ForumCategory, Profile, Review, Session, Subject
+from .models import (
+    BlogPost,
+    ChallengeSubmission,
+    Course,
+    CourseMaterial,
+    ForumCategory,
+    Profile,
+    Review,
+    Session,
+    Subject,
+)
 from .widgets import (
     TailwindCaptchaTextInput,
     TailwindCheckboxInput,
@@ -23,6 +33,7 @@ from .widgets import (
 __all__ = [
     "UserRegistrationForm",
     "ProfileForm",
+    "ChallengeSubmissionForm",
     "CourseCreationForm",
     "CourseForm",
     "SessionForm",
@@ -820,3 +831,14 @@ class FeedbackForm(forms.Form):
         required=True,
     )
     captcha = CaptchaField(widget=TailwindCaptchaTextInput)
+
+
+class ChallengeSubmissionForm(forms.ModelForm):
+    class Meta:
+        model = ChallengeSubmission
+        fields = ["submission_text"]
+        widgets = {
+            "submission_text": forms.Textarea(
+                attrs={"rows": 5, "placeholder": "Describe your results or reflections..."}
+            ),
+        }

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-4 text-center">Weekly Challenge</h1>
+    {% if current_challenge %}
+      <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+        <h2 class="text-2xl font-semibold mb-2">{{ current_challenge.title }}</h2>
+        <p class="text-lg mb-4">{{ current_challenge.description }}</p>
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          <strong>Challenge Period:</strong> {{ current_challenge.start_date }} to {{ current_challenge.end_date }}
+        </p>
+      </div>
+    {% else %}
+      <p class="text-center text-gray-500 dark:text-gray-400">No challenge available for this week.</p>
+    {% endif %}
+  </div>
+{% endblock %}
