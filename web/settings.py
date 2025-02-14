@@ -271,6 +271,8 @@ GITHUB_REPO = env.str("GITHUB_REPO", default="AlphaOneLabs/education-website")
 YOUTUBE_API_KEY = env.str("YOUTUBE_API_KEY", default="")
 YOUTUBE_CHANNEL_ID = env.str("YOUTUBE_CHANNEL_ID", default="")
 
+TWITTER_USERNAME = env.str("TWITTER_USERNAME", default="alphaonelabs")
+
 # Slack Integration
 SLACK_WEBHOOK_URL = env.str("SLACK_WEBHOOK_URL", default="")
 

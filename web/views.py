@@ -80,6 +80,7 @@ from .models import (
     WebRequest,
 )
 from .notifications import notify_session_reminder, notify_teacher_new_enrollment, send_enrollment_confirmation
+from .social import get_social_stats
 from .utils import get_or_create_cart
 
 GOOGLE_CREDENTIALS_PATH = os.path.join(settings.BASE_DIR, "google_credentials.json")
@@ -2472,7 +2473,7 @@ def content_dashboard(request):
             else None
         ),
     }
-    blog_stats["status"] = get_status(blog_stats["date"], 7)  # 1 week threshold
+    blog_stats["status"] = get_status(blog_stats["date"], 7)
 
     # Forum stats
     forum_stats = {
@@ -2525,6 +2526,8 @@ def content_dashboard(request):
 
     overall_score = int((healthy_platforms / max(connected_platforms, 1)) * 100)
 
+    # Get social media stats
+    social_stats = get_social_stats()
     content_data = {
         "blog": {
             "stats": blog_stats,
@@ -2547,6 +2550,9 @@ def content_dashboard(request):
             "date": user_stats["date"],
         },
     }
+
+    # Add social media stats
+    content_data.update(social_stats)
 
     return render(
         request,

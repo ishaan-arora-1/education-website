@@ -233,7 +233,14 @@
               <i class="fab fa-x-twitter"></i>
             </div>
             <div>
-              <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">X</h2>
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">
+                <a href="https://nitter.net/alphaonelabs"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-200">
+                  X (via Nitter)
+                </a>
+              </h2>
               <div class="text-sm text-gray-500 dark:text-gray-400">Threshold: 1 day</div>
             </div>
           </div>
@@ -247,7 +254,7 @@
             </span>
           {% endif %}
         </div>
-        <div class="grid grid-cols-2 gap-4 mt-4">
+        <div class="grid grid-cols-3 gap-4 mt-4">
           <div class="text-sm text-gray-600 dark:text-gray-400">
             <span class="block font-medium">Followers</span>
             <span>{{ content_data.x.stats.followers|default:"N/A"|intcomma }}</span>
