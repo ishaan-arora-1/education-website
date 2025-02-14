@@ -178,7 +178,7 @@ By contributing, you agree that your contributions will be licensed under the AG
   - Community support and collaboration
   - Announcements and updates
   - Quick questions and answers
-- Email us at [contact@alphaonelabs.com](mailto:contact@alphaonelabs.com)
+- Email us at [info@alphaonelabs.com](mailto:info@alphaonelabs.com)
 
 Thank you for contributing to Alpha One Labs! 🎉
 
