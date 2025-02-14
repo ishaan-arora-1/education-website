@@ -10,6 +10,68 @@
       </div>
       <!-- Status Cards -->
       <div class="grid gap-6">
+        <!-- Disk Space Status -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-3">
+                <div class="flex-shrink-0">
+                  <i class="fas fa-hdd text-2xl text-gray-400 dark:text-gray-500"></i>
+                </div>
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Disk Space</h3>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Storage Usage</p>
+                </div>
+              </div>
+              <div class="flex items-center">
+                {% if status.disk_space.status == 'ok' %}
+                  <div class="h-2.5 w-2.5 rounded-full bg-green-500 mr-2"></div>
+                  <span class="text-sm font-medium text-green-500 dark:text-green-400">Normal</span>
+                {% elif status.disk_space.status == 'warning' %}
+                  <div class="h-2.5 w-2.5 rounded-full bg-yellow-500 mr-2"></div>
+                  <span class="text-sm font-medium text-yellow-500 dark:text-yellow-400">Warning</span>
+                {% elif status.disk_space.status == 'error' %}
+                  <div class="h-2.5 w-2.5 rounded-full bg-red-500 mr-2"></div>
+                  <span class="text-sm font-medium text-red-500 dark:text-red-400">Critical</span>
+                {% else %}
+                  <div class="h-2.5 w-2.5 rounded-full bg-gray-500 mr-2"></div>
+                  <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Unknown</span>
+                {% endif %}
+              </div>
+            </div>
+            <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ status.disk_space.message }}</div>
+            {% if status.disk_space.usage %}
+              <div class="space-y-4">
+                <!-- Usage Bar -->
+                <div>
+                  <div class="flex justify-between text-sm mb-1">
+                    <span>Storage Usage</span>
+                    <span>{{ status.disk_space.usage.percent }}%</span>
+                  </div>
+                  <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                    <div class="h-2.5 rounded-full transition-all duration-300 {% if status.disk_space.usage.percent >= 90 %}bg-red-500{% elif status.disk_space.usage.percent >= 80 %}bg-yellow-500{% else %}bg-green-500{% endif %}"
+                         style="width: {{ status.disk_space.usage.percent }}%"></div>
+                  </div>
+                </div>
+                <!-- Storage Details -->
+                <div class="grid grid-cols-3 gap-4">
+                  <div>
+                    <span class="block font-medium mb-1">Total Space</span>
+                    <span class="text-gray-900 dark:text-gray-100">{{ status.disk_space.usage.total_gb }} GB</span>
+                  </div>
+                  <div>
+                    <span class="block font-medium mb-1">Used Space</span>
+                    <span class="text-gray-900 dark:text-gray-100">{{ status.disk_space.usage.used_gb }} GB</span>
+                  </div>
+                  <div>
+                    <span class="block font-medium mb-1">Free Space</span>
+                    <span class="text-gray-900 dark:text-gray-100">{{ status.disk_space.usage.free_gb }} GB</span>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
         <!-- SendGrid Status -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div class="p-6">

@@ -1,6 +1,8 @@
 import calendar
 import json
 import os
+import re
+import shutil
 import subprocess
 import time
 from datetime import timedelta
@@ -8,7 +10,6 @@ from decimal import Decimal
 
 import requests
 import stripe
-from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
@@ -2244,9 +2245,10 @@ def get_calendar_data(request, share_token):
 
 
 def system_status(request):
-    """Check system status including SendGrid API connectivity."""
+    """Check system status including SendGrid API connectivity and disk space usage."""
     status = {
         "sendgrid": {"status": "unknown", "message": "", "api_key_configured": False},
+        "disk_space": {"status": "unknown", "message": "", "usage": {}},
         "timestamp": timezone.now(),
     }
 
@@ -2273,6 +2275,35 @@ def system_status(request):
     else:
         status["sendgrid"]["status"] = "error"
         status["sendgrid"]["message"] = "SendGrid API key not configured"
+
+    # Check disk space
+    try:
+        total, used, free = shutil.disk_usage("/")
+        total_gb = total / (2**30)  # Convert to GB
+        used_gb = used / (2**30)
+        free_gb = free / (2**30)
+        usage_percent = (used / total) * 100
+
+        status["disk_space"]["usage"] = {
+            "total_gb": round(total_gb, 2),
+            "used_gb": round(used_gb, 2),
+            "free_gb": round(free_gb, 2),
+            "percent": round(usage_percent, 1),
+        }
+
+        # Set status based on usage percentage
+        if usage_percent >= 90:
+            status["disk_space"]["status"] = "error"
+            status["disk_space"]["message"] = "Critical: Disk usage above 90%"
+        elif usage_percent >= 80:
+            status["disk_space"]["status"] = "warning"
+            status["disk_space"]["message"] = "Warning: Disk usage above 80%"
+        else:
+            status["disk_space"]["status"] = "ok"
+            status["disk_space"]["message"] = "Disk space usage is normal"
+    except Exception as e:
+        status["disk_space"]["status"] = "error"
+        status["disk_space"]["message"] = f"Error checking disk space: {str(e)}"
 
     return render(request, "status.html", {"status": status})
 
@@ -2635,9 +2666,13 @@ def fetch_video_title(request):
     try:
         response = requests.get(url)
         response.raise_for_status()
-        soup = BeautifulSoup(response.content, "html.parser")
-        title_tag = soup.find("title")
-        title = title_tag.string if title_tag else "Untitled Video"
+        # Extract title from response headers or content
+        title = response.headers.get("title", "")
+        if not title:
+            # Try to extract title from HTML content
+            content = response.text
+            title_match = re.search(r"<title>(.*?)</title>", content)
+            title = title_match.group(1) if title_match else "Untitled Video"
         return JsonResponse({"title": title})
     except requests.RequestException:
         return JsonResponse({"error": "Failed to fetch video title"}, status=500)
