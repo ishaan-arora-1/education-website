@@ -8,6 +8,7 @@ from decimal import Decimal
 
 import requests
 import stripe
+from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
@@ -2617,3 +2618,20 @@ def challenge_submit(request, week_number):
         form = ChallengeSubmissionForm()
 
     return render(request, "web/challenge_submit.html", {"challenge": challenge, "form": form})
+
+
+@require_GET
+def fetch_video_title(request):
+    url = request.GET.get("url")
+    if not url:
+        return JsonResponse({"error": "URL parameter is required"}, status=400)
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, "html.parser")
+        title_tag = soup.find("title")
+        title = title_tag.string if title_tag else "Untitled Video"
+        return JsonResponse({"title": title})
+    except requests.RequestException:
+        return JsonResponse({"error": "Failed to fetch video title"}, status=500)

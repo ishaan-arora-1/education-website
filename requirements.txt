@@ -1,4 +1,5 @@
 asgiref==3.8.1 ; python_version >= "3.10" and python_version < "4.0"
+beautifulsoup4==4.13.3 ; python_version >= "3.10" and python_version < "4.0"
 cachetools==5.5.0 ; python_version >= "3.10" and python_version < "4.0"
 certifi==2024.12.14 ; python_version >= "3.10" and python_version < "4.0"
 charset-normalizer==3.4.1 ; python_version >= "3.10" and python_version < "4.0"

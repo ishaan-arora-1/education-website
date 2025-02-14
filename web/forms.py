@@ -331,6 +331,7 @@ class CourseMaterialForm(forms.ModelForm):
             "description",
             "material_type",
             "file",
+            "external_url",
             "session",
             "is_downloadable",
             "order",
@@ -340,9 +341,13 @@ class CourseMaterialForm(forms.ModelForm):
             "description": TailwindTextarea(attrs={"rows": 3}),
             "material_type": TailwindSelect(),
             "file": TailwindFileInput(),
+            "external_url": TailwindInput(attrs={"placeholder": "Enter video URL"}),  # Add widget for external_url
             "session": TailwindSelect(),
             "is_downloadable": TailwindCheckboxInput(),
             "order": TailwindNumberInput(attrs={"min": 0}),
+        }
+        labels = {
+            "external_url": "External URL",  # Update label
         }
 
     def __init__(self, *args, course=None, **kwargs):
