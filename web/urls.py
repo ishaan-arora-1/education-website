@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.conf.urls.i18n import i18n_patterns
 from django.contrib import admin
+from django.contrib.auth.decorators import login_required
 from django.urls import include, path
 
 from . import admin_views, views
@@ -167,6 +168,48 @@ urlpatterns += i18n_patterns(
     path("challenges/<int:week_number>/submit/", views.challenge_submit, name="challenge_submit"),
     path("current-weekly-challenge/", views.current_weekly_challenge, name="current_weekly_challenge"),
     path("fetch-video-title/", views.fetch_video_title, name="fetch_video_title"),
+    # Storefront Management
+    path("store/create/", login_required(views.StorefrontCreateView.as_view()), name="storefront_create"),
+    path(
+        "store/<slug:store_slug>/edit/",
+        login_required(views.StorefrontUpdateView.as_view()),
+        name="storefront_update",
+    ),
+    path("storefront/<slug:store_slug>/", views.StorefrontDetailView.as_view(), name="storefront_detail"),
+    # Product (Goods) Management
+    path("storefront/update/", login_required(views.StorefrontUpdateView.as_view()), name="storefront_update"),
+    path("goods/", views.GoodsListView.as_view(), name="goods_list"),
+    path("goods/<slug:slug>/", views.GoodsDetailView.as_view(), name="goods_detail"),
+    path("store/<slug:store_slug>/goods/create/", login_required(views.GoodsCreateView.as_view()), name="goods_create"),
+    path(
+        "store/<slug:store_slug>/goods/<slug:slug>/edit/",
+        login_required(views.GoodsUpdateView.as_view()),
+        name="goods_update",
+    ),
+    path("goods/update/<int:pk>/", login_required(views.GoodsUpdateView.as_view()), name="goods_update"),
+    # Payment Handling
+    path("goods/<slug:slug>/purchase/", login_required(views.GoodsPurchaseView.as_view()), name="goods_purchase"),
+    path("goods/<uuid:order_id>/payment/", login_required(views.GoodsPaymentView.as_view()), name="goods_payment"),
+    path("payment/webhook/", views.PaymentWebhookView.as_view(), name="payment_webhook"),
+    # Order Management
+    path("orders/", login_required(views.OrderListView.as_view()), name="order_list"),
+    path("orders/<uuid:order_id>/", login_required(views.OrderDetailView.as_view()), name="order_detail"),
+    path(
+        "store/<slug:store_slug>/orders/",
+        login_required(views.OrderManagementView.as_view()),
+        name="store_order_management",
+    ),
+    # Analytics
+    path(
+        "store/<slug:store_slug>/analytics/",
+        login_required(views.StoreAnalyticsView.as_view()),
+        name="store_analytics",
+    ),
+    path(
+        "admin/merchandise-analytics/",
+        login_required(views.AdminMerchAnalyticsView.as_view()),
+        name="admin_merch_analytics",
+    ),
     prefix_default_language=True,
 )
 

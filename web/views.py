@@ -14,19 +14,23 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.db import IntegrityError, models, transaction
-from django.db.models import Avg, Count, Q, Sum
+from django.db.models import Avg, Count, F, Q, Sum
 from django.http import FileResponse, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
+from django.utils.decorators import method_decorator
+from django.views import generic
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
+from django.views.generic import CreateView, UpdateView
 
 from .calendar_sync import generate_google_calendar_link, generate_ical_feed, generate_outlook_calendar_link
 from .decorators import teacher_required
@@ -38,12 +42,14 @@ from .forms import (
     FeedbackForm,
     ForumCategoryForm,
     ForumTopicForm,
+    GoodsForm,
     InviteStudentForm,
     LearnForm,
     MessageTeacherForm,
     ProfileUpdateForm,
     ReviewForm,
     SessionForm,
+    StorefrontForm,
     TeacherSignupForm,
     TeachForm,
     UserRegistrationForm,
@@ -69,13 +75,18 @@ from .models import (
     ForumCategory,
     ForumReply,
     ForumTopic,
+    Goods,
+    Order,
+    OrderItem,
     PeerConnection,
     PeerMessage,
+    ProductImage,
     Profile,
     SearchLog,
     Session,
     SessionAttendance,
     SessionEnrollment,
+    Storefront,
     StudyGroup,
     TimeSlot,
     WebRequest,
@@ -1673,12 +1684,16 @@ def teacher_dashboard(request):
             }
         )
 
+    # Get the teacher's storefront if it exists
+    storefront = Storefront.objects.filter(teacher=request.user).first()
+
     context = {
         "courses": courses,
         "upcoming_sessions": upcoming_sessions,
         "course_stats": course_stats,
         "completion_rate": (total_completed / total_students * 100) if total_students > 0 else 0,
         "total_earnings": round(total_earnings, 2),
+        "storefront": storefront,
     }
     return render(request, "dashboard/teacher.html", context)
 
@@ -2676,3 +2691,301 @@ def fetch_video_title(request):
         return JsonResponse({"title": title})
     except requests.RequestException:
         return JsonResponse({"error": "Failed to fetch video title"}, status=500)
+
+
+# Goods Views
+class GoodsListView(LoginRequiredMixin, generic.ListView):
+    model = Goods
+    template_name = "goods/goods_list.html"
+    context_object_name = "goods"
+
+    def get_queryset(self):
+        return Goods.objects.filter(storefront__teacher=self.request.user)
+
+
+class GoodsDetailView(LoginRequiredMixin, generic.DetailView):
+    model = Goods
+    template_name = "goods/goods_detail.html"
+    context_object_name = "item"
+
+
+class GoodsCreateView(LoginRequiredMixin, UserPassesTestMixin, generic.CreateView):
+    model = Goods
+    form_class = GoodsForm
+    template_name = "goods/goods_form.html"
+
+    def test_func(self):
+        return hasattr(self.request.user, "storefront")
+
+    def form_valid(self, form):
+        # Check for digital products without images
+        if form.instance.product_type == "digital":
+            images = self.request.FILES.getlist("images")
+            if not images:
+                form.add_error("images", "At least one image is required for digital products.")
+                return self.form_invalid(form)
+
+        # Proceed with saving the Goods instance
+        form.instance.storefront = self.request.user.storefront
+        self.object = form.save()
+
+        # Create ProductImage instances for uploaded images
+        images = self.request.FILES.getlist("images")
+        for image in images:
+            ProductImage.objects.create(goods=self.object, image=image)
+
+        messages.success(self.request, "Product created successfully!")
+        return redirect("goods_create_success")
+
+    def form_invalid(self, form):
+        error_messages = form.errors.as_json()
+        messages.error(
+            self.request,
+            f"There was an error creating the product. Please check the form and try again. Errors: {error_messages}",
+        )
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def get_success_url(self):
+        return reverse("goods_list")
+
+
+class GoodsUpdateView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView):
+    model = Goods
+    form_class = GoodsForm
+    template_name = "goods/goods_form.html"
+
+    def test_func(self):
+        return self.get_object().storefront.teacher == self.request.user
+
+    def get_success_url(self):
+        return reverse("goods_list")
+
+
+class GoodsPurchaseView(LoginRequiredMixin, generic.DetailView):
+    model = Goods
+    template_name = "goods/goods_purchase.html"
+    context_object_name = "item"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["stripe_public_key"] = settings.STRIPE_PUBLISHABLE_KEY
+        return context
+
+
+# Payment Handling
+class PaymentIntentView(LoginRequiredMixin, generic.View):
+    def post(self, request, *args, **kwargs):
+        item = get_object_or_404(Goods, pk=self.kwargs["pk"])
+
+        # Stock validation
+        if item.product_type == "physical" and item.stock <= 0:
+            return JsonResponse({"error": "This item is out of stock."}, status=400)
+
+        try:
+            final_price = item.discount_price or item.price
+            intent = stripe.PaymentIntent.create(
+                amount=int(final_price * 100),
+                currency="usd",
+                metadata={"goods_id": item.id, "user_id": request.user.id, "storefront_id": item.storefront.id},
+            )
+            return JsonResponse({"clientSecret": intent.client_secret})
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=403)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class PaymentWebhookView(generic.View):
+    def post(self, request):
+        payload = request.body
+        sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
+
+        try:
+            event = stripe.Webhook.construct_event(payload, sig_header, settings.STRIPE_WEBHOOK_SECRET)
+        except (ValueError, stripe.error.SignatureVerificationError):
+            return HttpResponse(status=400)
+
+        if event.type == "payment_intent.succeeded":
+            self.handle_successful_payment(event.data.object)
+        elif event.type == "payment_intent.payment_failed":
+            self.handle_failed_payment(event.data.object)
+
+        return HttpResponse(status=200)
+
+    def handle_successful_payment(self, payment_intent):
+        metadata = payment_intent.metadata
+        goods = get_object_or_404(Goods, id=metadata["goods_id"])
+        user = get_object_or_404(settings.AUTH_USER_MODEL, id=metadata["user_id"])
+
+        # Update stock for physical goods
+        if goods.product_type == "physical":
+            goods.stock = F("stock") - 1
+            goods.save(update_fields=["stock"])
+
+        # Create order
+        order = Order.objects.create(
+            user=user,
+            total_price=payment_intent.amount / 100,
+            status="completed",
+            payment_method="stripe",
+            payment_id=payment_intent.id,
+            storefront_id=metadata["storefront_id"],
+        )
+
+        OrderItem.objects.create(
+            order=order,
+            goods=goods,
+            quantity=1,
+            price_at_purchase=payment_intent.amount / 100,
+        )
+
+        # Send notifications
+        self.send_order_confirmation(order)
+        if hasattr(order, "notify_user"):
+            order.notify_user()
+
+    def handle_failed_payment(self, payment_intent):
+        try:
+            user = settings.AUTH_USER_MODEL.objects.get(id=payment_intent.metadata["user_id"])
+            Order.objects.filter(user=user, status="pending").update(status="failed")
+        except (settings.AUTH_USER_MODEL.DoesNotExist, Order.DoesNotExist):
+            pass
+
+    def send_order_confirmation(self, order):
+        subject = "Your Order Confirmation"
+        message = f"Thank you for your purchase! Order ID: {order.id}"
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [order.user.email],
+            fail_silently=True,
+        )
+
+
+# Order Management
+class OrderManagementView(LoginRequiredMixin, UserPassesTestMixin, generic.ListView):
+    model = Order
+    template_name = "orders/order_management.html"
+    context_object_name = "orders"
+
+    def test_func(self):
+        storefront = get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])
+        return self.request.user == storefront.teacher
+
+    def get_queryset(self):
+        return Order.objects.filter(items__goods__storefront__store_slug=self.kwargs["store_slug"]).distinct()
+
+
+class OrderListView(LoginRequiredMixin, generic.ListView):
+    model = Order
+    template_name = "orders/order_list.html"
+    context_object_name = "orders"
+
+    def get_queryset(self):
+        return Order.objects.filter(user=self.request.user).order_by("-created_at")
+
+
+class OrderDetailView(LoginRequiredMixin, generic.DetailView):
+    model = Order
+    template_name = "orders/order_detail.html"
+    context_object_name = "order"
+
+
+# Analytics
+class StoreAnalyticsView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
+    template_name = "analytics/analytics_dashboard.html"
+
+    def test_func(self):
+        storefront = get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])
+        return self.request.user == storefront.teacher
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        storefront = get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])
+
+        # Store-specific analytics
+        orders = Order.objects.filter(storefront=storefront, status="completed")
+
+        context.update(
+            {
+                "total_sales": orders.count(),
+                "total_revenue": orders.aggregate(Sum("total_price"))["total_price__sum"] or 0,
+                "top_products": OrderItem.objects.filter(order__storefront=storefront)
+                .values("goods__name")
+                .annotate(total_sold=Sum("quantity"))
+                .order_by("-total_sold")[:5],
+                "storefront": storefront,
+            }
+        )
+        return context
+
+
+class AdminMerchAnalyticsView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
+    template_name = "analytics/admin_analytics.html"
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Platform-wide analytics
+        context.update(
+            {
+                "total_sales": Order.objects.filter(status="completed").count(),
+                "total_revenue": Order.objects.filter(status="completed").aggregate(Sum("total_price"))[
+                    "total_price__sum"
+                ]
+                or 0,
+                "top_storefronts": Storefront.objects.annotate(total_sales=Count("goods__orderitem")).order_by(
+                    "-total_sales"
+                )[:5],
+            }
+        )
+        return context
+
+
+class StorefrontCreateView(LoginRequiredMixin, CreateView):
+    model = Storefront
+    form_class = StorefrontForm
+    template_name = "storefront/storefront_form.html"
+    success_url = "/dashboard/teacher/"
+
+    def dispatch(self, request, *args, **kwargs):
+        if Storefront.objects.filter(teacher=request.user).exists():
+            return redirect("storefront_update", store_slug=request.user.storefront.store_slug)
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        form.instance.teacher = self.request.user  # Set the teacher field to the current user
+        return super().form_valid(form)
+
+
+class StorefrontUpdateView(LoginRequiredMixin, UpdateView):
+    model = Storefront
+    form_class = StorefrontForm
+    template_name = "storefront/storefront_form.html"
+    success_url = "/dashboard/teacher/"
+
+    def get_object(self):
+        return get_object_or_404(Storefront, teacher=self.request.user)
+
+
+class GoodsPaymentView(LoginRequiredMixin, generic.DetailView):
+    model = Order
+    template_name = "goods/goods_payment.html"
+    context_object_name = "order"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["stripe_public_key"] = settings.STRIPE_PUBLISHABLE_KEY
+        return context
+
+
+class StorefrontDetailView(LoginRequiredMixin, generic.DetailView):
+    model = Storefront
+    template_name = "storefront/storefront_detail.html"
+    context_object_name = "storefront"
+
+    def get_object(self):
+        return get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])

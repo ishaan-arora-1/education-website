@@ -13,12 +13,16 @@ from .models import (
     Course,
     CourseMaterial,
     ForumCategory,
+    Goods,
+    ProductImage,
     Profile,
     Review,
     Session,
+    Storefront,
     Subject,
 )
 from .widgets import (
+    MultipleFileInput,
     TailwindCaptchaTextInput,
     TailwindCheckboxInput,
     TailwindDateTimeInput,
@@ -50,6 +54,8 @@ __all__ = [
     "BlogPostForm",
     "MessageTeacherForm",
     "FeedbackForm",
+    "GoodsForm",
+    "StorefrontForm",
 ]
 
 
@@ -847,3 +853,165 @@ class ChallengeSubmissionForm(forms.ModelForm):
                 attrs={"rows": 5, "placeholder": "Describe your results or reflections..."}
             ),
         }
+
+
+class TailwindInput(forms.widgets.Input):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("attrs", {}).update(
+            {"class": "w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"}
+        )
+        super().__init__(*args, **kwargs)
+
+
+class TailwindTextarea(forms.widgets.Textarea):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("attrs", {}).update(
+            {"class": "w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"}
+        )
+        super().__init__(*args, **kwargs)
+
+
+class GoodsForm(forms.ModelForm):
+    """Form for creating/updating goods with full validation and UI alignment"""
+
+    images = forms.FileField(
+        widget=MultipleFileInput(
+            attrs={
+                "accept": "image/*",
+                "class": (
+                    "file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm "
+                    "file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                ),
+            }
+        ),
+        required=False,
+        help_text="Upload up to 8 product images (5MB max each)",
+    )
+
+    class Meta:
+        model = Goods
+        fields = [
+            "name",
+            "description",
+            "price",
+            "discount_price",
+            "product_type",
+            "stock",
+            "file",
+            "category",
+            "images",
+            "is_available",
+        ]
+        widgets = {
+            "name": TailwindInput(attrs={"placeholder": "Algebra Basics Workbook"}),
+            "description": TailwindTextarea(
+                attrs={"rows": 4, "placeholder": "Detailed product description including features and specifications"}
+            ),
+            "price": forms.NumberInput(
+                attrs={"class": "tailwind-input-class", "min": "0", "step": "0.01", "placeholder": "49.99"}
+            ),
+            "discount_price": forms.NumberInput(
+                attrs={"class": "tailwind-input-class", "min": "0", "step": "0.01", "placeholder": "39.99"}
+            ),
+            "product_type": forms.Select(
+                attrs={"class": "tailwind-select-class", "onchange": "toggleDigitalFields(this.value)"}
+            ),
+            "stock": forms.NumberInput(
+                attrs={
+                    "class": "tailwind-input-class",
+                    "min": "0",
+                    "placeholder": "100",
+                    "data-product-type": "physical",
+                }
+            ),
+            "file": forms.FileInput(
+                attrs={"class": "file-input-tailwind", "accept": ".pdf,.zip,.mp4,.docx", "data-product-type": "digital"}
+            ),
+            "category": forms.TextInput(
+                attrs={"class": "tailwind-input-class", "placeholder": "Educational Materials"}
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["product_type"].initial = "physical"
+
+        # Set required fields based on product type
+        if self.instance and self.instance.pk:
+            if self.instance.product_type == "digital":
+                self.fields["file"].required = True
+                self.fields["stock"].required = False
+            else:
+                self.fields["stock"].required = True
+
+    def clean(self):
+        cleaned_data = super().clean()
+        product_type = cleaned_data.get("product_type")
+        price = cleaned_data.get("price")
+        discount_price = cleaned_data.get("discount_price")
+        stock = cleaned_data.get("stock")
+        file = cleaned_data.get("file")
+        images = self.files.getlist("images")
+
+        # Validate discount pricing
+        if discount_price and discount_price >= price:
+            self.add_error("discount_price", "Discount price must be lower than base price")
+
+        # Product type specific validation
+        if product_type == "digital":
+            if stock is not None:
+                self.add_error("stock", "Digital products cannot have stock quantities")
+            if not file and not self.instance.file:
+                self.add_error("file", "Digital products require a file upload")
+        else:
+            if stock is None:
+                self.add_error("stock", "Physical products require stock quantity")
+            if file:
+                self.add_error("file", "Physical products cannot have digital files")
+
+        # Image validation
+        if len(images) > 8:
+            self.add_error("images", "Maximum 8 images allowed")
+        for img in images:
+            if img.size > 5 * 1024 * 1024:  # 5MB
+                self.add_error("images", f"{img.name} exceeds 5MB size limit")
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        goods = super().save(commit=False)
+
+        # Handle product type specific fields
+        if goods.product_type == "digital":
+            goods.stock = None
+        else:
+            goods.file = None
+
+        if commit:
+            goods.save()
+            self.save_images(goods)
+
+        return goods
+
+    def save_images(self, goods):
+        # Delete existing images if replacing
+        if "images" in self.changed_data:
+            goods.images.all().delete()
+
+        # Create new ProductImage instances
+        for img in self.files.getlist("images"):
+            ProductImage.objects.create(goods=goods, image=img)
+
+
+class StorefrontForm(forms.ModelForm):
+    class Meta:
+        model = Storefront
+        fields = [
+            "name",
+            "description",
+            "store_slug",
+            "logo",
+            "refund_policy",
+            "privacy_policy",
+            "is_active",
+        ]

@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
+from django.core.mail import send_mail
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models.signals import post_save
@@ -966,3 +967,152 @@ class ChallengeSubmission(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s submission for Week {self.challenge.week_number}"
+
+
+class Storefront(models.Model):
+    teacher = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="storefront", verbose_name="Teacher Profile"
+    )
+    name = models.CharField(
+        max_length=100, unique=True, help_text="Display name for your store", default="Default Store Name"
+    )
+    description = models.TextField(blank=True, help_text="Describe your store for customers")
+    logo = models.ImageField(upload_to="store_logos/", blank=True, help_text="Recommended size: 200x200px")
+    store_slug = models.SlugField(unique=True, blank=True, help_text="Auto-generated URL-friendly identifier")
+    is_active = models.BooleanField(default=True, help_text="Enable/disable public visibility of your store")
+    refund_policy = models.URLField(blank=True, help_text="Link to your refund policy (required for compliance)")
+    privacy_policy = models.URLField(blank=True, help_text="Link to your privacy policy (required for compliance)")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.store_slug:
+            self.store_slug = self._generate_unique_slug()
+        super().save(*args, **kwargs)
+
+    def _generate_unique_slug(self):
+        base_slug = slugify(self.name)
+        unique_slug = base_slug
+        count = 1
+        while Storefront.objects.filter(store_slug=unique_slug).exists():
+            unique_slug = f"{base_slug}-{count}"
+            count += 1
+        return unique_slug
+
+    def __str__(self):
+        return f"{self.name} (by {self.teacher.username})"
+
+
+class Goods(models.Model):
+    PRODUCT_TYPE_CHOICES = [
+        ("physical", "Physical Product"),
+        ("digital", "Digital Download"),
+    ]
+
+    name = models.CharField(max_length=100, help_text="Product title (e.g., 'Algebra Basics Workbook')")
+    description = models.TextField(help_text="Detailed product description")
+    price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Price in USD")
+    discount_price = models.DecimalField(
+        max_digits=10, decimal_places=2, blank=True, null=True, help_text="Discounted price (optional)"
+    )
+    stock = models.PositiveIntegerField(blank=True, null=True, help_text="Leave blank for digital products")
+    product_type = models.CharField(max_length=10, choices=PRODUCT_TYPE_CHOICES, default="physical")
+    file = models.FileField(upload_to="digital_goods/", blank=True, help_text="Required for digital products")
+    category = models.CharField(max_length=100, blank=True, help_text="e.g., 'Books', 'Course Materials'")
+    images = models.ManyToManyField("ProductImage", related_name="goods_images", blank=True)
+    storefront = models.ForeignKey(Storefront, on_delete=models.CASCADE, related_name="goods")
+    is_available = models.BooleanField(default=True, help_text="Show/hide product from store")
+    sku = models.CharField(
+        max_length=50, unique=True, blank=True, null=True, help_text="Inventory tracking ID (auto-generated)"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        # Validate discount logic
+        if self.discount_price and self.discount_price >= self.price:
+            raise ValidationError("Discount price must be lower than original price.")
+
+        # Validate digital product constraints
+        if self.product_type == "digital":
+            if self.stock is not None:
+                raise ValidationError("Digital products cannot have stock quantities.")
+            if not self.file:
+                raise ValidationError("Digital products require a file upload.")
+
+        # Validate physical product constraints
+        if self.product_type == "physical" and self.stock is None:
+            raise ValidationError("Physical products must have a stock quantity.")
+
+    def save(self, *args, **kwargs):
+        if not self.sku:
+            self.sku = f"{slugify(self.name[:20])}-{self.id}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.name} (${self.price})"
+
+
+class ProductImage(models.Model):
+    goods = models.ForeignKey(Goods, on_delete=models.CASCADE, related_name="goods_images")
+    image = models.ImageField(upload_to="goods_images/", help_text="Product display image")
+    alt_text = models.CharField(max_length=125, blank=True, help_text="Accessibility description for screen readers")
+
+    def __str__(self):
+        return f"Image for {self.goods.name}"
+
+
+class Order(models.Model):
+    STATUS_CHOICES = [
+        ("draft", "Draft"),
+        ("pending", "Pending Payment"),
+        ("processing", "Processing"),
+        ("shipped", "Shipped"),
+        ("completed", "Completed"),
+        ("cancelled", "Cancelled"),
+        ("refunded", "Refunded"),
+    ]
+
+    PAYMENT_METHOD_CHOICES = [
+        ("stripe", "Stripe"),
+        ("paypal", "PayPal"),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="orders")
+    storefront = models.ForeignKey(Storefront, on_delete=models.CASCADE, related_name="orders", null=True, blank=True)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
+    currency = models.CharField(max_length=3, default="USD", editable=False)
+    tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, editable=False)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="draft")
+    payment_method = models.CharField(max_length=10, blank=True, choices=PAYMENT_METHOD_CHOICES)
+    payment_id = models.CharField(max_length=100, blank=True, verbose_name="Payment Gateway ID")
+    shipping_address = models.JSONField(blank=True, null=True, help_text="Structured shipping details")
+    tracking_number = models.CharField(max_length=100, blank=True)
+    terms_accepted = models.BooleanField(default=False, help_text="User accepted terms during checkout")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Order #{self.id} ({self.user.email})"
+
+    def notify_user(self):
+        subject = f"Order #{self.id} Status Update"
+        message = f"Your order status is now: {self.get_status_display()}"
+        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [self.user.email], fail_silently=False)
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
+    goods = models.ForeignKey(Goods, on_delete=models.PROTECT, verbose_name="Product")
+    quantity = models.PositiveIntegerField(default=1)
+    price_at_purchase = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
+    discounted_price_at_purchase = models.DecimalField(
+        max_digits=10, decimal_places=2, blank=True, null=True, editable=False
+    )
+
+    class Meta:
+        unique_together = [("order", "goods")]
+        verbose_name = "Order Line Item"
+
+    def __str__(self):
+        return f"{self.quantity}x {self.goods.name}"

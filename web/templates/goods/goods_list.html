@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Manage Products - {{ user.get_full_name|default:user.username }}
+{% endblock title %}
+{% block content %}
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-4">Manage Products</h1>
+    <a href="{% url 'goods_create' store_slug=request.user.storefront.store_slug %}"
+       class="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-lg mb-4 inline-block">
+      <i class="fas fa-plus-circle mr-2"></i> Add New Product
+    </a>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      {% if products %}
+        <ul class="space-y-4">
+          {% for product in products %}
+            <li class="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
+              <div class="flex justify-between items-center">
+                <div>
+                  <h3 class="font-medium">{{ product.name }}</h3>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">{{ product.description|truncatewords:20 }}</p>
+                </div>
+                <div class="flex space-x-2">
+                  <a href="{% url 'goods_detail' product.slug %}"
+                     class="text-teal-500 hover:text-teal-600 dark:text-teal-400">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                  <a href="{% url 'goods_update' store_slug=request.user.storefront.store_slug slug=product.slug %}"
+                     class="text-blue-500 hover:text-blue-600 dark:text-blue-400">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                </div>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-gray-500 dark:text-gray-400">No products found.</p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock content %}

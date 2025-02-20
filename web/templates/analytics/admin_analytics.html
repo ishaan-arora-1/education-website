@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Admin Analytics Dashboard
+{% endblock title %}
+{% block content %}
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Admin Analytics Dashboard</h1>
+    <!-- Total Sales -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+      <h2 class="text-2xl font-semibold mb-4">Total Sales</h2>
+      <p class="text-4xl font-bold">{{ total_sales }}</p>
+    </div>
+    <!-- Total Revenue -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+      <h2 class="text-2xl font-semibold mb-4">Total Revenue</h2>
+      <p class="text-4xl font-bold">${{ total_revenue|floatformat:2 }}</p>
+    </div>
+    <!-- Top Storefronts -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+      <h2 class="text-2xl font-semibold mb-4">Top Storefronts</h2>
+      <table class="min-w-full bg-white dark:bg-gray-800">
+        <thead>
+          <tr>
+            <th class="py-2 px-4 border-b border-gray-200 dark:border-gray-700">Storefront</th>
+            <th class="py-2 px-4 border-b border-gray-200 dark:border-gray-700">Total Sales</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for storefront in top_storefronts %}
+            <tr>
+              <td class="py-2 px-4 border-b border-gray-200 dark:border-gray-700">{{ storefront.name }}</td>
+              <td class="py-2 px-4 border-b border-gray-200 dark:border-gray-700">{{ storefront.total_sales }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock content %}
