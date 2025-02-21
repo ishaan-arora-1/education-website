@@ -96,38 +96,47 @@ def sitemap(request):
 
 
 def index(request):
-    if request.method == "POST":
-        form = TeacherSignupForm(request.POST)
-        if form.is_valid():
-            user, subject = form.save()
-            messages.success(
-                request,
-                (
-                    f"Thank you for signing up! We've sent instructions to {user.email} - "
-                    "you can continue to create your course"
+    """Homepage view."""
+    # Get current user's profile if authenticated
+    profile = request.user.profile if request.user.is_authenticated else None
+
+    # Get top referrers
+    top_referrers = (
+        Profile.objects.annotate(
+            total_signups=Count("referrals"),
+            total_enrollments=Count(
+                "referrals__user__enrollments", filter=Q(referrals__user__enrollments__status="approved")
+            ),
+            total_clicks=Count(
+                "referrals__user",
+                filter=Q(
+                    referrals__user__username__in=WebRequest.objects.filter(path__contains="ref=").values_list(
+                        "user", flat=True
+                    )
                 ),
-            )
+            ),
+        )
+        .filter(total_signups__gt=0)
+        .order_by("-total_signups")[:5]
+    )
 
-            # Use the user object directly instead of querying again
-            user.backend = "django.contrib.auth.backends.ModelBackend"
-            login(request, user)
-
-            # TODO: Send welcome email
-            # redirect to create a course
-            return redirect("create_course")
-    else:
-        form = TeacherSignupForm()
-
-    # Get featured courses - only published and featured courses
+    # Get featured courses
     featured_courses = Course.objects.filter(status="published", is_featured=True).order_by("-created_at")[:3]
 
-    # Get current weekly challenge
+    # Get current challenge
     current_challenge = Challenge.objects.filter(start_date__lte=timezone.now(), end_date__gte=timezone.now()).first()
 
+    # Get signup form if needed
+    form = None
+    if not request.user.is_authenticated or not request.user.profile.is_teacher:
+        form = TeacherSignupForm()
+
     context = {
-        "form": form,
+        "profile": profile,
+        "top_referrers": top_referrers,
         "featured_courses": featured_courses,
         "current_challenge": current_challenge,
+        "form": form,
     }
     return render(request, "index.html", context)
 
@@ -2613,3 +2622,26 @@ def fetch_video_title(request):
         return JsonResponse({"title": title})
     except requests.RequestException:
         return JsonResponse({"error": "Failed to fetch video title"}, status=500)
+
+
+def get_referral_stats():
+    """Get statistics for top referrers."""
+    return (
+        Profile.objects.annotate(
+            total_signups=Count("referrals"),
+            total_enrollments=Count(
+                "referrals__user__enrollments", filter=Q(referrals__user__enrollments__status="approved")
+            ),
+            total_clicks=Count(
+                "referrals__user__webrequest", filter=Q(referrals__user__webrequest__path__contains="ref=")
+            ),
+        )
+        .filter(total_signups__gt=0)
+        .order_by("-total_signups")[:10]
+    )
+
+
+def referral_leaderboard(request):
+    """Display the referral leaderboard."""
+    top_referrers = get_referral_stats()
+    return render(request, "web/referral_leaderboard.html", {"top_referrers": top_referrers})

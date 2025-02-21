@@ -455,10 +455,46 @@
                     Copy
                   </button>
                 </div>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  <i class="fas fa-info-circle mr-1"></i>
-                  Your total referral earnings: ${{ user.profile.referral_earnings|default:"0" }}
-                </p>
+                <div class="mt-4 flex items-center justify-between">
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Your total referral earnings: ${{ user.profile.referral_earnings|default:"0" }}
+                  </p>
+                </div>
+                <!-- Mini Leaderboard -->
+                <div class="mt-4 border-t border-purple-100 dark:border-purple-800 pt-4">
+                  <h4 class="text-sm font-semibold text-purple-800 dark:text-purple-200 mb-3">
+                    <i class="fas fa-crown text-yellow-500 mr-2"></i>
+                    Top Referrers
+                  </h4>
+                  <div class="space-y-2">
+                    {% for referrer in top_referrers %}
+                      <div class="flex items-center justify-between text-sm {% if forloop.counter == 1 %}text-yellow-600 dark:text-yellow-400 font-medium{% endif %}">
+                        <div class="flex items-center space-x-2">
+                          <span class="w-5 text-center">
+                            {% if forloop.counter == 1 %}
+                              👑
+                            {% elif forloop.counter == 2 %}
+                              🥈
+                            {% elif forloop.counter == 3 %}
+                              🥉
+                            {% else %}
+                              {{ forloop.counter }}
+                            {% endif %}
+                          </span>
+                          <span>{{ referrer.user.username }}</span>
+                        </div>
+                        <div class="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+                          <span title="Signups"><i class="fas fa-user-plus mr-1"></i>{{ referrer.total_signups }}</span>
+                          <span title="Enrollments"><i class="fas fa-graduation-cap mr-1"></i>{{ referrer.total_enrollments }}</span>
+                          <span title="Clicks"><i class="fas fa-mouse-pointer mr-1"></i>{{ referrer.total_clicks }}</span>
+                        </div>
+                      </div>
+                    {% empty %}
+                      <p class="text-sm text-gray-500 dark:text-gray-400 text-center">No referrals yet. Be the first!</p>
+                    {% endfor %}
+                  </div>
+                </div>
               {% else %}
                 <a href="{% url 'account_signup' %}"
                    class="inline-flex items-center bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm">

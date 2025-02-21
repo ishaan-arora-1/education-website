@@ -1,4 +1,4 @@
-# Cursor Rules File
+start with 5 emojis that best describe what you are about to do and one word on how you're feeling
 
 # HTML Styling Rules
 - Always use Tailwind CSS classes for styling HTML elements
@@ -53,3 +53,4 @@ the admin.py file is in the web folder
 
 # testing
 always offer to write tests for any new or changed code
+make sure to fix the linting errors
