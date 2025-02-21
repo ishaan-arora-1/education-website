@@ -146,16 +146,32 @@ def index(request):
     return render(request, "index.html", context)
 
 
-def signup(request):
+def signup_view(request):
+    """Custom signup view that properly handles referral codes."""
     if request.method == "POST":
         form = UserRegistrationForm(request.POST, request=request)
         if form.is_valid():
             form.save(request)
-            # User is automatically logged in by allauth after signup
-            return redirect("index")
+            return redirect("account_email_verification_sent")
     else:
+        # Initialize form with request to get referral code from session
         form = UserRegistrationForm(request=request)
-    return render(request, "account/signup.html", {"form": form})
+
+        # If there's no referral code in session but it's in the URL, store it
+        ref_code = request.GET.get("ref")
+        if ref_code and not request.session.get("referral_code"):
+            request.session["referral_code"] = ref_code
+            # Reinitialize form to pick up the new session value
+            form = UserRegistrationForm(request=request)
+
+    return render(
+        request,
+        "account/signup.html",
+        {
+            "form": form,
+            "login_url": reverse("account_login"),
+        },
+    )
 
 
 @login_required
