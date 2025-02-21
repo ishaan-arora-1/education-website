@@ -19,14 +19,13 @@ from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.db import IntegrityError, models, transaction
-from django.db.models import Avg, Count, F, Q, Sum
+from django.db.models import Avg, Count, Q, Sum
 from django.http import FileResponse, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
-from django.utils.decorators import method_decorator
 from django.views import generic
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
@@ -2634,7 +2633,7 @@ def fetch_video_title(request):
 class GoodsListView(LoginRequiredMixin, generic.ListView):
     model = Goods
     template_name = "goods/goods_list.html"
-    context_object_name = "goods"
+    context_object_name = "products"
 
     def get_queryset(self):
         return Goods.objects.filter(storefront__teacher=self.request.user)
@@ -2689,7 +2688,7 @@ class GoodsCreateView(LoginRequiredMixin, UserPassesTestMixin, generic.CreateVie
 class GoodsUpdateView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView):
     model = Goods
     form_class = GoodsForm
-    template_name = "goods/goods_form.html"
+    template_name = "goods/goods_update.html"
 
     def test_func(self):
         return self.get_object().storefront.teacher == self.request.user
@@ -2707,96 +2706,6 @@ class GoodsPurchaseView(LoginRequiredMixin, generic.DetailView):
         context = super().get_context_data(**kwargs)
         context["stripe_public_key"] = settings.STRIPE_PUBLISHABLE_KEY
         return context
-
-
-# Payment Handling
-class PaymentIntentView(LoginRequiredMixin, generic.View):
-    def post(self, request, *args, **kwargs):
-        item = get_object_or_404(Goods, pk=self.kwargs["pk"])
-
-        # Stock validation
-        if item.product_type == "physical" and item.stock <= 0:
-            return JsonResponse({"error": "This item is out of stock."}, status=400)
-
-        try:
-            final_price = item.discount_price or item.price
-            intent = stripe.PaymentIntent.create(
-                amount=int(final_price * 100),
-                currency="usd",
-                metadata={"goods_id": item.id, "user_id": request.user.id, "storefront_id": item.storefront.id},
-            )
-            return JsonResponse({"clientSecret": intent.client_secret})
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=403)
-
-
-@method_decorator(csrf_exempt, name="dispatch")
-class PaymentWebhookView(generic.View):
-    def post(self, request):
-        payload = request.body
-        sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
-
-        try:
-            event = stripe.Webhook.construct_event(payload, sig_header, settings.STRIPE_WEBHOOK_SECRET)
-        except (ValueError, stripe.error.SignatureVerificationError):
-            return HttpResponse(status=400)
-
-        if event.type == "payment_intent.succeeded":
-            self.handle_successful_payment(event.data.object)
-        elif event.type == "payment_intent.payment_failed":
-            self.handle_failed_payment(event.data.object)
-
-        return HttpResponse(status=200)
-
-    def handle_successful_payment(self, payment_intent):
-        metadata = payment_intent.metadata
-        goods = get_object_or_404(Goods, id=metadata["goods_id"])
-        user = get_object_or_404(settings.AUTH_USER_MODEL, id=metadata["user_id"])
-
-        # Update stock for physical goods
-        if goods.product_type == "physical":
-            goods.stock = F("stock") - 1
-            goods.save(update_fields=["stock"])
-
-        # Create order
-        order = Order.objects.create(
-            user=user,
-            total_price=payment_intent.amount / 100,
-            status="completed",
-            payment_method="stripe",
-            payment_id=payment_intent.id,
-            storefront_id=metadata["storefront_id"],
-        )
-
-        OrderItem.objects.create(
-            order=order,
-            goods=goods,
-            quantity=1,
-            price_at_purchase=payment_intent.amount / 100,
-        )
-
-        # Send notifications
-        self.send_order_confirmation(order)
-        if hasattr(order, "notify_user"):
-            order.notify_user()
-
-    def handle_failed_payment(self, payment_intent):
-        try:
-            user = settings.AUTH_USER_MODEL.objects.get(id=payment_intent.metadata["user_id"])
-            Order.objects.filter(user=user, status="pending").update(status="failed")
-        except (settings.AUTH_USER_MODEL.DoesNotExist, Order.DoesNotExist):
-            pass
-
-    def send_order_confirmation(self, order):
-        subject = "Your Order Confirmation"
-        message = f"Thank you for your purchase! Order ID: {order.id}"
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [order.user.email],
-            fail_silently=True,
-        )
 
 
 # Order Management
@@ -2906,17 +2815,6 @@ class StorefrontUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_object(self):
         return get_object_or_404(Storefront, teacher=self.request.user)
-
-
-class GoodsPaymentView(LoginRequiredMixin, generic.DetailView):
-    model = Order
-    template_name = "goods/goods_payment.html"
-    context_object_name = "order"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["stripe_public_key"] = settings.STRIPE_PUBLISHABLE_KEY
-        return context
 
 
 class StorefrontDetailView(LoginRequiredMixin, generic.DetailView):

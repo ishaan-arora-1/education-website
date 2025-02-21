@@ -177,9 +177,8 @@ urlpatterns += i18n_patterns(
     ),
     path("storefront/<slug:store_slug>/", views.StorefrontDetailView.as_view(), name="storefront_detail"),
     # Product (Goods) Management
-    path("storefront/update/", login_required(views.StorefrontUpdateView.as_view()), name="storefront_update"),
     path("goods/", views.GoodsListView.as_view(), name="goods_list"),
-    path("goods/<slug:slug>/", views.GoodsDetailView.as_view(), name="goods_detail"),
+    path("goods/<int:pk>/", views.GoodsDetailView.as_view(), name="goods_detail"),
     path("store/<slug:store_slug>/goods/create/", login_required(views.GoodsCreateView.as_view()), name="goods_create"),
     path(
         "store/<slug:store_slug>/goods/<slug:slug>/edit/",
@@ -187,10 +186,7 @@ urlpatterns += i18n_patterns(
         name="goods_update",
     ),
     path("goods/update/<int:pk>/", login_required(views.GoodsUpdateView.as_view()), name="goods_update"),
-    # Payment Handling
-    path("goods/<slug:slug>/purchase/", login_required(views.GoodsPurchaseView.as_view()), name="goods_purchase"),
-    path("goods/<uuid:order_id>/payment/", login_required(views.GoodsPaymentView.as_view()), name="goods_payment"),
-    path("payment/webhook/", views.PaymentWebhookView.as_view(), name="payment_webhook"),
+    path("store/<str:store_slug>/goods/<int:product_id>/edit/", views.GoodsUpdateView.as_view(), name="goods_update"),
     # Order Management
     path("orders/", login_required(views.OrderListView.as_view()), name="order_list"),
     path("orders/<uuid:order_id>/", login_required(views.OrderDetailView.as_view()), name="order_detail"),

@@ -1029,7 +1029,5 @@ class StorefrontForm(forms.ModelForm):
             "description",
             "store_slug",
             "logo",
-            "refund_policy",
-            "privacy_policy",
             "is_active",
         ]

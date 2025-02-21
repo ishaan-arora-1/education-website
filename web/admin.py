@@ -472,9 +472,9 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "total_price", "status", "created_at")
-    list_filter = ("status", "payment_method", "created_at")
-    search_fields = ("user__username", "user__email", "payment_id", "tracking_number")
+    list_display = ("id", "user", "status", "created_at", "updated_at")
+    list_filter = ("status", "created_at")
+    search_fields = ("user__email", "tracking_number")
     readonly_fields = ("id", "created_at", "updated_at")
     raw_id_fields = ("user",)
     date_hierarchy = "created_at"
@@ -482,8 +482,8 @@ class OrderAdmin(admin.ModelAdmin):
     actions = ["mark_as_completed"]
 
     fieldsets = (
-        (None, {"fields": ("user", "status", "payment_method")}),
-        ("Financials", {"fields": ("total_price", "currency", "tax_rate")}),
+        (None, {"fields": ("user", "status")}),
+        ("Financials", {"fields": ("currency", "tax_rate")}),
         ("Fulfillment", {"fields": ("shipping_address", "tracking_number")}),
         ("Compliance", {"fields": ("terms_accepted", "transaction_log")}),
         ("Dates", {"fields": ("created_at", "updated_at")}),

@@ -50,23 +50,6 @@
                     rows="3"
                     placeholder="Describe your store">{{ form.description.value|default_if_none:'' }}</textarea>
         </div>
-        <!-- Refund & Privacy Policy URLs -->
-        <div>
-          <label class="block text-gray-700 font-semibold">Refund Policy URL:</label>
-          <input type="url"
-                 name="refund_policy"
-                 value="{{ form.refund_policy.value|default_if_none:'' }}"
-                 class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-teal-500"
-                 placeholder="https://your-refund-policy.com" />
-        </div>
-        <div>
-          <label class="block text-gray-700 font-semibold">Privacy Policy URL:</label>
-          <input type="url"
-                 name="privacy_policy"
-                 value="{{ form.privacy_policy.value|default_if_none:'' }}"
-                 class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-teal-500"
-                 placeholder="https://your-privacy-policy.com" />
-        </div>
         <!-- Is Active Toggle -->
         <div class="col-span-2 flex items-center gap-4">
           <label class="text-gray-700 font-semibold">Store Active:</label>

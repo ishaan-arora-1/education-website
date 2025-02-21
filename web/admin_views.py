@@ -85,6 +85,8 @@ def admin_dashboard(request):
     # Sort stats by total count descending
     stats.sort(key=lambda x: x["count"], reverse=True)
 
+    context["stats"] = stats
+
     # Merchandise-specific analytics
     # Sales data with proper price handling (discounts vs regular)
     merchandise_sales = (

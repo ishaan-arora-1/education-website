@@ -980,8 +980,6 @@ class Storefront(models.Model):
     logo = models.ImageField(upload_to="store_logos/", blank=True, help_text="Recommended size: 200x200px")
     store_slug = models.SlugField(unique=True, blank=True, help_text="Auto-generated URL-friendly identifier")
     is_active = models.BooleanField(default=True, help_text="Enable/disable public visibility of your store")
-    refund_policy = models.URLField(blank=True, help_text="Link to your refund policy (required for compliance)")
-    privacy_policy = models.URLField(blank=True, help_text="Link to your privacy policy (required for compliance)")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -1073,19 +1071,10 @@ class Order(models.Model):
         ("refunded", "Refunded"),
     ]
 
-    PAYMENT_METHOD_CHOICES = [
-        ("stripe", "Stripe"),
-        ("paypal", "PayPal"),
-    ]
-
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="orders")
     storefront = models.ForeignKey(Storefront, on_delete=models.CASCADE, related_name="orders", null=True, blank=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
-    currency = models.CharField(max_length=3, default="USD", editable=False)
-    tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, editable=False)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="draft")
-    payment_method = models.CharField(max_length=10, blank=True, choices=PAYMENT_METHOD_CHOICES)
-    payment_id = models.CharField(max_length=100, blank=True, verbose_name="Payment Gateway ID")
     shipping_address = models.JSONField(blank=True, null=True, help_text="Structured shipping details")
     tracking_number = models.CharField(max_length=100, blank=True)
     terms_accepted = models.BooleanField(default=False, help_text="User accepted terms during checkout")
