@@ -104,8 +104,8 @@ class UserRegistrationForm(SignupForm):
 
         # Pre-fill referral code from session if available
         if request and request.session.get("referral_code"):
+            self.initial["referral_code"] = request.session.get("referral_code")
             self.fields["referral_code"].initial = request.session.get("referral_code")
-            self.fields["referral_code"].widget.attrs["value"] = request.session.get("referral_code")
 
         # Preserve values on form errors
         if self.data:
