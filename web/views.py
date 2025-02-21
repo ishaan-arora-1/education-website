@@ -148,13 +148,13 @@ def index(request):
 
 def signup(request):
     if request.method == "POST":
-        form = UserRegistrationForm(request.POST)
+        form = UserRegistrationForm(request.POST, request=request)
         if form.is_valid():
             form.save(request)
             # User is automatically logged in by allauth after signup
             return redirect("index")
     else:
-        form = UserRegistrationForm()
+        form = UserRegistrationForm(request=request)
     return render(request, "account/signup.html", {"form": form})
 
 
