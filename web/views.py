@@ -2629,6 +2629,29 @@ def fetch_video_title(request):
         return JsonResponse({"error": "Failed to fetch video title"}, status=500)
 
 
+def get_referral_stats():
+    """Get statistics for top referrers."""
+    return (
+        Profile.objects.annotate(
+            total_signups=Count("referrals"),
+            total_enrollments=Count(
+                "referrals__user__enrollments", filter=Q(referrals__user__enrollments__status="approved")
+            ),
+            total_clicks=Count(
+                "referrals__user__webrequest", filter=Q(referrals__user__webrequest__path__contains="ref=")
+            ),
+        )
+        .filter(total_signups__gt=0)
+        .order_by("-total_signups")[:10]
+    )
+
+
+def referral_leaderboard(request):
+    """Display the referral leaderboard."""
+    top_referrers = get_referral_stats()
+    return render(request, "web/referral_leaderboard.html", {"top_referrers": top_referrers})
+
+
 # Goods Views
 class GoodsListView(LoginRequiredMixin, generic.ListView):
     model = Goods
