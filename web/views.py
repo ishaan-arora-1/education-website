@@ -97,6 +97,11 @@ def sitemap(request):
 
 def index(request):
     """Homepage view."""
+    # Store referral code in session if present in URL
+    ref_code = request.GET.get("ref")
+    if ref_code:
+        request.session["referral_code"] = ref_code
+
     # Get current user's profile if authenticated
     profile = request.user.profile if request.user.is_authenticated else None
 

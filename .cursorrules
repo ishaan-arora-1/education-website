@@ -51,6 +51,4 @@ the models.py file is in the web folder
 the tests are in the tests folder
 the admin.py file is in the web folder
 
-# testing
-always offer to write tests for any new or changed code
 make sure to fix the linting errors
