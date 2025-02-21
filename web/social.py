@@ -15,6 +15,7 @@ class NitterClient:
 
     # List of Nitter instances to try in case of failure
     NITTER_INSTANCES = [
+        "https://nitter.net",
         "https://nitter.privacydev.net",
         "https://nitter.woodland.cafe",
         "https://nitter.mint.lgbt",
@@ -24,6 +25,16 @@ class NitterClient:
         "https://nitter.edist.ro",
         "https://nitter.tux.pizza",
         "https://nitter.foss.wtf",
+        "https://nitter.1d4.us",
+        "https://nitter.cz",
+        "https://nitter.unixfox.eu",
+        "https://nitter.moomoo.me",
+        "https://nitter.rawbit.ninja",
+        "https://nitter.esmailelbob.xyz",
+        "https://nitter.inpt.fr",
+        "https://nitter.caioalonso.com",
+        "https://nitter.at",
+        "https://nitter.nicfab.eu",
     ]
 
     USER_AGENTS = [
@@ -41,9 +52,20 @@ class NitterClient:
         self.working_instances = []
         self._find_working_instances()
 
+    def _is_valid_response(self, response_text):
+        """Check if the response contains valid profile data."""
+        required_elements = [
+            'class="profile-card"',
+            'class="profile-stat-num"',
+            'class="followers"',
+            'class="tweet-link"',
+        ]
+        return all(element in response_text for element in required_elements)
+
     def _find_working_instances(self):
         """Try all Nitter instances and collect working ones."""
         random.shuffle(self.NITTER_INSTANCES)  # Randomize the order to distribute load
+
         for instance in self.NITTER_INSTANCES:
             try:
                 headers = {
@@ -53,29 +75,44 @@ class NitterClient:
                     "DNT": "1",
                     "Connection": "keep-alive",
                     "Upgrade-Insecure-Requests": "1",
-                    "Sec-Fetch-Dest": "document",
-                    "Sec-Fetch-Mode": "navigate",
-                    "Sec-Fetch-Site": "none",
-                    "Sec-Fetch-User": "?1",
-                    "Cache-Control": "max-age=0",
                 }
+
+                # First try a basic connection
                 response = requests.get(
-                    f"{instance}/alphaonelabs",  # Test with actual username
+                    instance,
+                    headers=headers,
+                    timeout=5,
+                    allow_redirects=True,
+                )
+                response.raise_for_status()
+
+                # If basic connection works, try fetching the actual profile
+                profile_response = requests.get(
+                    f"{instance}/{self.username}",
                     headers=headers,
                     timeout=10,
                     allow_redirects=True,
                 )
-                if response.status_code == 200 and "profile-card" in response.text:
+                profile_response.raise_for_status()
+
+                if self._is_valid_response(profile_response.text):
                     logger.info(f"Found working Nitter instance: {instance}")
                     self.working_instances.append(instance)
                     if not self.base_url:
                         self.base_url = instance
+                else:
+                    logger.warning(f"Invalid response from {instance}")
+
             except requests.RequestException as e:
                 logger.warning(f"Failed to connect to Nitter instance {instance}: {str(e)}")
+                continue
+            except Exception as e:
+                logger.warning(f"Unexpected error with {instance}: {str(e)}")
                 continue
 
         if not self.working_instances:
             logger.error("No working Nitter instances found")
+            logger.error("Tried instances: " + ", ".join(self.NITTER_INSTANCES))
 
     def get_working_instance(self):
         """Get a working instance, trying to find new ones if necessary."""
@@ -96,67 +133,71 @@ class NitterClient:
             self.base_url = self.get_working_instance()
             if not self.base_url:
                 logger.error("No working Nitter instance available")
-                return self._get_error_stats("No working Nitter instance available")
+                return self._get_error_stats("No working Nitter instance available - all instances failed")
 
         cache_key = f"nitter_stats_{self.username}"
         cached_data = cache.get(cache_key)
         if cached_data:
             return cached_data
 
-        try:
-            headers = {
-                "User-Agent": random.choice(self.USER_AGENTS),
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-                "Accept-Language": "en-US,en;q=0.5",
-                "DNT": "1",
-                "Connection": "keep-alive",
-                "Upgrade-Insecure-Requests": "1",
-                "Sec-Fetch-Dest": "document",
-                "Sec-Fetch-Mode": "navigate",
-                "Sec-Fetch-Site": "none",
-                "Sec-Fetch-User": "?1",
-                "Cache-Control": "max-age=0",
-            }
+        max_retries = 3
+        retry_count = 0
 
-            response = requests.get(
-                f"{self.base_url}/{self.username}", headers=headers, timeout=10, allow_redirects=True
-            )
-            response.raise_for_status()
+        while retry_count < max_retries:
+            try:
+                headers = {
+                    "User-Agent": random.choice(self.USER_AGENTS),
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                    "Accept-Language": "en-US,en;q=0.5",
+                    "DNT": "1",
+                    "Connection": "keep-alive",
+                    "Upgrade-Insecure-Requests": "1",
+                }
 
-            if "profile-card" not in response.text:
-                # Try another instance if this one returns invalid data
-                self.working_instances.remove(self.base_url)
+                response = requests.get(
+                    f"{self.base_url}/{self.username}", headers=headers, timeout=10, allow_redirects=True
+                )
+                response.raise_for_status()
+
+                if not self._is_valid_response(response.text):
+                    # Try another instance if this one returns invalid data
+                    if self.base_url in self.working_instances:
+                        self.working_instances.remove(self.base_url)
+                    self.base_url = self.get_working_instance()
+                    if not self.base_url:
+                        break
+                    retry_count += 1
+                    continue
+
+                html_content = response.text
+
+                # Parse profile stats
+                stats = self._parse_profile_stats(html_content)
+
+                if not any([stats["followers"], stats["tweets"], stats["last_tweet"]]):
+                    logger.warning(f"Failed to parse any meaningful stats for {self.username}")
+                    retry_count += 1
+                    continue
+
+                # Cache the results for 15 minutes (reduced due to Nitter instability)
+                cache.set(cache_key, stats, timeout=900)
+                return stats
+
+            except requests.RequestException as e:
+                logger.error(f"Error fetching Nitter stats from {self.base_url}: {str(e)}")
+                # Try another instance if current one fails
+                if self.base_url in self.working_instances:
+                    self.working_instances.remove(self.base_url)
                 self.base_url = self.get_working_instance()
-                if self.base_url:
-                    return self.get_profile_stats()
-                return self._get_error_stats("Invalid response from Nitter instance")
+                if not self.base_url:
+                    break
+                retry_count += 1
 
-            html_content = response.text
+            except Exception as e:
+                logger.error(f"Error parsing Nitter stats: {str(e)}")
+                retry_count += 1
 
-            # Parse profile stats
-            stats = self._parse_profile_stats(html_content)
-
-            if not any([stats["followers"], stats["tweets"], stats["last_tweet"]]):
-                logger.warning(f"Failed to parse any meaningful stats for {self.username}")
-                return self._get_error_stats("Failed to parse profile stats")
-
-            # Cache the results for 30 minutes (reduced from 1 hour due to Nitter instability)
-            cache.set(cache_key, stats, timeout=1800)
-            return stats
-
-        except requests.RequestException as e:
-            logger.error(f"Error fetching Nitter stats from {self.base_url}: {str(e)}")
-            # Try another instance if current one fails
-            if self.base_url in self.working_instances:
-                self.working_instances.remove(self.base_url)
-            self.base_url = self.get_working_instance()
-            if self.base_url:
-                return self.get_profile_stats()
-            return self._get_error_stats(f"Request failed: {str(e)}")
-
-        except Exception as e:
-            logger.error(f"Error parsing Nitter stats: {str(e)}")
-            return self._get_error_stats(f"Parsing failed: {str(e)}")
+        return self._get_error_stats("Failed to fetch stats after multiple retries")
 
     def _parse_profile_stats(self, html_content):
         """Parse the HTML content and extract profile stats."""
