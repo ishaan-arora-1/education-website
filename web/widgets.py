@@ -1,6 +1,5 @@
 from captcha.fields import CaptchaTextInput
 from django import forms
-from django.forms.widgets import ClearableFileInput
 
 
 class TailwindInput(forms.TextInput):
@@ -136,12 +135,3 @@ class TailwindCaptchaTextInput(CaptchaTextInput):
         if attrs:
             default_attrs.update(attrs)
         super().__init__(default_attrs)
-
-
-class MultipleFileInput(ClearableFileInput):
-    allow_multiple_selected = True
-
-    def __init__(self, attrs=None):
-        super().__init__(attrs)
-        if attrs is not None:
-            self.attrs.update(attrs)

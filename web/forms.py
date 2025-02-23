@@ -23,7 +23,6 @@ from .models import (
 )
 from .referrals import handle_referral
 from .widgets import (
-    MultipleFileInput,
     TailwindCaptchaTextInput,
     TailwindCheckboxInput,
     TailwindDateTimeInput,
@@ -890,21 +889,7 @@ class TailwindTextarea(forms.widgets.Textarea):
 
 
 class GoodsForm(forms.ModelForm):
-    """Form for creating/updating goods with full validation and UI alignment"""
-
-    images = forms.FileField(
-        widget=MultipleFileInput(
-            attrs={
-                "accept": "image/*",
-                "class": (
-                    "file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm "
-                    "file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                ),
-            }
-        ),
-        required=False,
-        help_text="Upload up to 8 product images (5MB max each)",
-    )
+    """Form for creating/updating goods with full validation"""
 
     class Meta:
         model = Goods
@@ -917,44 +902,23 @@ class GoodsForm(forms.ModelForm):
             "stock",
             "file",
             "category",
-            "images",
             "is_available",
         ]
         widgets = {
             "name": TailwindInput(attrs={"placeholder": "Algebra Basics Workbook"}),
-            "description": TailwindTextarea(
-                attrs={"rows": 4, "placeholder": "Detailed product description including features and specifications"}
-            ),
-            "price": forms.NumberInput(
-                attrs={"class": "tailwind-input-class", "min": "0", "step": "0.01", "placeholder": "49.99"}
-            ),
-            "discount_price": forms.NumberInput(
-                attrs={"class": "tailwind-input-class", "min": "0", "step": "0.01", "placeholder": "39.99"}
-            ),
-            "product_type": forms.Select(
-                attrs={"class": "tailwind-select-class", "onchange": "toggleDigitalFields(this.value)"}
-            ),
-            "stock": forms.NumberInput(
-                attrs={
-                    "class": "tailwind-input-class",
-                    "min": "0",
-                    "placeholder": "100",
-                    "data-product-type": "physical",
-                }
-            ),
-            "file": forms.FileInput(
-                attrs={"class": "file-input-tailwind", "accept": ".pdf,.zip,.mp4,.docx", "data-product-type": "digital"}
-            ),
-            "category": forms.TextInput(
-                attrs={"class": "tailwind-input-class", "placeholder": "Educational Materials"}
-            ),
+            "description": TailwindTextarea(attrs={"rows": 4, "placeholder": "Detailed product description"}),
+            "price": forms.NumberInput(attrs={"class": "tailwind-input-class", "min": "0", "step": "0.01"}),
+            "discount_price": forms.NumberInput(attrs={"class": "tailwind-input-class", "min": "0", "step": "0.01"}),
+            "product_type": forms.Select(attrs={"onchange": "toggleDigitalFields(this.value)"}),
+            "stock": forms.NumberInput(attrs={"data-product-type": "physical"}),
+            "file": forms.FileInput(attrs={"accept": ".pdf,.zip,.mp4,.docx", "data-product-type": "digital"}),
+            "category": forms.TextInput(attrs={"placeholder": "Educational Materials"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["product_type"].initial = "physical"
 
-        # Set required fields based on product type
         if self.instance and self.instance.pk:
             if self.instance.product_type == "digital":
                 self.fields["file"].required = True
@@ -969,30 +933,20 @@ class GoodsForm(forms.ModelForm):
         discount_price = cleaned_data.get("discount_price")
         stock = cleaned_data.get("stock")
         file = cleaned_data.get("file")
-        images = self.files.getlist("images")
 
-        # Validate discount pricing
         if discount_price and discount_price >= price:
-            self.add_error("discount_price", "Discount price must be lower than base price")
+            self.add_error("discount_price", "Discount must be lower than base price")
 
-        # Product type specific validation
         if product_type == "digital":
             if stock is not None:
-                self.add_error("stock", "Digital products cannot have stock quantities")
+                self.add_error("stock", "Digital products can't have stock")
             if not file and not self.instance.file:
-                self.add_error("file", "Digital products require a file upload")
+                self.add_error("file", "File required for digital products")
         else:
             if stock is None:
-                self.add_error("stock", "Physical products require stock quantity")
+                self.add_error("stock", "Stock required for physical products")
             if file:
-                self.add_error("file", "Physical products cannot have digital files")
-
-        # Image validation
-        if len(images) > 8:
-            self.add_error("images", "Maximum 8 images allowed")
-        for img in images:
-            if img.size > 5 * 1024 * 1024:  # 5MB
-                self.add_error("images", f"{img.name} exceeds 5MB size limit")
+                self.add_error("file", "Files only for digital products")
 
         return cleaned_data
 

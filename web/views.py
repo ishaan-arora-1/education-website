@@ -2677,32 +2677,37 @@ class GoodsCreateView(LoginRequiredMixin, UserPassesTestMixin, generic.CreateVie
         return hasattr(self.request.user, "storefront")
 
     def form_valid(self, form):
-        # Check for digital products without images
-        if form.instance.product_type == "digital":
-            images = self.request.FILES.getlist("images")
-            if not images:
-                form.add_error("images", "At least one image is required for digital products.")
+        form.instance.storefront = self.request.user.storefront
+        images = self.request.FILES.getlist("images")
+        product_type = form.cleaned_data.get("product_type")
+
+        # Validate digital product images
+        if product_type == "digital" and not images:
+            form.add_error(None, "Digital products require at least one image")
+            return self.form_invalid(form)
+
+        # Validate image constraints
+        if len(images) > 8:
+            form.add_error(None, "Maximum 8 images allowed")
+            return self.form_invalid(form)
+
+        for img in images:
+            if img.size > 5 * 1024 * 1024:
+                form.add_error(None, f"{img.name} exceeds 5MB size limit")
                 return self.form_invalid(form)
 
-        # Proceed with saving the Goods instance
-        form.instance.storefront = self.request.user.storefront
-        self.object = form.save()
+        # Save main product first
+        super().form_valid(form)
 
-        # Create ProductImage instances for uploaded images
-        images = self.request.FILES.getlist("images")
-        for image in images:
-            ProductImage.objects.create(goods=self.object, image=image)
+        # Save images after product creation
+        for image_file in images:
+            ProductImage.objects.create(goods=self.object, image=image_file)
 
-        messages.success(self.request, "Product created successfully!")
-        return redirect("goods_create_success")
+        return render(self.request, "goods/goods_create_success.html", {"product": self.object})
 
     def form_invalid(self, form):
-        error_messages = form.errors.as_json()
-        messages.error(
-            self.request,
-            f"There was an error creating the product. Please check the form and try again. Errors: {error_messages}",
-        )
-        return self.render_to_response(self.get_context_data(form=form))
+        messages.error(self.request, f"Creation failed: {form.errors.as_text()}")
+        return super().form_invalid(form)
 
     def get_success_url(self):
         return reverse("goods_list")
