@@ -5,38 +5,52 @@
 {% endblock title %}
 {% block content %}
   <div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-4">Manage Products</h1>
-    <a href="{% url 'goods_create' store_slug=request.user.storefront.store_slug %}"
-       class="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-lg mb-4 inline-block">
-      <i class="fas fa-plus-circle mr-2"></i> Add New Product
-    </a>
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-      {% if products %}
-        <ul class="space-y-4">
-          {% for product in products %}
-            <li class="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
-              <div class="flex justify-between items-center">
-                <div>
-                  <h3 class="font-medium">{{ product.name }}</h3>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">{{ product.description|truncatewords:20 }}</p>
-                </div>
-                <div class="flex space-x-2">
-                  <a href="{% url 'goods_detail' pk=product.id %}"
-                     class="text-teal-500 hover:text-teal-600 dark:text-teal-400">
-                    <i class="fas fa-eye"></i>
-                  </a>
-                  <a href="{% url 'goods_update' store_slug=request.user.storefront.store_slug product_id=product.id %}"
-                     class="text-blue-500 hover:text-blue-600 dark:text-blue-400">
-                    <i class="fas fa-edit"></i>
-                  </a>
-                </div>
-              </div>
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p class="text-gray-500 dark:text-gray-400">No products found.</p>
-      {% endif %}
+    <h1 class="text-4xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+      <i class="fas fa-box-open text-teal-600"></i>Manage Your Products
+    </h1>
+    <!-- Add New Product Button (Teal Theme) -->
+    <div class="flex justify-start mt-6">
+      <a href="{% url 'goods_create' store_slug=request.user.storefront.store_slug %}"
+         class="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-lg flex items-center shadow-md transition-all">
+        <i class="fas fa-plus-circle mr-2"></i> Add New Product
+      </a>
     </div>
-  </div>
-{% endblock content %}
+    <!-- Product Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
+      {% for product in products %}
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-5 transition-transform transform hover:scale-105 flex flex-col border border-gray-200">
+          <div class="h-48 w-full overflow-hidden rounded-md">
+            <img src="{{ product.image.url }}"
+                 alt="{{ product.name|default:'Product Image' }}"
+                 class="w-full h-full object-cover aspect-[4/3]" />
+          </div>
+          <h3 class="mt-4 text-lg font-bold text-gray-900 dark:text-white">{{ product.name }}</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">{{ product.description|truncatewords:15 }}</p>
+          <div class="flex justify-between mt-auto gap-2">
+            <a href="{% url 'goods_detail' pk=product.id %}"
+               class="flex-1 text-center bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg shadow-md">
+              <i class="fas fa-eye"></i> View
+            </a>
+            <a href="{% url 'goods_update' store_slug=request.user.storefront.store_slug product_id=product.id %}"
+               class="flex-1 text-center bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg shadow-md">
+              <i class="fas fa-edit"></i> Edit
+            </a>
+            <button type="button"
+                    onclick="confirmDelete('{% url 'goods_delete' pk=product.id %}')"
+                    class="flex-1 text-center bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-md">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          </div>
+        </div>
+      {% empty %}
+        <p class="text-gray-500 dark:text-gray-400 text-center col-span-full mt-6">No products found.</p>
+      {% endfor %}
+    </div>
+    <script>
+        function confirmDelete(url) {
+            if (confirm('Are you sure you want to delete this product?')) {
+                window.location.href = url;
+            }
+        }
+    </script>
+  {% endblock content %}

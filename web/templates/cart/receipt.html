@@ -77,6 +77,25 @@
                 </div>
               </div>
             {% endfor %}
+            {% for goods_item in goods_items %}
+              <div class="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
+                <div class="flex justify-between">
+                  <div>
+                    <h3 class="font-medium">{{ goods_item.goods.name }}</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ goods_item.goods.description }}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Category: {{ goods_item.goods.category }}</p>
+                  </div>
+                  <p class="font-semibold">
+                    {% if goods_item.goods.discount_price %}
+                      <span class="line-through text-gray-500">${{ goods_item.goods.price }}</span>
+                      <span class="text-red-500">${{ goods_item.goods.discount_price }}</span>
+                    {% else %}
+                      ${{ goods_item.goods.price }}
+                    {% endif %}
+                  </p>
+                </div>
+              </div>
+            {% endfor %}
           </div>
           <!-- Total -->
           <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">

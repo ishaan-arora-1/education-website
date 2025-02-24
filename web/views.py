@@ -23,13 +23,13 @@ from django.db.models import Avg, Count, Q, Sum
 from django.http import FileResponse, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
-from django.urls import NoReverseMatch, reverse
+from django.urls import NoReverseMatch, reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.views import generic
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
-from django.views.generic import CreateView, UpdateView
+from django.views.generic import CreateView, DeleteView, UpdateView
 
 from .calendar_sync import generate_google_calendar_link, generate_ical_feed, generate_outlook_calendar_link
 from .decorators import teacher_required
@@ -63,6 +63,7 @@ from .models import (
     Achievement,
     BlogComment,
     BlogPost,
+    Cart,
     CartItem,
     Challenge,
     ChallengeSubmission,
@@ -2665,7 +2666,10 @@ class GoodsListView(LoginRequiredMixin, generic.ListView):
 class GoodsDetailView(LoginRequiredMixin, generic.DetailView):
     model = Goods
     template_name = "goods/goods_detail.html"
-    context_object_name = "item"
+    context_object_name = "product"
+
+    def get_object(self):
+        return get_object_or_404(Goods, pk=self.kwargs["pk"])
 
 
 class GoodsCreateView(LoginRequiredMixin, UserPassesTestMixin, generic.CreateView):
@@ -2723,6 +2727,15 @@ class GoodsUpdateView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateVie
 
     def get_success_url(self):
         return reverse("goods_list")
+
+
+class GoodsDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Goods
+    template_name = "goods/goods_confirm_delete.html"
+    success_url = reverse_lazy("goods_list")
+
+    def test_func(self):
+        return self.request.user == self.get_object().storefront.teacher
 
 
 class GoodsPurchaseView(LoginRequiredMixin, generic.DetailView):
@@ -2852,3 +2865,15 @@ class StorefrontDetailView(LoginRequiredMixin, generic.DetailView):
 
     def get_object(self):
         return get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])
+
+
+@login_required
+def add_goods_to_cart(request, pk):
+    product = get_object_or_404(Goods, pk=pk)
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_item, created = CartItem.objects.get_or_create(cart=cart, goods=product)
+    if created:
+        messages.success(request, f"{product.name} added to cart.")
+    else:
+        messages.info(request, f"{product.name} is already in your cart.")
+    return redirect("cart_view")

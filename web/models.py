@@ -818,8 +818,12 @@ class Cart(models.Model):
         return self.items.count()
 
     @property
+    def has_goods(self):
+        return self.items.filter(goods__isnull=False).exists()
+
+    @property
     def total(self):
-        return sum(item.price for item in self.items.all())
+        return sum(item.final_price for item in self.items.all())
 
     def __str__(self):
         if self.user:
@@ -827,10 +831,102 @@ class Cart(models.Model):
         return "Anonymous cart"
 
 
+class Storefront(models.Model):
+    teacher = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="storefront", verbose_name="Teacher Profile"
+    )
+    name = models.CharField(
+        max_length=100, unique=True, help_text="Display name for your store", default="Default Store Name"
+    )
+    description = models.TextField(blank=True, help_text="Describe your store for customers")
+    logo = models.ImageField(upload_to="store_logos/", blank=True, help_text="Recommended size: 200x200px")
+    store_slug = models.SlugField(unique=True, blank=True, help_text="Auto-generated URL-friendly identifier")
+    is_active = models.BooleanField(default=True, help_text="Enable/disable public visibility of your store")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.store_slug:
+            self.store_slug = self._generate_unique_slug()
+        super().save(*args, **kwargs)
+
+    def _generate_unique_slug(self):
+        base_slug = slugify(self.name)
+        unique_slug = base_slug
+        count = 1
+        while Storefront.objects.filter(store_slug=unique_slug).exists():
+            unique_slug = f"{base_slug}-{count}"
+            count += 1
+        return unique_slug
+
+    def __str__(self):
+        return f"{self.name} (by {self.teacher.username})"
+
+
+class Goods(models.Model):
+    PRODUCT_TYPE_CHOICES = [
+        ("physical", "Physical Product"),
+        ("digital", "Digital Download"),
+    ]
+
+    name = models.CharField(max_length=100, help_text="Product title (e.g., 'Algebra Basics Workbook')")
+    description = models.TextField(help_text="Detailed product description")
+    price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Price in USD")
+    discount_price = models.DecimalField(
+        max_digits=10, decimal_places=2, blank=True, null=True, help_text="Discounted price (optional)"
+    )
+    stock = models.PositiveIntegerField(blank=True, null=True, help_text="Leave blank for digital products")
+    product_type = models.CharField(max_length=10, choices=PRODUCT_TYPE_CHOICES, default="physical")
+    file = models.FileField(upload_to="digital_goods/", blank=True, help_text="Required for digital products")
+    category = models.CharField(max_length=100, blank=True, help_text="e.g., 'Books', 'Course Materials'")
+    images = models.ManyToManyField("ProductImage", related_name="goods_images", blank=True)
+    storefront = models.ForeignKey(Storefront, on_delete=models.CASCADE, related_name="goods")
+    is_available = models.BooleanField(default=True, help_text="Show/hide product from store")
+    sku = models.CharField(
+        max_length=50, unique=True, blank=True, null=True, help_text="Inventory tracking ID (auto-generated)"
+    )
+    slug = models.SlugField(unique=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        # Validate discount logic
+        if self.discount_price and self.discount_price >= self.price:
+            raise ValidationError("Discount price must be lower than original price.")
+
+        # Validate digital product constraints
+        if self.product_type == "digital":
+            if self.stock is not None:
+                raise ValidationError("Digital products cannot have stock quantities.")
+            if not self.file:
+                raise ValidationError("Digital products require a file upload.")
+
+        # Validate physical product constraints
+        if self.product_type == "physical" and self.stock is None:
+            raise ValidationError("Physical products must have a stock quantity.")
+
+    def save(self, *args, **kwargs):
+        if not self.sku:
+            self.sku = f"{slugify(self.name[:20])}-{self.id}"
+        if not self.slug:
+            base_slug = slugify(self.name)
+            slug = base_slug
+            counter = 1
+            while Goods.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.name} (${self.price})"
+
+
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
     course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True, blank=True, related_name="cart_items")
     session = models.ForeignKey(Session, on_delete=models.CASCADE, null=True, blank=True, related_name="cart_items")
+    goods = models.ForeignKey(Goods, on_delete=models.CASCADE, null=True, blank=True, related_name="cart_items")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -838,15 +934,14 @@ class CartItem(models.Model):
         unique_together = [
             ("cart", "course"),
             ("cart", "session"),
+            ("cart", "goods"),
         ]
 
     def clean(self):
-        if not self.course and not self.session:
-            raise ValidationError("Either a course or a session must be selected")
-        if self.course and self.session:
-            raise ValidationError("Cannot select both course and session")
-        if self.session and not self.session.course.allow_individual_sessions:
-            raise ValidationError("This course does not allow individual session registration")
+        if not self.course and not self.session and not self.goods:
+            raise ValidationError("Either a course, session, or goods must be selected")
+        if (self.course and self.session) or (self.course and self.goods) or (self.session and self.goods):
+            raise ValidationError("Cannot select more than one type of item")
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -856,12 +951,26 @@ class CartItem(models.Model):
     def price(self):
         if self.course:
             return self.course.price
-        return self.session.price or 0
+        if self.session:
+            return self.session.price or 0
+        if self.goods:
+            return self.goods.price
+        return 0
+
+    @property
+    def final_price(self):
+        if self.goods and self.goods.discount_price:  # Check for discount
+            return self.goods.discount_price
+        return self.price  # Fallback to original price
 
     def __str__(self):
         if self.course:
             return f"{self.course.title} in cart for {self.cart}"
-        return f"{self.session.title} in cart for {self.cart}"
+        if self.session:
+            return f"{self.session.title} in cart for {self.cart}"
+        if self.goods:
+            return f"{self.goods.name} in cart for {self.cart}"
+        return "Unknown item in cart"
 
 
 # Constants
@@ -967,88 +1076,6 @@ class ChallengeSubmission(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s submission for Week {self.challenge.week_number}"
-
-
-class Storefront(models.Model):
-    teacher = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="storefront", verbose_name="Teacher Profile"
-    )
-    name = models.CharField(
-        max_length=100, unique=True, help_text="Display name for your store", default="Default Store Name"
-    )
-    description = models.TextField(blank=True, help_text="Describe your store for customers")
-    logo = models.ImageField(upload_to="store_logos/", blank=True, help_text="Recommended size: 200x200px")
-    store_slug = models.SlugField(unique=True, blank=True, help_text="Auto-generated URL-friendly identifier")
-    is_active = models.BooleanField(default=True, help_text="Enable/disable public visibility of your store")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def save(self, *args, **kwargs):
-        if not self.store_slug:
-            self.store_slug = self._generate_unique_slug()
-        super().save(*args, **kwargs)
-
-    def _generate_unique_slug(self):
-        base_slug = slugify(self.name)
-        unique_slug = base_slug
-        count = 1
-        while Storefront.objects.filter(store_slug=unique_slug).exists():
-            unique_slug = f"{base_slug}-{count}"
-            count += 1
-        return unique_slug
-
-    def __str__(self):
-        return f"{self.name} (by {self.teacher.username})"
-
-
-class Goods(models.Model):
-    PRODUCT_TYPE_CHOICES = [
-        ("physical", "Physical Product"),
-        ("digital", "Digital Download"),
-    ]
-
-    name = models.CharField(max_length=100, help_text="Product title (e.g., 'Algebra Basics Workbook')")
-    description = models.TextField(help_text="Detailed product description")
-    price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Price in USD")
-    discount_price = models.DecimalField(
-        max_digits=10, decimal_places=2, blank=True, null=True, help_text="Discounted price (optional)"
-    )
-    stock = models.PositiveIntegerField(blank=True, null=True, help_text="Leave blank for digital products")
-    product_type = models.CharField(max_length=10, choices=PRODUCT_TYPE_CHOICES, default="physical")
-    file = models.FileField(upload_to="digital_goods/", blank=True, help_text="Required for digital products")
-    category = models.CharField(max_length=100, blank=True, help_text="e.g., 'Books', 'Course Materials'")
-    images = models.ManyToManyField("ProductImage", related_name="goods_images", blank=True)
-    storefront = models.ForeignKey(Storefront, on_delete=models.CASCADE, related_name="goods")
-    is_available = models.BooleanField(default=True, help_text="Show/hide product from store")
-    sku = models.CharField(
-        max_length=50, unique=True, blank=True, null=True, help_text="Inventory tracking ID (auto-generated)"
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def clean(self):
-        # Validate discount logic
-        if self.discount_price and self.discount_price >= self.price:
-            raise ValidationError("Discount price must be lower than original price.")
-
-        # Validate digital product constraints
-        if self.product_type == "digital":
-            if self.stock is not None:
-                raise ValidationError("Digital products cannot have stock quantities.")
-            if not self.file:
-                raise ValidationError("Digital products require a file upload.")
-
-        # Validate physical product constraints
-        if self.product_type == "physical" and self.stock is None:
-            raise ValidationError("Physical products must have a stock quantity.")
-
-    def save(self, *args, **kwargs):
-        if not self.sku:
-            self.sku = f"{slugify(self.name[:20])}-{self.id}"
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.name} (${self.price})"
 
 
 class ProductImage(models.Model):
