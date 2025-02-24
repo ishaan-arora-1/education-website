@@ -31,7 +31,7 @@
                class="flex-1 text-center bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg shadow-md">
               <i class="fas fa-eye"></i> View
             </a>
-            <a href="{% url 'goods_update' store_slug=request.user.storefront.store_slug product_id=product.id %}"
+            <a href="{% url 'goods_update' pk=product.id %}"
                class="flex-1 text-center bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg shadow-md">
               <i class="fas fa-edit"></i> Edit
             </a>

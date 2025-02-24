@@ -181,13 +181,7 @@ urlpatterns += i18n_patterns(
     path("goods/", views.GoodsListView.as_view(), name="goods_list"),
     path("goods/<int:pk>/", views.GoodsDetailView.as_view(), name="goods_detail"),
     path("store/<slug:store_slug>/goods/create/", login_required(views.GoodsCreateView.as_view()), name="goods_create"),
-    path(
-        "store/<slug:store_slug>/goods/<slug:slug>/edit/",
-        login_required(views.GoodsUpdateView.as_view()),
-        name="goods_update",
-    ),
-    path("goods/update/<int:pk>/", login_required(views.GoodsUpdateView.as_view()), name="goods_update"),
-    path("store/<str:store_slug>/goods/<int:product_id>/edit/", views.GoodsUpdateView.as_view(), name="goods_update"),
+    path("goods/<int:pk>/edit/", views.GoodsUpdateView.as_view(), name="goods_update"),
     path("goods/delete/<int:pk>/", views.GoodsDeleteView.as_view(), name="goods_delete"),
     path("goods/add-to-cart/<int:pk>/", add_goods_to_cart, name="add_goods_to_cart"),
     # Order Management

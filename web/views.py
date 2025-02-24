@@ -2722,6 +2722,11 @@ class GoodsUpdateView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateVie
     form_class = GoodsForm
     template_name = "goods/goods_update.html"
 
+    # Filter by user's products only
+    def get_queryset(self):
+        return Goods.objects.filter(storefront__teacher=self.request.user)
+
+    # Verify ownership
     def test_func(self):
         return self.get_object().storefront.teacher == self.request.user
 
@@ -2736,17 +2741,6 @@ class GoodsDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def test_func(self):
         return self.request.user == self.get_object().storefront.teacher
-
-
-class GoodsPurchaseView(LoginRequiredMixin, generic.DetailView):
-    model = Goods
-    template_name = "goods/goods_purchase.html"
-    context_object_name = "item"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["stripe_public_key"] = settings.STRIPE_PUBLISHABLE_KEY
-        return context
 
 
 # Order Management
