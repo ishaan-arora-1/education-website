@@ -2773,6 +2773,25 @@ class GoodsDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return self.request.user == self.get_object().storefront.teacher
 
 
+@login_required
+def add_goods_to_cart(request, pk):
+    product = get_object_or_404(Goods, pk=pk)
+    # Prevent adding out-of-stock items
+    if product.stock is None or product.stock <= 0:
+        messages.error(request, f"{product.name} is out of stock and cannot be added to cart.")
+        return redirect("goods_detail", pk=pk)  # Redirect back to product page
+
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_item, created = CartItem.objects.get_or_create(cart=cart, goods=product)
+
+    if created:
+        messages.success(request, f"{product.name} added to cart.")
+    else:
+        messages.info(request, f"{product.name} is already in your cart.")
+
+    return redirect("cart_view")
+
+
 # Order Management
 class OrderManagementView(LoginRequiredMixin, UserPassesTestMixin, generic.ListView):
     model = Order
@@ -2889,15 +2908,3 @@ class StorefrontDetailView(LoginRequiredMixin, generic.DetailView):
 
     def get_object(self):
         return get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])
-
-
-@login_required
-def add_goods_to_cart(request, pk):
-    product = get_object_or_404(Goods, pk=pk)
-    cart, created = Cart.objects.get_or_create(user=request.user)
-    cart_item, created = CartItem.objects.get_or_create(cart=cart, goods=product)
-    if created:
-        messages.success(request, f"{product.name} added to cart.")
-    else:
-        messages.info(request, f"{product.name} is already in your cart.")
-    return redirect("cart_view")
