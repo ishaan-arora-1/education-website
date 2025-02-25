@@ -16,25 +16,15 @@ class NitterClient:
     # List of Nitter instances to try in case of failure
     NITTER_INSTANCES = [
         "https://nitter.net",
-        "https://nitter.privacydev.net",
-        "https://nitter.woodland.cafe",
-        "https://nitter.mint.lgbt",
+        "https://nitter.lacontrevoie.fr",
+        "https://nitter.nixnet.services",
+        "https://nitter.pw",
         "https://nitter.poast.org",
-        "https://nitter.bird.froth.zone",
-        "https://nitter.datura.network",
-        "https://nitter.edist.ro",
-        "https://nitter.tux.pizza",
-        "https://nitter.foss.wtf",
-        "https://nitter.1d4.us",
-        "https://nitter.cz",
-        "https://nitter.unixfox.eu",
-        "https://nitter.moomoo.me",
-        "https://nitter.rawbit.ninja",
-        "https://nitter.esmailelbob.xyz",
-        "https://nitter.inpt.fr",
-        "https://nitter.caioalonso.com",
-        "https://nitter.at",
-        "https://nitter.nicfab.eu",
+        "https://nitter.d420.de",
+        "https://nitter.platypush.tech",
+        "https://nitter.sethforprivacy.com",
+        "https://nitter.cutelab.space",
+        "https://nitter.ktachibana.party",
     ]
 
     USER_AGENTS = [
@@ -54,13 +44,12 @@ class NitterClient:
 
     def _is_valid_response(self, response_text):
         """Check if the response contains valid profile data."""
+        # More lenient validation to handle different Nitter instance formats
         required_elements = [
             'class="profile-card"',
             'class="profile-stat-num"',
-            'class="followers"',
-            'class="tweet-link"',
         ]
-        return all(element in response_text for element in required_elements)
+        return any(element in response_text for element in required_elements)
 
     def _find_working_instances(self):
         """Try all Nitter instances and collect working ones."""
@@ -77,38 +66,32 @@ class NitterClient:
                     "Upgrade-Insecure-Requests": "1",
                 }
 
-                # First try a basic connection
+                # Try fetching the profile directly with a shorter timeout
                 response = requests.get(
-                    instance,
+                    f"{instance}/{self.username}",
                     headers=headers,
-                    timeout=5,
+                    timeout=5,  # Reduced timeout to fail faster
                     allow_redirects=True,
+                    verify=True,  # Always verify SSL for security
                 )
                 response.raise_for_status()
 
-                # If basic connection works, try fetching the actual profile
-                profile_response = requests.get(
-                    f"{instance}/{self.username}",
-                    headers=headers,
-                    timeout=10,
-                    allow_redirects=True,
-                )
-                profile_response.raise_for_status()
-
-                if self._is_valid_response(profile_response.text):
+                if self._is_valid_response(response.text):
                     logger.info(f"Found working Nitter instance: {instance}")
                     self.working_instances.append(instance)
                     if not self.base_url:
                         self.base_url = instance
-                else:
-                    logger.warning(f"Invalid response from {instance}")
 
-            except requests.RequestException as e:
+            except requests.exceptions.RequestException as e:
                 logger.warning(f"Failed to connect to Nitter instance {instance}: {str(e)}")
                 continue
             except Exception as e:
                 logger.warning(f"Unexpected error with {instance}: {str(e)}")
                 continue
+
+            # Break after finding 2 working instances to avoid unnecessary checks
+            if len(self.working_instances) >= 2:
+                break
 
         if not self.working_instances:
             logger.error("No working Nitter instances found")
@@ -132,8 +115,13 @@ class NitterClient:
         if not self.base_url:
             self.base_url = self.get_working_instance()
             if not self.base_url:
-                logger.error("No working Nitter instance available")
-                return self._get_error_stats("No working Nitter instance available - all instances failed")
+                # Return cached data if available
+                cache_key = f"nitter_stats_{self.username}"
+                cached_data = cache.get(cache_key)
+                if cached_data:
+                    logger.info("Using cached data due to Nitter unavailability")
+                    return cached_data
+                return self._get_error_stats("No working Nitter instance available - using fallback data")
 
         cache_key = f"nitter_stats_{self.username}"
         cached_data = cache.get(cache_key)
@@ -142,9 +130,15 @@ class NitterClient:
 
         max_retries = 3
         retry_count = 0
+        last_error = None
+
+        # Store original base_url to restore if needed
+        original_base_url = self.base_url
 
         while retry_count < max_retries:
             try:
+                logger.debug(f"Attempt {retry_count + 1}: Fetching stats from {self.base_url}")
+
                 headers = {
                     "User-Agent": random.choice(self.USER_AGENTS),
                     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
@@ -155,49 +149,59 @@ class NitterClient:
                 }
 
                 response = requests.get(
-                    f"{self.base_url}/{self.username}", headers=headers, timeout=10, allow_redirects=True
+                    f"{self.base_url}/{self.username}",
+                    headers=headers,
+                    timeout=10,
+                    allow_redirects=True,
+                    verify=True,  # Always verify SSL for security
                 )
                 response.raise_for_status()
 
                 if not self._is_valid_response(response.text):
-                    # Try another instance if this one returns invalid data
-                    if self.base_url in self.working_instances:
-                        self.working_instances.remove(self.base_url)
-                    self.base_url = self.get_working_instance()
-                    if not self.base_url:
-                        break
-                    retry_count += 1
-                    continue
+                    raise ValueError("Invalid response format")
 
-                html_content = response.text
+                stats = self._parse_profile_stats(response.text)
 
-                # Parse profile stats
-                stats = self._parse_profile_stats(html_content)
+                if stats.get("error"):
+                    raise ValueError(stats["error"])
 
-                if not any([stats["followers"], stats["tweets"], stats["last_tweet"]]):
-                    logger.warning(f"Failed to parse any meaningful stats for {self.username}")
-                    retry_count += 1
-                    continue
-
-                # Cache the results for 15 minutes (reduced due to Nitter instability)
-                cache.set(cache_key, stats, timeout=900)
+                # Cache the results for 30 minutes
+                cache.set(cache_key, stats, timeout=1800)
                 return stats
 
-            except requests.RequestException as e:
-                logger.error(f"Error fetching Nitter stats from {self.base_url}: {str(e)}")
-                # Try another instance if current one fails
-                if self.base_url in self.working_instances:
-                    self.working_instances.remove(self.base_url)
-                self.base_url = self.get_working_instance()
-                if not self.base_url:
+            except (requests.exceptions.RequestException, ValueError) as e:
+                last_error = str(e)
+                logger.warning(f"Attempt {retry_count + 1} failed: {last_error}")
+
+                # Increment retry count
+                retry_count += 1
+
+                # Try another instance if we have retries left
+                if retry_count < max_retries:
+                    # Remove the current instance from working instances if it failed
+                    if self.base_url in self.working_instances:
+                        self.working_instances.remove(self.base_url)
+
+                    # Get a new working instance
+                    new_base_url = self.get_working_instance()
+                    if new_base_url:
+                        self.base_url = new_base_url
+                        logger.debug(f"Switching to alternate instance: {self.base_url}")
+                    else:
+                        # If no new instance is available, restore the original and break
+                        self.base_url = original_base_url
+                        break
+                else:
+                    # We've exhausted our retries
                     break
-                retry_count += 1
 
-            except Exception as e:
-                logger.error(f"Error parsing Nitter stats: {str(e)}")
-                retry_count += 1
+        # If all retries failed, try to return cached data
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            logger.info("Using cached data after retries failed")
+            return cached_data
 
-        return self._get_error_stats("Failed to fetch stats after multiple retries")
+        return self._get_error_stats("Failed to fetch stats - using fallback data")
 
     def _parse_profile_stats(self, html_content):
         """Parse the HTML content and extract profile stats."""
@@ -215,81 +219,84 @@ class NitterClient:
             "error": None,
         }
 
-        # Extract name
-        name_pattern = r'class="profile-card-fullname"[^>]*>([^<]+)'
-        name_match = re.search(name_pattern, html_content)
-        if name_match:
-            stats["name"] = name_match.group(1).strip()
+        try:
+            # Extract name
+            name_pattern = r'class="profile-card-fullname"[^>]*>([^<]+)'
+            name_match = re.search(name_pattern, html_content)
+            if name_match:
+                stats["name"] = name_match.group(1).strip()
 
-        # Extract bio
-        bio_pattern = r'class="profile-bio"[^>]*>([^<]+)'
-        bio_match = re.search(bio_pattern, html_content)
-        if bio_match:
-            stats["bio"] = bio_match.group(1).strip()
+            # Extract bio
+            bio_pattern = r'class="profile-bio"[^>]*>([^<]+)'
+            bio_match = re.search(bio_pattern, html_content)
+            if bio_match:
+                stats["bio"] = bio_match.group(1).strip()
 
-        # Extract location
-        location_pattern = r'class="profile-location"[^>]*>([^<]+)'
-        location_match = re.search(location_pattern, html_content)
-        if location_match:
-            stats["location"] = location_match.group(1).strip()
+            # Extract location
+            location_pattern = r'class="profile-location"[^>]*>([^<]+)'
+            location_match = re.search(location_pattern, html_content)
+            if location_match:
+                stats["location"] = location_match.group(1).strip()
 
-        # Extract website
-        website_pattern = r'class="profile-website"[^>]*href="([^"]+)"'
-        website_match = re.search(website_pattern, html_content)
-        if website_match:
-            stats["website"] = website_match.group(1)
+            # Extract website - handle both direct and linked formats
+            website_pattern = r'class="profile-website"[^>]*>(?:<a[^>]*href="([^"]+)"[^>]*>)?([^<]+)'
+            website_match = re.search(website_pattern, html_content)
+            if website_match:
+                stats["website"] = website_match.group(1) if website_match.group(1) else website_match.group(2)
 
-        # Extract joined date
-        joined_pattern = r'class="profile-joindate"[^>]*>Joined ([^<]+)'
-        joined_match = re.search(joined_pattern, html_content)
-        if joined_match:
-            try:
-                stats["joined"] = datetime.strptime(joined_match.group(1).strip(), "%B %Y")
-            except ValueError:
-                pass
+            # Extract joined date
+            joined_pattern = r'class="profile-joindate"[^>]*>Joined ([^<]+)'
+            joined_match = re.search(joined_pattern, html_content)
+            if joined_match:
+                try:
+                    stats["joined"] = datetime.strptime(joined_match.group(1).strip(), "%B %Y")
+                except ValueError:
+                    pass
 
-        # Extract numeric stats using regex
-        followers_pattern = r'class="followers"[^>]*>.*?' r'class="profile-stat-num"[^>]*>([^<]+)'
-        followers_match = re.search(followers_pattern, html_content, re.DOTALL)
-        if followers_match:
-            try:
-                stats["followers"] = int(followers_match.group(1).strip().replace(",", ""))
-            except ValueError:
-                pass
+            # Extract follower count
+            followers_pattern = r'class="followers"[^>]*>.*?class="profile-stat-num"[^>]*>([^<]+)'
+            followers_match = re.search(followers_pattern, html_content, re.DOTALL)
+            if followers_match:
+                try:
+                    stats["followers"] = int(followers_match.group(1).replace(",", ""))
+                except ValueError:
+                    pass
 
-        following_pattern = r'class="following"[^>]*>.*?' r'class="profile-stat-num"[^>]*>([^<]+)'
-        following_match = re.search(following_pattern, html_content, re.DOTALL)
-        if following_match:
-            try:
-                stats["following"] = int(following_match.group(1).strip().replace(",", ""))
-            except ValueError:
-                pass
+            # Extract following count
+            following_pattern = r'class="following"[^>]*>.*?class="profile-stat-num"[^>]*>([^<]+)'
+            following_match = re.search(following_pattern, html_content, re.DOTALL)
+            if following_match:
+                try:
+                    stats["following"] = int(following_match.group(1).replace(",", ""))
+                except ValueError:
+                    pass
 
-        tweets_pattern = r'class="tweets"[^>]*>.*?' r'class="profile-stat-num"[^>]*>([^<]+)'
-        tweets_match = re.search(tweets_pattern, html_content, re.DOTALL)
-        if tweets_match:
-            try:
-                stats["tweets"] = int(tweets_match.group(1).strip().replace(",", ""))
-            except ValueError:
-                pass
+            # Extract tweets count
+            tweets_pattern = r'class="tweets"[^>]*>.*?class="profile-stat-num"[^>]*>([^<]+)'
+            tweets_match = re.search(tweets_pattern, html_content, re.DOTALL)
+            if tweets_match:
+                try:
+                    stats["tweets"] = int(tweets_match.group(1).replace(",", ""))
+                except ValueError:
+                    pass
 
-        # Extract latest tweet date
-        tweet_date_pattern = r'class="tweet-date"[^>]*>.*?title="([^"]+)"'
-        tweet_date_match = re.search(tweet_date_pattern, html_content, re.DOTALL)
-        if tweet_date_match:
-            try:
-                stats["last_tweet"] = datetime.strptime(tweet_date_match.group(1), "%b %d, %Y · %I:%M %p UTC")
-            except ValueError:
-                pass
+            # Extract last tweet date
+            tweet_date_pattern = r'class="tweet-date"[^>]*title="([^"]+)"'
+            tweet_date_match = re.search(tweet_date_pattern, html_content)
+            if tweet_date_match:
+                try:
+                    stats["last_tweet"] = datetime.strptime(tweet_date_match.group(1).split(" · ")[0], "%b %d, %Y")
+                except (ValueError, IndexError):
+                    pass
 
-        # Calculate engagement rate
-        if stats["followers"] > 0 and stats["tweets"] > 0:
-            stats["engagement"] = round((stats["tweets"] / stats["followers"]) * 100, 2)
+            return stats
 
-        return stats
+        except Exception as e:
+            logger.error(f"Error parsing profile stats: {str(e)}")
+            return self._get_error_stats(f"Error parsing Nitter stats: {str(e)}")
 
     def _get_error_stats(self, error_message):
-        """Return stats dict with error message."""
+        """Return a stats dict with error message and zero values."""
         return {
             "followers": 0,
             "following": 0,
