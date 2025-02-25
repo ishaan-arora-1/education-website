@@ -84,7 +84,9 @@ class UserRegistrationForm(SignupForm):
     captcha = CaptchaField(widget=TailwindCaptchaTextInput)
 
     def __init__(self, *args, **kwargs):
+        request = kwargs.pop("request", None)
         super().__init__(*args, **kwargs)
+
         # Update email field
         self.fields["email"].widget = TailwindEmailInput(
             attrs={
@@ -104,6 +106,16 @@ class UserRegistrationForm(SignupForm):
                 ),
             }
         )
+
+        # Handle referral code from session or POST data
+        if self.data:  # If form was submitted (POST)
+            referral_code = self.data.get("referral_code")
+            if referral_code:
+                self.fields["referral_code"].initial = referral_code
+        elif request and request.session.get("referral_code"):  # If new form (GET) with session data
+            referral_code = request.session.get("referral_code")
+            self.fields["referral_code"].initial = referral_code
+            self.initial["referral_code"] = referral_code
 
         # Preserve values on form errors
         if self.data:

@@ -246,7 +246,11 @@
           </div>
           {% if content_data.x %}
             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if content_data.x.status == 'danger' %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% elif content_data.x.status == 'warning' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% else %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% endif %}">
-              {{ content_data.x.date|default:"No data" }}
+              {% if content_data.x.error %}
+                Error
+              {% else %}
+                {{ content_data.x.date|timesince }} ago
+              {% endif %}
             </span>
           {% else %}
             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
@@ -254,16 +258,27 @@
             </span>
           {% endif %}
         </div>
-        <div class="grid grid-cols-3 gap-4 mt-4">
+        {% if content_data.x.error %}
+          <div class="mb-4 p-3 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-lg text-sm">
+            {{ content_data.x.error }}
+          </div>
+        {% endif %}
+        <div class="grid grid-cols-2 gap-4 mt-4">
           <div class="text-sm text-gray-600 dark:text-gray-400">
-            <span class="block font-medium">Followers</span>
-            <span>{{ content_data.x.stats.followers|default:"N/A"|intcomma }}</span>
+            <span class="block font-medium mb-1">Followers</span>
+            <span class="text-2xl font-bold text-gray-800 dark:text-gray-200">{{ content_data.x.stats.followers|default:"N/A"|intcomma }}</span>
           </div>
           <div class="text-sm text-gray-600 dark:text-gray-400">
-            <span class="block font-medium">Engagement</span>
-            <span>{{ content_data.x.stats.engagement|default:"N/A" }}%</span>
+            <span class="block font-medium mb-1">Engagement</span>
+            <span class="text-2xl font-bold text-gray-800 dark:text-gray-200">{{ content_data.x.stats.engagement|default:"N/A" }}%</span>
           </div>
         </div>
+        {% if content_data.x.stats.last_tweet %}
+          <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
+            <span class="block font-medium mb-1">Last Tweet</span>
+            <span class="text-gray-800 dark:text-gray-200">{{ content_data.x.stats.last_tweet|date:"M j, Y g:i A" }}</span>
+          </div>
+        {% endif %}
       </div>
       <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-200">
         <div class="flex items-center justify-between mb-4">

@@ -1,8 +1,9 @@
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
-from web.models import Course, Subject, WebRequest
+from web.models import Challenge, Course, Subject, WebRequest
 
 
 class WebRequestMiddlewareTests(TestCase):
@@ -26,6 +27,17 @@ class WebRequestMiddlewareTests(TestCase):
             max_students=50,
             subject=self.subject,
             level="beginner",
+            status="published",
+            is_featured=True,
+        )
+
+        # Create a test challenge for the homepage
+        self.challenge = Challenge.objects.create(
+            title="Test Challenge",
+            description="Test Description",
+            week_number=1,
+            start_date=timezone.now() - timezone.timedelta(days=1),
+            end_date=timezone.now() + timezone.timedelta(days=6),
         )
 
     def test_web_request_tracking_course_detail(self):

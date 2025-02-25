@@ -107,52 +107,82 @@ def sitemap(request):
 
 
 def index(request):
-    if request.method == "POST":
-        form = TeacherSignupForm(request.POST)
-        if form.is_valid():
-            user, subject = form.save()
-            messages.success(
-                request,
-                (
-                    f"Thank you for signing up! We've sent instructions to {user.email} - "
-                    "you can continue to create your course"
+    """Homepage view."""
+    # Store referral code in session if present in URL
+    ref_code = request.GET.get("ref")
+    if ref_code:
+        request.session["referral_code"] = ref_code
+
+    # Get current user's profile if authenticated
+    profile = request.user.profile if request.user.is_authenticated else None
+
+    # Get top referrers
+    top_referrers = (
+        Profile.objects.annotate(
+            total_signups=Count("referrals"),
+            total_enrollments=Count(
+                "referrals__user__enrollments", filter=Q(referrals__user__enrollments__status="approved")
+            ),
+            total_clicks=Count(
+                "referrals__user",
+                filter=Q(
+                    referrals__user__username__in=WebRequest.objects.filter(path__contains="ref=").values_list(
+                        "user", flat=True
+                    )
                 ),
-            )
+            ),
+        )
+        .filter(total_signups__gt=0)
+        .order_by("-total_signups")[:5]
+    )
 
-            # Use the user object directly instead of querying again
-            user.backend = "django.contrib.auth.backends.ModelBackend"
-            login(request, user)
-
-            # TODO: Send welcome email
-            # redirect to create a course
-            return redirect("create_course")
-    else:
-        form = TeacherSignupForm()
-
-    # Get featured courses - only published and featured courses
+    # Get featured courses
     featured_courses = Course.objects.filter(status="published", is_featured=True).order_by("-created_at")[:3]
 
-    # Get current weekly challenge
+    # Get current challenge
     current_challenge = Challenge.objects.filter(start_date__lte=timezone.now(), end_date__gte=timezone.now()).first()
 
+    # Get signup form if needed
+    form = None
+    if not request.user.is_authenticated or not request.user.profile.is_teacher:
+        form = TeacherSignupForm()
+
     context = {
-        "form": form,
+        "profile": profile,
+        "top_referrers": top_referrers,
         "featured_courses": featured_courses,
         "current_challenge": current_challenge,
+        "form": form,
     }
     return render(request, "index.html", context)
 
 
-def signup(request):
+def signup_view(request):
+    """Custom signup view that properly handles referral codes."""
     if request.method == "POST":
-        form = UserRegistrationForm(request.POST)
+        form = UserRegistrationForm(request.POST, request=request)
         if form.is_valid():
             form.save(request)
-            # User is automatically logged in by allauth after signup
-            return redirect("index")
+            return redirect("account_email_verification_sent")
     else:
-        form = UserRegistrationForm()
-    return render(request, "account/signup.html", {"form": form})
+        # Initialize form with request to get referral code from session
+        form = UserRegistrationForm(request=request)
+
+        # If there's no referral code in session but it's in the URL, store it
+        ref_code = request.GET.get("ref")
+        if ref_code and not request.session.get("referral_code"):
+            request.session["referral_code"] = ref_code
+            # Reinitialize form to pick up the new session value
+            form = UserRegistrationForm(request=request)
+
+    return render(
+        request,
+        "account/signup.html",
+        {
+            "form": form,
+            "login_url": reverse("account_login"),
+        },
+    )
 
 
 @login_required

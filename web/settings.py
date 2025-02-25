@@ -33,6 +33,9 @@ PA_HOST = PA_USER + ".pythonanywhere.com"
 PA_WSGI = "/var/www/" + PA_USER + "_pythonanywhere_com_wsgi.py"
 PA_SOURCE_DIR = "/home/" + PA_USER + "/web"
 
+# Social Media Settings
+TWITTER_USERNAME = "alphaonelabs"
+
 # Production settings
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
