@@ -29,7 +29,7 @@ from django.utils.crypto import get_random_string
 from django.views import generic
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
-from django.views.generic import CreateView, DeleteView, UpdateView
+from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
 from .calendar_sync import generate_google_calendar_link, generate_ical_feed, generate_outlook_calendar_link
 from .decorators import teacher_required
@@ -2790,6 +2790,40 @@ def add_goods_to_cart(request, pk):
         messages.info(request, f"{product.name} is already in your cart.")
 
     return redirect("cart_view")
+
+
+class GoodsListingView(ListView):
+    model = Goods
+    template_name = "goods/goods_listing.html"
+    context_object_name = "products"
+    paginate_by = 15
+
+    def get_queryset(self):
+        queryset = Goods.objects.all()
+        store_name = self.request.GET.get("store_name")
+        product_type = self.request.GET.get("product_type")
+        category = self.request.GET.get("category")
+        min_price = self.request.GET.get("min_price")
+        max_price = self.request.GET.get("max_price")
+
+        if store_name:
+            queryset = queryset.filter(storefront__name__icontains=store_name)
+        if product_type:
+            queryset = queryset.filter(product_type=product_type)
+        if category:
+            queryset = queryset.filter(category__icontains=category)
+        if min_price:
+            queryset = queryset.filter(price__gte=min_price)
+        if max_price:
+            queryset = queryset.filter(price__lte=max_price)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["store_names"] = Storefront.objects.values_list("name", flat=True).distinct()
+        context["categories"] = Goods.objects.values_list("category", flat=True).distinct()
+        return context
 
 
 # Order Management

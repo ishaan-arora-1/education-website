@@ -150,6 +150,76 @@
             <i class="fas fa-arrow-right ml-2"></i>
           </a>
         </div>
+        <!-- Featured Products (3 across) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          {% for product in featured_products %}
+            <!-- Product Card -->
+            <div class="rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+              <div class="aspect-square w-full relative overflow-hidden rounded-lg mb-3">
+                {% if product.image %}
+                  <a href="{% url 'goods_detail' pk=product.id %}">
+                    <img src="{{ product.image.url }}"
+                         alt="{{ product.name }}"
+                         class="w-full h-full object-cover" />
+                  </a>
+                {% else %}
+                  <a href="{% url 'goods_detail' pk=product.id %}">
+                    <img src="{% static 'images/placeholder.png' %}"
+                         alt="{{ product.name }}"
+                         class="w-full h-full object-cover" />
+                  </a>
+                {% endif %}
+              </div>
+              <!-- Title and Price -->
+              <div class="mb-3">
+                <h3 class="text-lg font-semibold h-14 flex items-start">
+                  <a href="{% url 'goods_detail' pk=product.id %}"
+                     class="hover:text-orange-500 transition-colors duration-200 line-clamp-2">{{ product.name }}</a>
+                </h3>
+                <div class="flex items-center justify-between text-sm">
+                  {% if product.discount_price %}
+                    <span class="text-red-500 dark:text-red-400 font-bold">${{ product.discount_price }}</span>
+                    <span class="line-through text-gray-500 dark:text-gray-400">${{ product.price }}</span>
+                  {% else %}
+                    <span class="text-orange-600 dark:text-orange-500 font-bold">${{ product.price }}</span>
+                  {% endif %}
+                </div>
+              </div>
+              <!-- Stock Status -->
+              <div class="mb-3 text-sm text-gray-600 dark:text-gray-300">
+                {% if product.stock > 0 %}
+                  <span class="text-green-500 font-semibold">In Stock</span>
+                {% else %}
+                  <span class="text-red-500 font-semibold">Out of Stock</span>
+                {% endif %}
+              </div>
+              <!-- Add to Cart Button -->
+              <form method="post" action="{% url 'add_goods_to_cart' pk=product.id %}">
+                {% csrf_token %}
+                <button type="submit"
+                        class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold px-3 py-2 rounded-lg flex items-center justify-center"
+                        {% if product.stock == 0 %}disabled{% endif %}>
+                  <i class="fas fa-cart-plus mr-2"></i>
+                  {% if product.stock > 0 %}
+                    Add to Cart
+                  {% else %}
+                    Sold Out
+                  {% endif %}
+                </button>
+              </form>
+            </div>
+          {% empty %}
+            <p>No featured products available.</p>
+          {% endfor %}
+        </div>
+        <!-- Add view more link -->
+        <div class="text-right mt-4">
+          <a href="{% url 'goods_listing' %}"
+             class="text-orange-500 hover:text-orange-600 underline transition-colors duration-200">
+            <span>View More Products</span>
+            <i class="fas fa-arrow-right ml-2"></i>
+          </a>
+        </div>
         <!-- GSoC Announcement -->
         <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white shadow-lg my-8">
           <div class="flex items-center justify-between">
