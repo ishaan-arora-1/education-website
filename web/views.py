@@ -1812,6 +1812,7 @@ def checkout_success(request):
         # Lists to track enrollments for the receipt
         enrollments = []
         session_enrollments = []
+        goods_items = []
         total_amount = 0
 
         # Process enrollments
@@ -1838,6 +1839,11 @@ def checkout_success(request):
                 session_enrollments.append(session_enrollment)
                 total_amount += item.session.price
 
+            elif item.goods:
+                # Track goods items for the receipt
+                goods_items.append(item)
+                total_amount += item.final_price
+
         # Clear the cart
         cart.items.all().delete()
 
@@ -1851,6 +1857,7 @@ def checkout_success(request):
                 "user": user,
                 "enrollments": enrollments,
                 "session_enrollments": session_enrollments,
+                "goods_items": goods_items,
                 "total": total_amount,
             },
         )
