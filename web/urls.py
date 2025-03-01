@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import include, path
 
 from . import admin_views, views
-from .views import GoodsListingView, add_goods_to_cart
+from .views import GoodsListingView, add_goods_to_cart, sales_analytics, sales_data
 
 # Non-prefixed URLs
 urlpatterns = [
@@ -187,7 +187,7 @@ urlpatterns += i18n_patterns(
     path("products/", GoodsListingView.as_view(), name="goods_listing"),
     # Order Management
     path("orders/", login_required(views.OrderListView.as_view()), name="order_list"),
-    path("orders/<uuid:order_id>/", login_required(views.OrderDetailView.as_view()), name="order_detail"),
+    path("orders/<int:pk>/", login_required(views.OrderDetailView.as_view()), name="order_detail"),
     path(
         "store/<slug:store_slug>/orders/",
         login_required(views.OrderManagementView.as_view()),
@@ -204,6 +204,8 @@ urlpatterns += i18n_patterns(
         login_required(views.AdminMerchAnalyticsView.as_view()),
         name="admin_merch_analytics",
     ),
+    path("analytics/", sales_analytics, name="sales_analytics"),
+    path("analytics/data/", sales_data, name="sales_data"),
     prefix_default_language=True,
 )
 

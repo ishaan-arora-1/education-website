@@ -1815,6 +1815,14 @@ def checkout_success(request):
         goods_items = []
         total_amount = 0
 
+        # Create an order for goods
+        order = Order.objects.create(
+            user=user,
+            total_price=0,  # Will update later
+            status="completed",
+            storefront=None,  # Update if needed
+        )
+
         # Process enrollments
         for item in cart.items.all():
             if item.course:
@@ -1843,6 +1851,19 @@ def checkout_success(request):
                 # Track goods items for the receipt
                 goods_items.append(item)
                 total_amount += item.final_price
+
+                # Create order item for goods
+                OrderItem.objects.create(
+                    order=order,
+                    goods=item.goods,
+                    quantity=1,
+                    price_at_purchase=item.goods.price,
+                    discounted_price_at_purchase=item.goods.discount_price,
+                )
+
+        # Update order total price
+        order.total_price = total_amount
+        order.save()
 
         # Clear the cart
         cart.items.all().delete()
@@ -2914,6 +2935,49 @@ class AdminMerchAnalyticsView(LoginRequiredMixin, UserPassesTestMixin, generic.T
             }
         )
         return context
+
+
+@login_required
+def sales_analytics(request):
+    """View for displaying sales analytics."""
+    storefront = get_object_or_404(Storefront, teacher=request.user)
+    orders = Order.objects.filter(storefront=storefront, status="completed")
+
+    total_revenue = orders.aggregate(Sum("total_price"))["total_price__sum"] or 0
+    total_orders = orders.count()
+    conversion_rate = (total_orders / max(1, orders.count())) * 100
+
+    best_selling_products = (
+        OrderItem.objects.filter(order__storefront=storefront)
+        .values("goods__name")
+        .annotate(total_sold=Sum("quantity"))
+        .order_by("-total_sold")[:5]
+    )
+
+    context = {
+        "total_revenue": total_revenue,
+        "total_orders": total_orders,
+        "conversion_rate": conversion_rate,
+        "best_selling_products": best_selling_products,
+    }
+    return render(request, "analytics/analytics_dashboard.html", context)
+
+
+@login_required
+def sales_data(request):
+    """API endpoint for sales data."""
+    storefront = get_object_or_404(Storefront, teacher=request.user)
+    best_selling_products = (
+        OrderItem.objects.filter(order__storefront=storefront)
+        .values("goods__name")
+        .annotate(total_sold=Sum("quantity"))
+        .order_by("-total_sold")[:5]
+    )
+
+    data = {
+        "best_selling_products": list(best_selling_products),
+    }
+    return JsonResponse(data)
 
 
 class StorefrontCreateView(LoginRequiredMixin, CreateView):

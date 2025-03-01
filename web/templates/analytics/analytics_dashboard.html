@@ -3,12 +3,122 @@
 {% block title %}
   Sales Analytics - {{ user.get_full_name|default:user.username }}
 {% endblock title %}
+{% block extra_head %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+      /* Professional Glassmorphism Effect */
+      .glass-card {
+          background: rgba(255, 255, 255, 0.15);
+          backdrop-filter: blur(12px);
+          border-radius: 12px;
+          padding: 20px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+          transition: transform 0.3s ease-in-out;
+      }
+
+      .glass-card:hover {
+          transform: translateY(-5px);
+      }
+
+      /* Ensuring White Text for Numbers */
+      .text-highlight {
+          font-size: 2.5rem;
+          font-weight: bold;
+          color: white !important;
+          /* Always white */
+      }
+
+      /* Chart Container */
+      .chart-container {
+          background: rgba(255, 255, 255, 0.2);
+          backdrop-filter: blur(10px);
+          padding: 20px;
+          border-radius: 12px;
+      }
+  </style>
+{% endblock extra_head %}
 {% block content %}
-  <div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-4">Sales Analytics</h1>
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-      <p class="text-gray-600 dark:text-gray-400 mb-4">Here you can view your sales analytics.</p>
-      <!-- Add your analytics charts and data here -->
+  <div class="container mx-auto px-6 py-8">
+    <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-6">📊 Sales Analytics</h1>
+    <!-- Analytics Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- Total Revenue -->
+      <div class="glass-card text-white bg-gradient-to-r from-blue-600 to-blue-800">
+        <h2 class="text-lg font-semibold">Total Revenue</h2>
+        <p class="text-highlight">${{ total_revenue }}</p>
+      </div>
+      <!-- Total Orders -->
+      <div class="glass-card text-white bg-gradient-to-r from-gray-700 to-gray-900">
+        <h2 class="text-lg font-semibold">Total Orders</h2>
+        <p class="text-highlight">{{ total_orders }}</p>
+      </div>
+      <!-- Conversion Rate -->
+      <div class="glass-card text-white bg-gradient-to-r from-green-600 to-green-800">
+        <h2 class="text-lg font-semibold">Conversion Rate</h2>
+        <p class="text-highlight">{{ conversion_rate|floatformat:2 }}%</p>
+      </div>
+      <!-- Best Selling Products -->
+      <div class="glass-card text-white bg-gradient-to-r from-purple-600 to-purple-800">
+        <h2 class="text-lg font-semibold">Best Selling Products</h2>
+        <ul class="mt-2">
+          {% for product in best_selling_products %}
+            <li class="text-sm">
+              {{ product.goods__name }} - <strong class="text-highlight">{{ product.total_sold }}</strong> sold
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    <!-- Sales Chart -->
+    <div class="chart-container mt-8">
+      <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">📈 Sales Performance</h2>
+      <canvas id="salesChart"></canvas>
     </div>
   </div>
 {% endblock content %}
+{% block extra_js %}
+  <script>
+      document.addEventListener('DOMContentLoaded', function() {
+          fetch("{% url 'sales_data' %}")
+              .then(response => response.json())
+              .then(data => {
+                  const ctx = document.getElementById('salesChart').getContext('2d');
+                  new Chart(ctx, {
+                      type: 'bar',
+                      data: {
+                          labels: data.best_selling_products.map(product => product.goods__name),
+                          datasets: [{
+                              label: 'Total Sold',
+                              data: data.best_selling_products.map(product => product.total_sold),
+                              backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                              borderColor: 'rgba(54, 162, 235, 1)',
+                              borderWidth: 2,
+                              borderRadius: 8,
+                          }]
+                      },
+                      options: {
+                          responsive: true,
+                          plugins: {
+                              legend: {
+                                  display: false
+                              }
+                          },
+                          scales: {
+                              y: {
+                                  beginAtZero: true,
+                                  grid: {
+                                      color: "rgba(200, 200, 200, 0.2)"
+                                  }
+                              },
+                              x: {
+                                  grid: {
+                                      color: "rgba(200, 200, 200, 0.2)"
+                                  }
+                              }
+                          }
+                      }
+                  });
+              });
+      });
+  </script>
+{% endblock extra_js %}
