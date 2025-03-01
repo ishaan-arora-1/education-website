@@ -1815,12 +1815,34 @@ def checkout_success(request):
         goods_items = []
         total_amount = 0
 
-        # Create an order for goods
+        # Define shipping_address
+        shipping_address = request.POST.get("address") if cart.has_goods else None
+
+        # Check if the cart contains goods requiring shipping
+        has_goods = any(item.goods for item in cart.items.all())
+
+        # Extract shipping address from Stripe PaymentIntent
+        shipping_address = None
+        if has_goods:
+            shipping_data = getattr(payment_intent, "shipping", None)
+            if shipping_data:
+                # Construct structured shipping address
+                shipping_address = {
+                    "line1": shipping_data.address.line1,
+                    "line2": shipping_data.address.line2 or "",
+                    "city": shipping_data.address.city,
+                    "state": shipping_data.address.state,
+                    "postal_code": shipping_data.address.postal_code,
+                    "country": shipping_data.address.country,
+                }
+
+        # Create the Order with shipping address
         order = Order.objects.create(
-            user=user,
-            total_price=0,  # Will update later
-            status="completed",
-            storefront=None,  # Update if needed
+            user=user,  # User is defined earlier in guest/auth logic
+            total_price=0,  # Updated later
+            status="Order received",
+            shipping_address=shipping_address,
+            terms_accepted=True,
         )
 
         # Process enrollments
@@ -1880,6 +1902,8 @@ def checkout_success(request):
                 "session_enrollments": session_enrollments,
                 "goods_items": goods_items,
                 "total": total_amount,
+                "order": order,
+                "shipping_address": shipping_address,
             },
         )
 
@@ -2859,28 +2883,52 @@ class OrderManagementView(LoginRequiredMixin, UserPassesTestMixin, generic.ListV
     model = Order
     template_name = "orders/order_management.html"
     context_object_name = "orders"
+    paginate_by = 20
 
     def test_func(self):
         storefront = get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])
         return self.request.user == storefront.teacher
 
     def get_queryset(self):
-        return Order.objects.filter(items__goods__storefront__store_slug=self.kwargs["store_slug"]).distinct()
+        queryset = Order.objects.filter(items__goods__storefront__store_slug=self.kwargs["store_slug"]).distinct()
 
+        # Get status from request and filter
+        selected_status = self.request.GET.get("status")
+        if selected_status and selected_status != "all":
+            queryset = queryset.filter(status=selected_status)
 
-class OrderListView(LoginRequiredMixin, generic.ListView):
-    model = Order
-    template_name = "orders/order_list.html"
-    context_object_name = "orders"
+        return queryset
 
-    def get_queryset(self):
-        return Order.objects.filter(user=self.request.user).order_by("-created_at")
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["statuses"] = Order.STATUS_CHOICES  # Directly from model
+        context["selected_status"] = self.request.GET.get("status", "")
+        return context
 
 
 class OrderDetailView(LoginRequiredMixin, generic.DetailView):
     model = Order
     template_name = "orders/order_detail.html"
     context_object_name = "order"
+
+
+@login_required
+@require_POST
+def update_order_status(request, item_id):
+    order = get_object_or_404(Order, id=item_id, user=request.user)
+    new_status = request.POST.get("status").lower()  # Convert to lowercase for consistency
+
+    # Define allowed statuses inside the function
+    VALID_STATUSES = ["draft", "pending", "processing", "shipped", "completed", "cancelled", "refunded"]
+
+    if new_status not in VALID_STATUSES:
+        messages.error(request, "Invalid status.")
+        return redirect("order_detail", pk=item_id)
+
+    order.status = new_status
+    order.save()
+    messages.success(request, "Order status updated successfully.")
+    return redirect("order_detail", pk=item_id)
 
 
 # Analytics

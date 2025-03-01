@@ -186,13 +186,13 @@ urlpatterns += i18n_patterns(
     path("goods/add-to-cart/<int:pk>/", add_goods_to_cart, name="add_goods_to_cart"),
     path("products/", GoodsListingView.as_view(), name="goods_listing"),
     # Order Management
-    path("orders/", login_required(views.OrderListView.as_view()), name="order_list"),
     path("orders/<int:pk>/", login_required(views.OrderDetailView.as_view()), name="order_detail"),
     path(
         "store/<slug:store_slug>/orders/",
         login_required(views.OrderManagementView.as_view()),
         name="store_order_management",
     ),
+    path("orders/item/<int:item_id>/update-status/", views.update_order_status, name="update_order_status"),
     # Analytics
     path(
         "store/<slug:store_slug>/analytics/",

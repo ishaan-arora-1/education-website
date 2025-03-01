@@ -2,6 +2,7 @@ import os
 import random
 import string
 import time
+import uuid
 from io import BytesIO
 
 from allauth.account.signals import user_signed_up
@@ -1107,6 +1108,17 @@ class Order(models.Model):
     terms_accepted = models.BooleanField(default=False, help_text="User accepted terms during checkout")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None  # Check if it's a new order
+        super().save(*args, **kwargs)  # Save first to generate an ID
+
+        if is_new and not self.tracking_number:
+            self.tracking_number = self.generate_tracking_number()
+            super().save(update_fields=["tracking_number"])
+
+    def generate_tracking_number(self):
+        return f"TRACK-{self.pk}-{int(time.time())}-{uuid.uuid4().hex[:6].upper()}"
 
     def __str__(self):
         return f"Order #{self.id} ({self.user.email})"
