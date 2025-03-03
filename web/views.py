@@ -1840,11 +1840,12 @@ def checkout_success(request):
         order = Order.objects.create(
             user=user,  # User is defined earlier in guest/auth logic
             total_price=0,  # Updated later
-            status="Order received",
+            status="completed",
             shipping_address=shipping_address,
             terms_accepted=True,
         )
 
+        storefront = None
         # Process enrollments
         for item in cart.items.all():
             if item.course:
@@ -1882,13 +1883,22 @@ def checkout_success(request):
                     price_at_purchase=item.goods.price,
                     discounted_price_at_purchase=item.goods.discount_price,
                 )
+                # Capture storefront from the first goods item
+                if not storefront:
+                    storefront = item.goods.storefront
 
-        # Update order total price
+        # Update order details
         order.total_price = total_amount
+        if storefront:
+            order.storefront = goods_items[0].goods.storefront
         order.save()
 
         # Clear the cart
         cart.items.all().delete()
+
+        if storefront:
+            order.storefront = storefront
+            order.save(update_fields=["storefront"])
 
         # Render the receipt page
         return render(
@@ -2989,12 +2999,18 @@ class AdminMerchAnalyticsView(LoginRequiredMixin, UserPassesTestMixin, generic.T
 def sales_analytics(request):
     """View for displaying sales analytics."""
     storefront = get_object_or_404(Storefront, teacher=request.user)
+
+    # Get completed orders for this storefront
     orders = Order.objects.filter(storefront=storefront, status="completed")
 
-    total_revenue = orders.aggregate(Sum("total_price"))["total_price__sum"] or 0
+    # Calculate metrics
+    total_revenue = orders.aggregate(total=Sum("total_price"))["total"] or 0
     total_orders = orders.count()
-    conversion_rate = (total_orders / max(1, orders.count())) * 100
 
+    # Placeholder conversion rate (to be implemented properly later)
+    conversion_rate = 0.00  # Temporary placeholder
+
+    # Best selling products
     best_selling_products = (
         OrderItem.objects.filter(order__storefront=storefront)
         .values("goods__name")
@@ -3016,7 +3032,7 @@ def sales_data(request):
     """API endpoint for sales data."""
     storefront = get_object_or_404(Storefront, teacher=request.user)
     best_selling_products = (
-        OrderItem.objects.filter(order__storefront=storefront)
+        OrderItem.objects.filter(order__storefront=storefront, order__status="completed")
         .values("goods__name")
         .annotate(total_sold=Sum("quantity"))
         .order_by("-total_sold")[:5]
