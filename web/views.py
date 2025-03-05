@@ -3029,16 +3029,36 @@ def sales_analytics(request):
 
 @login_required
 def sales_data(request):
-    """API endpoint for sales data."""
+    # Get the user's storefront
     storefront = get_object_or_404(Storefront, teacher=request.user)
+
+    # Define valid statuses for metrics (e.g., include "completed" and "shipped")
+    valid_statuses = ["completed", "shipped"]
+    orders = Order.objects.filter(storefront=storefront, status__in=valid_statuses)
+
+    # Calculate total revenue
+    total_revenue = orders.aggregate(total=Sum("total_price"))["total"] or 0
+
+    # Calculate total orders
+    total_orders = orders.count()
+
+    # Calculate conversion rate (orders / visits * 100)
+    total_visits = WebRequest.objects.filter(path__contains="ref=").count()  # Adjust based on visit tracking
+    conversion_rate = (total_orders / total_visits * 100) if total_visits > 0 else 0.00
+
+    # Get best-selling products
     best_selling_products = (
-        OrderItem.objects.filter(order__storefront=storefront, order__status="completed")
+        OrderItem.objects.filter(order__storefront=storefront, order__status__in=valid_statuses)
         .values("goods__name")
         .annotate(total_sold=Sum("quantity"))
         .order_by("-total_sold")[:5]
     )
 
+    # Prepare response data
     data = {
+        "total_revenue": float(total_revenue),
+        "total_orders": total_orders,
+        "conversion_rate": round(conversion_rate, 2),
         "best_selling_products": list(best_selling_products),
     }
     return JsonResponse(data)
