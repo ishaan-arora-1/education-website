@@ -14,6 +14,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
@@ -22,11 +23,13 @@ from django.db.models import Avg, Count, Q, Sum
 from django.http import FileResponse, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
-from django.urls import NoReverseMatch, reverse
+from django.urls import NoReverseMatch, reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.crypto import get_random_string
+from django.views import generic
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
+from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
 from .calendar_sync import generate_google_calendar_link, generate_ical_feed, generate_outlook_calendar_link
 from .decorators import teacher_required
@@ -38,12 +41,14 @@ from .forms import (
     FeedbackForm,
     ForumCategoryForm,
     ForumTopicForm,
+    GoodsForm,
     InviteStudentForm,
     LearnForm,
     MessageTeacherForm,
     ProfileUpdateForm,
     ReviewForm,
     SessionForm,
+    StorefrontForm,
     TeacherSignupForm,
     TeachForm,
     UserRegistrationForm,
@@ -58,6 +63,7 @@ from .models import (
     Achievement,
     BlogComment,
     BlogPost,
+    Cart,
     CartItem,
     Challenge,
     ChallengeSubmission,
@@ -69,13 +75,18 @@ from .models import (
     ForumCategory,
     ForumReply,
     ForumTopic,
+    Goods,
+    Order,
+    OrderItem,
     PeerConnection,
     PeerMessage,
+    ProductImage,
     Profile,
     SearchLog,
     Session,
     SessionAttendance,
     SessionEnrollment,
+    Storefront,
     StudyGroup,
     TimeSlot,
     WebRequest,
@@ -1640,12 +1651,16 @@ def teacher_dashboard(request):
             }
         )
 
+    # Get the teacher's storefront if it exists
+    storefront = Storefront.objects.filter(teacher=request.user).first()
+
     context = {
         "courses": courses,
         "upcoming_sessions": upcoming_sessions,
         "course_stats": course_stats,
         "completion_rate": (total_completed / total_students * 100) if total_students > 0 else 0,
         "total_earnings": round(total_earnings, 2),
+        "storefront": storefront,
     }
     return render(request, "dashboard/teacher.html", context)
 
@@ -1797,8 +1812,40 @@ def checkout_success(request):
         # Lists to track enrollments for the receipt
         enrollments = []
         session_enrollments = []
+        goods_items = []
         total_amount = 0
 
+        # Define shipping_address
+        shipping_address = request.POST.get("address") if cart.has_goods else None
+
+        # Check if the cart contains goods requiring shipping
+        has_goods = any(item.goods for item in cart.items.all())
+
+        # Extract shipping address from Stripe PaymentIntent
+        shipping_address = None
+        if has_goods:
+            shipping_data = getattr(payment_intent, "shipping", None)
+            if shipping_data:
+                # Construct structured shipping address
+                shipping_address = {
+                    "line1": shipping_data.address.line1,
+                    "line2": shipping_data.address.line2 or "",
+                    "city": shipping_data.address.city,
+                    "state": shipping_data.address.state,
+                    "postal_code": shipping_data.address.postal_code,
+                    "country": shipping_data.address.country,
+                }
+
+        # Create the Order with shipping address
+        order = Order.objects.create(
+            user=user,  # User is defined earlier in guest/auth logic
+            total_price=0,  # Updated later
+            status="completed",
+            shipping_address=shipping_address,
+            terms_accepted=True,
+        )
+
+        storefront = None
         # Process enrollments
         for item in cart.items.all():
             if item.course:
@@ -1823,8 +1870,35 @@ def checkout_success(request):
                 session_enrollments.append(session_enrollment)
                 total_amount += item.session.price
 
+            elif item.goods:
+                # Track goods items for the receipt
+                goods_items.append(item)
+                total_amount += item.final_price
+
+                # Create order item for goods
+                OrderItem.objects.create(
+                    order=order,
+                    goods=item.goods,
+                    quantity=1,
+                    price_at_purchase=item.goods.price,
+                    discounted_price_at_purchase=item.goods.discount_price,
+                )
+                # Capture storefront from the first goods item
+                if not storefront:
+                    storefront = item.goods.storefront
+
+        # Update order details
+        order.total_price = total_amount
+        if storefront:
+            order.storefront = goods_items[0].goods.storefront
+        order.save()
+
         # Clear the cart
         cart.items.all().delete()
+
+        if storefront:
+            order.storefront = storefront
+            order.save(update_fields=["storefront"])
 
         # Render the receipt page
         return render(
@@ -1836,7 +1910,10 @@ def checkout_success(request):
                 "user": user,
                 "enrollments": enrollments,
                 "session_enrollments": session_enrollments,
+                "goods_items": goods_items,
                 "total": total_amount,
+                "order": order,
+                "shipping_address": shipping_address,
             },
         )
 
@@ -2666,3 +2743,357 @@ def referral_leaderboard(request):
     """Display the referral leaderboard."""
     top_referrers = get_referral_stats()
     return render(request, "web/referral_leaderboard.html", {"top_referrers": top_referrers})
+
+
+# Goods Views
+class GoodsListView(LoginRequiredMixin, generic.ListView):
+    model = Goods
+    template_name = "goods/goods_list.html"
+    context_object_name = "products"
+
+    def get_queryset(self):
+        return Goods.objects.filter(storefront__teacher=self.request.user)
+
+
+class GoodsDetailView(LoginRequiredMixin, generic.DetailView):
+    model = Goods
+    template_name = "goods/goods_detail.html"
+    context_object_name = "product"
+
+    def get_object(self):
+        return get_object_or_404(Goods, pk=self.kwargs["pk"])
+
+
+class GoodsCreateView(LoginRequiredMixin, UserPassesTestMixin, generic.CreateView):
+    model = Goods
+    form_class = GoodsForm
+    template_name = "goods/goods_form.html"
+
+    def test_func(self):
+        return hasattr(self.request.user, "storefront")
+
+    def form_valid(self, form):
+        form.instance.storefront = self.request.user.storefront
+        images = self.request.FILES.getlist("images")
+        product_type = form.cleaned_data.get("product_type")
+
+        # Validate digital product images
+        if product_type == "digital" and not images:
+            form.add_error(None, "Digital products require at least one image")
+            return self.form_invalid(form)
+
+        # Validate image constraints
+        if len(images) > 8:
+            form.add_error(None, "Maximum 8 images allowed")
+            return self.form_invalid(form)
+
+        for img in images:
+            if img.size > 5 * 1024 * 1024:
+                form.add_error(None, f"{img.name} exceeds 5MB size limit")
+                return self.form_invalid(form)
+
+        # Save main product first
+        super().form_valid(form)
+
+        # Save images after product creation
+        for image_file in images:
+            ProductImage.objects.create(goods=self.object, image=image_file)
+
+        return render(self.request, "goods/goods_create_success.html", {"product": self.object})
+
+    def form_invalid(self, form):
+        messages.error(self.request, f"Creation failed: {form.errors.as_text()}")
+        return super().form_invalid(form)
+
+    def get_success_url(self):
+        return reverse("goods_list")
+
+
+class GoodsUpdateView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView):
+    model = Goods
+    form_class = GoodsForm
+    template_name = "goods/goods_update.html"
+
+    # Filter by user's products only
+    def get_queryset(self):
+        return Goods.objects.filter(storefront__teacher=self.request.user)
+
+    # Verify ownership
+    def test_func(self):
+        return self.get_object().storefront.teacher == self.request.user
+
+    def get_success_url(self):
+        return reverse("goods_list")
+
+
+class GoodsDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Goods
+    template_name = "goods/goods_confirm_delete.html"
+    success_url = reverse_lazy("goods_list")
+
+    def test_func(self):
+        return self.request.user == self.get_object().storefront.teacher
+
+
+@login_required
+def add_goods_to_cart(request, pk):
+    product = get_object_or_404(Goods, pk=pk)
+    # Prevent adding out-of-stock items
+    if product.stock is None or product.stock <= 0:
+        messages.error(request, f"{product.name} is out of stock and cannot be added to cart.")
+        return redirect("goods_detail", pk=pk)  # Redirect back to product page
+
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_item, created = CartItem.objects.get_or_create(cart=cart, goods=product)
+
+    if created:
+        messages.success(request, f"{product.name} added to cart.")
+    else:
+        messages.info(request, f"{product.name} is already in your cart.")
+
+    return redirect("cart_view")
+
+
+class GoodsListingView(ListView):
+    model = Goods
+    template_name = "goods/goods_listing.html"
+    context_object_name = "products"
+    paginate_by = 15
+
+    def get_queryset(self):
+        queryset = Goods.objects.all()
+        store_name = self.request.GET.get("store_name")
+        product_type = self.request.GET.get("product_type")
+        category = self.request.GET.get("category")
+        min_price = self.request.GET.get("min_price")
+        max_price = self.request.GET.get("max_price")
+
+        if store_name:
+            queryset = queryset.filter(storefront__name__icontains=store_name)
+        if product_type:
+            queryset = queryset.filter(product_type=product_type)
+        if category:
+            queryset = queryset.filter(category__icontains=category)
+        if min_price:
+            queryset = queryset.filter(price__gte=min_price)
+        if max_price:
+            queryset = queryset.filter(price__lte=max_price)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["store_names"] = Storefront.objects.values_list("name", flat=True).distinct()
+        context["categories"] = Goods.objects.values_list("category", flat=True).distinct()
+        return context
+
+
+# Order Management
+class OrderManagementView(LoginRequiredMixin, UserPassesTestMixin, generic.ListView):
+    model = Order
+    template_name = "orders/order_management.html"
+    context_object_name = "orders"
+    paginate_by = 20
+
+    def test_func(self):
+        storefront = get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])
+        return self.request.user == storefront.teacher
+
+    def get_queryset(self):
+        queryset = Order.objects.filter(items__goods__storefront__store_slug=self.kwargs["store_slug"]).distinct()
+
+        # Get status from request and filter
+        selected_status = self.request.GET.get("status")
+        if selected_status and selected_status != "all":
+            queryset = queryset.filter(status=selected_status)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["statuses"] = Order.STATUS_CHOICES  # Directly from model
+        context["selected_status"] = self.request.GET.get("status", "")
+        return context
+
+
+class OrderDetailView(LoginRequiredMixin, generic.DetailView):
+    model = Order
+    template_name = "orders/order_detail.html"
+    context_object_name = "order"
+
+
+@login_required
+@require_POST
+def update_order_status(request, item_id):
+    order = get_object_or_404(Order, id=item_id, user=request.user)
+    new_status = request.POST.get("status").lower()  # Convert to lowercase for consistency
+
+    # Define allowed statuses inside the function
+    VALID_STATUSES = ["draft", "pending", "processing", "shipped", "completed", "cancelled", "refunded"]
+
+    if new_status not in VALID_STATUSES:
+        messages.error(request, "Invalid status.")
+        return redirect("order_detail", pk=item_id)
+
+    order.status = new_status
+    order.save()
+    messages.success(request, "Order status updated successfully.")
+    return redirect("order_detail", pk=item_id)
+
+
+# Analytics
+class StoreAnalyticsView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
+    template_name = "analytics/analytics_dashboard.html"
+
+    def test_func(self):
+        storefront = get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])
+        return self.request.user == storefront.teacher
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        storefront = get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])
+
+        # Store-specific analytics
+        orders = Order.objects.filter(storefront=storefront, status="completed")
+
+        context.update(
+            {
+                "total_sales": orders.count(),
+                "total_revenue": orders.aggregate(Sum("total_price"))["total_price__sum"] or 0,
+                "top_products": OrderItem.objects.filter(order__storefront=storefront)
+                .values("goods__name")
+                .annotate(total_sold=Sum("quantity"))
+                .order_by("-total_sold")[:5],
+                "storefront": storefront,
+            }
+        )
+        return context
+
+
+class AdminMerchAnalyticsView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
+    template_name = "analytics/admin_analytics.html"
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Platform-wide analytics
+        context.update(
+            {
+                "total_sales": Order.objects.filter(status="completed").count(),
+                "total_revenue": Order.objects.filter(status="completed").aggregate(Sum("total_price"))[
+                    "total_price__sum"
+                ]
+                or 0,
+                "top_storefronts": Storefront.objects.annotate(total_sales=Count("goods__orderitem")).order_by(
+                    "-total_sales"
+                )[:5],
+            }
+        )
+        return context
+
+
+@login_required
+def sales_analytics(request):
+    """View for displaying sales analytics."""
+    storefront = get_object_or_404(Storefront, teacher=request.user)
+
+    # Get completed orders for this storefront
+    orders = Order.objects.filter(storefront=storefront, status="completed")
+
+    # Calculate metrics
+    total_revenue = orders.aggregate(total=Sum("total_price"))["total"] or 0
+    total_orders = orders.count()
+
+    # Placeholder conversion rate (to be implemented properly later)
+    conversion_rate = 0.00  # Temporary placeholder
+
+    # Best selling products
+    best_selling_products = (
+        OrderItem.objects.filter(order__storefront=storefront)
+        .values("goods__name")
+        .annotate(total_sold=Sum("quantity"))
+        .order_by("-total_sold")[:5]
+    )
+
+    context = {
+        "total_revenue": total_revenue,
+        "total_orders": total_orders,
+        "conversion_rate": conversion_rate,
+        "best_selling_products": best_selling_products,
+    }
+    return render(request, "analytics/analytics_dashboard.html", context)
+
+
+@login_required
+def sales_data(request):
+    # Get the user's storefront
+    storefront = get_object_or_404(Storefront, teacher=request.user)
+
+    # Define valid statuses for metrics (e.g., include "completed" and "shipped")
+    valid_statuses = ["completed", "shipped"]
+    orders = Order.objects.filter(storefront=storefront, status__in=valid_statuses)
+
+    # Calculate total revenue
+    total_revenue = orders.aggregate(total=Sum("total_price"))["total"] or 0
+
+    # Calculate total orders
+    total_orders = orders.count()
+
+    # Calculate conversion rate (orders / visits * 100)
+    total_visits = WebRequest.objects.filter(path__contains="ref=").count()  # Adjust based on visit tracking
+    conversion_rate = (total_orders / total_visits * 100) if total_visits > 0 else 0.00
+
+    # Get best-selling products
+    best_selling_products = (
+        OrderItem.objects.filter(order__storefront=storefront, order__status__in=valid_statuses)
+        .values("goods__name")
+        .annotate(total_sold=Sum("quantity"))
+        .order_by("-total_sold")[:5]
+    )
+
+    # Prepare response data
+    data = {
+        "total_revenue": float(total_revenue),
+        "total_orders": total_orders,
+        "conversion_rate": round(conversion_rate, 2),
+        "best_selling_products": list(best_selling_products),
+    }
+    return JsonResponse(data)
+
+
+class StorefrontCreateView(LoginRequiredMixin, CreateView):
+    model = Storefront
+    form_class = StorefrontForm
+    template_name = "storefront/storefront_form.html"
+    success_url = "/dashboard/teacher/"
+
+    def dispatch(self, request, *args, **kwargs):
+        if Storefront.objects.filter(teacher=request.user).exists():
+            return redirect("storefront_update", store_slug=request.user.storefront.store_slug)
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        form.instance.teacher = self.request.user  # Set the teacher field to the current user
+        return super().form_valid(form)
+
+
+class StorefrontUpdateView(LoginRequiredMixin, UpdateView):
+    model = Storefront
+    form_class = StorefrontForm
+    template_name = "storefront/storefront_form.html"
+    success_url = "/dashboard/teacher/"
+
+    def get_object(self):
+        return get_object_or_404(Storefront, teacher=self.request.user)
+
+
+class StorefrontDetailView(LoginRequiredMixin, generic.DetailView):
+    model = Storefront
+    template_name = "storefront/storefront_detail.html"
+    context_object_name = "storefront"
+
+    def get_object(self):
+        return get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])

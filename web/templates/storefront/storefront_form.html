@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {% if object %}
+    Update Storefront - {{ object.name }}
+  {% else %}
+    Create Storefront
+  {% endif %}
+{% endblock title %}
+{% block content %}
+  <div class="max-w-3xl mx-auto bg-white shadow-lg rounded-lg p-8 mt-10">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">
+      {% if object %}
+        Update Storefront
+      {% else %}
+        Create Storefront
+      {% endif %}
+    </h1>
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
+      {% csrf_token %}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Store Name -->
+        <div>
+          <label class="block text-gray-700 font-semibold">Store Name:</label>
+          <input type="text"
+                 name="name"
+                 id="storeName"
+                 value="{{ form.name.value|default_if_none:'' }}"
+                 class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-teal-500"
+                 placeholder="Enter store name"
+                 required />
+        </div>
+        <!-- Store Slug (Editable during creation, Read-only during edit) -->
+        <div>
+          <label class="block text-gray-700 font-semibold">Store Slug:</label>
+          <input type="text"
+                 name="store_slug"
+                 id="storeSlug"
+                 value="{{ form.store_slug.value|default_if_none:'' }}"
+                 class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-teal-500"
+                 placeholder="Suggested slug will appear here"
+                 {% if object %}readonly class="bg-gray-100 cursor-not-allowed"{% endif %} />
+          <p class="text-sm text-gray-500">This will be part of the store URL.</p>
+        </div>
+        <!-- Description -->
+        <div class="col-span-2">
+          <label class="block text-gray-700 font-semibold">Description:</label>
+          <textarea name="description"
+                    class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-teal-500"
+                    rows="3"
+                    placeholder="Describe your store">{{ form.description.value|default_if_none:'' }}</textarea>
+        </div>
+        <!-- Is Active Toggle -->
+        <div class="col-span-2 flex items-center gap-4">
+          <label class="text-gray-700 font-semibold">Store Active:</label>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox"
+                   name="is_active"
+                   class="sr-only peer"
+                   {% if form.is_active.value %}checked{% endif %} />
+            <div class="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-teal-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-1 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500">
+            </div>
+          </label>
+        </div>
+        <!-- Logo Upload -->
+        <div class="col-span-2">
+          <label class="block text-gray-700 font-semibold">Store Logo:</label>
+          <input type="file"
+                 name="logo"
+                 id="logoInput"
+                 class="mt-1 w-full text-gray-700" />
+          <p class="text-sm text-gray-500">Recommended size: 200x200px</p>
+          {% if form.logo.value %}
+            <img id="logoPreview"
+                 src="{{ form.logo.value.url }}"
+                 alt="Store Logo"
+                 class="mt-3 w-24 h-24 object-cover rounded-lg" />
+          {% else %}
+            <img id="logoPreview"
+                 class="hidden mt-3 w-24 h-24 object-cover rounded-lg" />
+          {% endif %}
+        </div>
+      </div>
+      <!-- Submit Button -->
+      <div class="text-center">
+        <button type="submit"
+                class="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-3 rounded-lg shadow-md transform transition duration-200 hover:scale-105">
+          {% if object %}
+            Save Changes
+          {% else %}
+            Create Storefront
+          {% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+  <!-- JavaScript for Live Slug Generation & Logo Preview -->
+  <script>
+      document.addEventListener("DOMContentLoaded", function() {
+          const storeNameInput = document.getElementById('storeName');
+          const storeSlugInput = document.getElementById('storeSlug');
+
+          // Only generate slug automatically if it's a new store
+          if (!storeSlugInput.hasAttribute("readonly")) {
+              storeNameInput.addEventListener('input', function() {
+                  let storeSlug = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                  storeSlugInput.value = storeSlug;
+              });
+          }
+
+          // Logo preview
+          document.getElementById('logoInput').addEventListener('change', function(event) {
+              const reader = new FileReader();
+              reader.onload = function() {
+                  const img = document.getElementById('logoPreview');
+                  img.src = reader.result;
+                  img.classList.remove('hidden');
+              };
+              reader.readAsDataURL(event.target.files[0]);
+          });
+      });
+  </script>
+{% endblock content %}

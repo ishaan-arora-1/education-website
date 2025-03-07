@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Product Details - {{ product.name }}
+{% endblock title %}
+{% block content %}
+  <div class="container mx-auto px-4 py-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <!-- Product Image -->
+      <div class="flex justify-center">
+        <img src="{{ product.image_url }}"
+             alt="{{ product.name }}"
+             class="rounded-lg shadow-lg w-full md:w-3/4" />
+      </div>
+      <!-- Product Details -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h1 class="text-3xl font-bold mb-4">{{ product.name }}</h1>
+        <p class="text-gray-600 dark:text-gray-400 mb-4">{{ product.description }}</p>
+        <!-- Price Section -->
+        <div class="mb-4">
+          {% if product.discount_price %}
+            <p class="text-lg text-gray-500 line-through">Original: ${{ product.price }}</p>
+            <p class="text-2xl font-bold text-red-500">Now: ${{ product.discount_price }}</p>
+          {% else %}
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">${{ product.price }}</p>
+          {% endif %}
+        </div>
+        <!-- Stock Status -->
+        <p class="text-gray-600 dark:text-gray-400 mb-4">
+          Stock:
+          {% if product.stock > 0 %}
+            <span class="text-green-500 font-semibold">In Stock</span>
+          {% else %}
+            <span class="text-red-500 font-semibold">Out of Stock</span>
+          {% endif %}
+        </p>
+        <p class="text-gray-600 dark:text-gray-400 mb-4">Category: {{ product.category }}</p>
+        <p class="text-gray-600 dark:text-gray-400 mb-4">Product Type: {{ product.get_product_type_display }}</p>
+        <!-- Add to Cart Button -->
+        <div class="mt-6">
+          <form method="post" action="{% url 'add_goods_to_cart' product.pk %}">
+            {% csrf_token %}
+            <button type="submit"
+                    class="bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition duration-300"
+                    {% if product.stock == 0 %}disabled{% endif %}>
+              {% if product.stock > 0 %}
+                Add to Cart
+              {% else %}
+                Sold Out
+              {% endif %}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

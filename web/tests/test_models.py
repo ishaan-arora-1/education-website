@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 
-from web.models import Course, Enrollment, Profile, Subject
+from web.models import Course, Enrollment, Goods, Order, OrderItem, Profile, Storefront, Subject
 
 
 @override_settings(STRIPE_SECRET_KEY="dummy_key")
@@ -155,3 +155,91 @@ class EnrollmentModelTests(TestCase):
         expected_str = f"{self.student.username} - {self.course.title}"
         self.assertEqual(str(enrollment), expected_str)
         self.assertEqual(str(enrollment), expected_str)
+
+
+class GoodsModelTests(TestCase):
+    def setUp(self):
+        self.teacher = User.objects.create_user(
+            username="teacher",
+            email="teacher@example.com",
+            password="teacherpass123",
+        )
+        self.teacher_profile, _ = Profile.objects.get_or_create(user=self.teacher, defaults={"is_teacher": True})
+        self.storefront = Storefront.objects.create(
+            teacher=self.teacher,
+            name="Test Store",
+            description="Test Store Description",
+        )
+
+    def test_add_goods_to_store(self):
+        """Test that a teacher can add goods to their store"""
+        goods = Goods.objects.create(
+            name="Test Good",
+            description="Test Good Description",
+            price=49.99,
+            discount_price=39.99,  # Provide a default value for discount_price
+            product_type="physical",
+            stock=100,
+            storefront=self.storefront,
+        )
+        self.assertEqual(goods.name, "Test Good")
+        self.assertEqual(goods.storefront, self.storefront)
+        self.assertEqual(goods.price, 49.99)
+        self.assertEqual(goods.discount_price, 39.99)
+        self.assertEqual(goods.stock, 100)
+        self.assertEqual(goods.product_type, "physical")
+
+
+class OrderModelTests(TestCase):
+    def setUp(self):
+        self.teacher = User.objects.create_user(
+            username="teacher",
+            email="teacher@example.com",
+            password="teacherpass123",
+        )
+        self.student = User.objects.create_user(
+            username="student",
+            email="student@example.com",
+            password="studentpass123",
+        )
+        self.teacher_profile, _ = Profile.objects.get_or_create(user=self.teacher, defaults={"is_teacher": True})
+        self.student_profile, _ = Profile.objects.get_or_create(user=self.student, defaults={"is_teacher": False})
+        self.storefront = Storefront.objects.create(
+            teacher=self.teacher,
+            name="Test Store",
+            description="Test Store Description",
+        )
+        self.goods = Goods.objects.create(
+            name="Test Good",
+            description="Test Good Description",
+            price=49.99,
+            discount_price=39.99,  # Provide a default value for discount_price
+            product_type="physical",
+            stock=100,
+            storefront=self.storefront,
+        )
+
+    def test_checkout_item(self):
+        """Test that an item can be checked out completely"""
+        order = Order.objects.create(
+            user=self.student,
+            total_price=self.goods.price,
+            status="pending",
+        )
+        order_item = OrderItem.objects.create(
+            order=order,
+            goods=self.goods,
+            quantity=1,
+            price_at_purchase=self.goods.price,
+        )
+        self.assertEqual(order.user, self.student)
+        self.assertEqual(order.total_price, self.goods.price)
+        self.assertEqual(order.status, "pending")
+        self.assertEqual(order_item.goods, self.goods)
+        self.assertEqual(order_item.quantity, 1)
+        self.assertEqual(order_item.price_at_purchase, self.goods.price)
+
+        # Simulate payment completion
+        order.status = "completed"
+        order.save()
+        self.assertEqual(order.status, "completed")

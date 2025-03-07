@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Add New Product - {{ user.get_full_name|default:user.username }}
+{% endblock title %}
+{% block content %}
+  <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-xl p-8 mt-8">
+    <h1 class="text-3xl font-bold text-gray-900 text-center mb-6">Create a New Product</h1>
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
+      {% csrf_token %}
+      <div class="grid grid-cols-2 gap-6">
+        <!-- Left Column -->
+        <div class="space-y-5">
+          <div>
+            <label class="block text-gray-800 font-semibold">Product Name *</label>
+            {{ form.name }}
+          </div>
+          <div>
+            <label class="block text-gray-800 font-semibold">Description</label>
+            {{ form.description }}
+            <small class="text-gray-500">Include key features and specifications.</small>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-gray-800 font-semibold">Price (USD) *</label>
+              <input type="number"
+                     name="price"
+                     class="w-full p-2 border rounded-lg"
+                     required />
+            </div>
+            <div>
+              <label class="block text-gray-800 font-semibold">Discounted Price</label>
+              <input type="number"
+                     name="discount_price"
+                     class="w-full p-2 border rounded-lg" />
+              <small class="text-gray-500">Optional: If offering a discount.</small>
+            </div>
+          </div>
+          <div id="stock-container">
+            <label class="block text-gray-800 font-semibold">Stock Quantity</label>
+            <input type="number" name="stock" class="w-full p-2 border rounded-lg" />
+            <small class="text-gray-500">If digital product, leave this empty.</small>
+          </div>
+        </div>
+        <!-- Right Column -->
+        <div class="space-y-5">
+          <div>
+            <label class="block text-gray-800 font-semibold">Product Type</label>
+            <select name="product_type"
+                    id="product-type"
+                    class="w-full p-2 border rounded-lg bg-gray-50">
+              <option value="physical">Physical Product</option>
+              <option value="digital">Digital Product</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-gray-800 font-semibold">Category</label>
+            <input type="text" name="category" class="w-full p-2 border rounded-lg" />
+            <small class="text-gray-500">E.g., Books, Electronics, Apparel</small>
+          </div>
+          <div id="file-container" style="display: none;">
+            <label class="block text-gray-800 font-semibold">Upload Product File</label>
+            <div class="border border-gray-300 p-2 rounded-lg bg-gray-50">{{ form.file }}</div>
+            <small class="text-gray-500">Required for digital products.</small>
+          </div>
+          <div>
+            <label class="block text-gray-800 font-semibold">Upload Product Images (Max: 8)</label>
+            <div class="border border-gray-300 p-2 rounded-lg bg-gray-50">
+              <input type="file" id="image-input" name="images" multiple accept="image/*" />
+            </div>
+            <small class="text-gray-500">Max 8 images, each up to 5MB. Selected images will be shown below.</small>
+            <div id="image-preview" class="grid grid-cols-4 gap-2 mt-2"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Availability Toggle Button -->
+      <div class="flex items-center space-x-3">
+        <label class="text-gray-800 font-semibold">Available for Sale</label>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox"
+                 class="sr-only peer"
+                 id="available-toggle"
+                 name="is_available" />
+          <div class="w-12 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6">
+          </div>
+        </label>
+      </div>
+      <!-- Submit Button -->
+      <button type="submit"
+              class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 rounded-xl text-lg shadow-md">
+        Create Product
+      </button>
+    </form>
+  </div>
+  <!-- JavaScript for Toggling Stock and File Fields -->
+  <script>
+      document.addEventListener("DOMContentLoaded", function() {
+          const productType = document.querySelector("[name='product_type']");
+          const stockContainer = document.getElementById("stock-container");
+          const fileContainer = document.getElementById("file-container");
+
+          function updateFormFields() {
+              if (productType.value === "digital") {
+                  stockContainer.style.display = "none";
+                  fileContainer.style.display = "block";
+              } else {
+                  stockContainer.style.display = "block";
+                  fileContainer.style.display = "none";
+              }
+          }
+
+          productType.addEventListener("change", updateFormFields);
+          updateFormFields(); // Set initial state
+
+          // Image Upload Logic
+          const imageInput = document.getElementById("image-input");
+          const previewContainer = document.getElementById("image-preview");
+          const maxImages = 8;
+          let selectedFiles = new Map(); // Store unique images by name
+
+          imageInput.addEventListener("change", function() {
+              const newFiles = Array.from(imageInput.files);
+              const totalFiles = selectedFiles.size + newFiles.length;
+
+              // Check if adding new files exceeds the limit
+              if (totalFiles > maxImages) {
+                  alert(`You can upload a maximum of ${maxImages} images. You already selected ${selectedFiles.size}.`);
+                  imageInput.value = "";
+                  return;
+              }
+
+              for (const file of newFiles) {
+                  if (selectedFiles.has(file.name)) {
+                      alert(`"${file.name}" is already selected. Duplicate images are not allowed.`);
+                      imageInput.value = "";
+                      return;
+                  }
+
+                  selectedFiles.set(file.name, file);
+                  displayImagePreview(file);
+              }
+
+              updateInputFiles();
+          });
+
+          function displayImagePreview(file) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                  const imgContainer = document.createElement("div");
+                  imgContainer.className = "relative group inline-block m-2";
+
+                  const img = document.createElement("img");
+                  img.src = e.target.result;
+                  img.className = "w-20 h-20 rounded-lg object-cover border shadow-sm";
+
+                  // Delete button
+                  const deleteBtn = document.createElement("button");
+                  deleteBtn.innerHTML = "✕";
+                  deleteBtn.className = "absolute top-0 right-0 bg-red-600 text-white rounded-full w-5 h-5 text-xs hidden group-hover:block";
+                  deleteBtn.onclick = () => {
+                      selectedFiles.delete(file.name);
+                      imgContainer.remove();
+                      updateInputFiles();
+                  };
+
+                  imgContainer.appendChild(img);
+                  imgContainer.appendChild(deleteBtn);
+                  previewContainer.appendChild(imgContainer);
+              };
+              reader.readAsDataURL(file);
+          }
+
+          function updateInputFiles() {
+              const dataTransfer = new DataTransfer();
+              selectedFiles.forEach(file => dataTransfer.items.add(file));
+              imageInput.files = dataTransfer.files;
+          }
+      });
+  </script>
+{% endblock content %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Confirm Delete - {{ object.name }}
+{% endblock title %}
+{% block content %}
+  <div class="container mx-auto px-4 py-8 flex justify-center items-center min-h-screen">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 max-w-md text-center">
+      <h1 class="text-3xl font-bold text-red-600 flex items-center justify-center gap-2">
+        <svg class="w-6 h-6 text-red-600"
+             xmlns="http://www.w3.org/2000/svg"
+             fill="none"
+             viewBox="0 0 24 24"
+             stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M5 12h14M9 16h6M9 8h6"></path>
+        </svg>
+        Confirm Delete
+      </h1>
+      <p class="text-gray-600 dark:text-gray-300 mt-4">
+        Are you sure you want to delete <span class="font-semibold text-gray-900 dark:text-white">"{{ object.name }}"</span>?
+      </p>
+      <form method="post" class="mt-6">
+        {% csrf_token %}
+        <button type="submit"
+                class="bg-red-500 hover:bg-red-600 text-white font-semibold px-6 py-2 rounded-lg transition duration-300">
+          Yes, Delete
+        </button>
+        <a href="{% url 'goods_list' %}"
+           class="bg-gray-500 hover:bg-gray-600 text-white font-semibold px-6 py-2 rounded-lg ml-2 transition duration-300">
+          Cancel
+        </a>
+      </form>
+    </div>
+  </div>
+{% endblock content %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Order Management
+{% endblock title %}
+{% block content %}
+  <div class="container mx-auto px-6 py-8">
+    <div class="max-w-7xl mx-auto">
+      <h1 class="text-3xl font-bold mb-6">Order Management</h1>
+      <!-- Filter Section -->
+      <div class="mb-6 flex items-center space-x-4">
+        <form method="get" class="flex items-center space-x-4">
+          <label for="status" class="text-lg font-medium">Filter by Status:</label>
+          <select name="status"
+                  id="status"
+                  class="form-select border rounded-lg px-4 py-2">
+            <option value="all"
+                    {% if selected_status == "all" or not selected_status %}selected{% endif %}>All Statuses</option>
+            {% for value, display in statuses %}
+              <option value="{{ value }}"
+                      {% if selected_status == value %}selected{% endif %}>{{ display|title }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit"
+                  class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">Filter</button>
+        </form>
+      </div>
+      <!-- Orders Table -->
+      <div class="overflow-x-auto bg-white shadow-md rounded-lg">
+        <table class="min-w-full border border-gray-300 rounded-lg">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="px-6 py-3 border-b">Order ID</th>
+              <th class="px-6 py-3 border-b">Buyer</th>
+              <th class="px-6 py-3 border-b">Status</th>
+              <th class="px-6 py-3 border-b">Total Price</th>
+              <th class="px-6 py-3 border-b">Tracking Number</th>
+              <th class="px-6 py-3 border-b">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y">
+            {% for order in orders %}
+              <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 border-b text-center">{{ order.id }}</td>
+                <td class="px-6 py-4 border-b">{{ order.user.get_full_name|default:order.user.username }}</td>
+                <td class="px-6 py-4 border-b">
+                  <span class="px-3 py-1 rounded-lg text-sm font-medium {% if order.status == 'completed' %} bg-green-200 text-green-800 {% elif order.status == 'pending' %} bg-yellow-200 text-yellow-800 {% else %} bg-gray-200 text-gray-800 {% endif %}">
+                    {{ order.get_status_display }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 border-b text-center">${{ order.total_price }}</td>
+                <td class="px-6 py-4 border-b text-center">{{ order.tracking_number|default:"N/A" }}</td>
+                <td class="px-6 py-4 border-b text-center">
+                  <a href="{% url 'order_detail' order.id %}"
+                     class="text-blue-600 hover:text-blue-800 font-semibold">View</a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="6" class="px-6 py-4 text-center text-gray-500">No orders found.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <!-- Pagination -->
+      <div class="mt-6 text-center">
+        {% if is_paginated %}
+          <nav class="inline-flex space-x-4">
+            {% if page_obj.has_previous %}
+              <a href="?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}page={{ page_obj.previous_page_number }}"
+                 class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Previous</a>
+            {% endif %}
+            <span class="px-4 py-2 text-lg font-semibold">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+              <a href="?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}page={{ page_obj.next_page_number }}"
+                 class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Next</a>
+            {% endif %}
+          </nav>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock content %}

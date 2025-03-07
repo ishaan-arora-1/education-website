@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Create Storefront - {{ user.get_full_name|default:user.username }}
+{% endblock title %}
+{% block content %}
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-4">Create Storefront</h1>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit"
+              class="bg-teal-500 hover:bg-teal-600 text-white font-semibold px-4 py-2 rounded-lg">
+        Create Storefront
+      </button>
+    </form>
+  </div>
+{% endblock content %}

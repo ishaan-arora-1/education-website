@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Update Product - {{ user.get_full_name|default:user.username }}
+{% endblock title %}
+{% block content %}
+  <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-xl p-8 mt-8">
+    <h1 class="text-3xl font-bold text-gray-900 text-center mb-6">Update Product</h1>
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
+      {% csrf_token %}
+      <div class="grid grid-cols-2 gap-6">
+        <!-- Left Column -->
+        <div class="space-y-5">
+          <div>
+            <label class="block text-gray-800 font-semibold">Product Name *</label>
+            {{ form.name }}
+          </div>
+          <div>
+            <label class="block text-gray-800 font-semibold">Description</label>
+            {{ form.description }}
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-gray-800 font-semibold">Price (USD) *</label>
+              {{ form.price }}
+            </div>
+            <div>
+              <label class="block text-gray-800 font-semibold">Discounted Price</label>
+              {{ form.discount_price }}
+            </div>
+          </div>
+          <div id="stock-container"
+               style="display: {% if form.product_type.value == 'physical' %}block{% else %}none{% endif %}">
+            <label class="block text-gray-800 font-semibold">Stock Quantity</label>
+            {{ form.stock }}
+          </div>
+        </div>
+        <!-- Right Column -->
+        <div class="space-y-5">
+          <div>
+            <label class="block text-gray-800 font-semibold">Product Type</label>
+            {{ form.product_type }}
+          </div>
+          <div>
+            <label class="block text-gray-800 font-semibold">Category</label>
+            {{ form.category }}
+          </div>
+          <div id="file-container"
+               style="display: {% if form.product_type.value == 'digital' %}block{% else %}none{% endif %}">
+            <label class="block text-gray-800 font-semibold">Upload Product File</label>
+            <div class="border border-gray-300 p-2 rounded-lg bg-gray-50">{{ form.file }}</div>
+          </div>
+          <div>
+            <label class="block text-gray-800 font-semibold">Upload Product Images (Max: 8)</label>
+            <div class="border border-gray-300 p-2 rounded-lg bg-gray-50">
+              <input type="file" id="image-input" name="images" multiple accept="image/*" />
+            </div>
+            <div id="image-preview" class="grid grid-cols-4 gap-2 mt-2">
+              {% for image in product.images.all %}
+                <img src="{{ image.url }}"
+                     class="w-20 h-20 rounded-lg object-cover border shadow-sm" />
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Availability Toggle -->
+      <div class="flex items-center space-x-3">
+        <label class="text-gray-800 font-semibold">Available for Sale</label>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox"
+                 class="sr-only peer"
+                 id="available-toggle"
+                 name="is_available"
+                 {% if form.is_available.value %}checked{% endif %} />
+          <div class="w-12 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6">
+          </div>
+        </label>
+      </div>
+      <!-- Submit Button -->
+      <button type="submit"
+              class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 rounded-xl text-lg shadow-md">
+        Save Changes
+      </button>
+    </form>
+  </div>
+  <!-- JavaScript for Product Type Logic -->
+  <script>
+      document.addEventListener("DOMContentLoaded", function() {
+          const productType = document.querySelector("[name='product_type']");
+          const stockContainer = document.getElementById("stock-container");
+          const fileContainer = document.getElementById("file-container");
+
+          function updateFormFields() {
+              if (productType.value === "digital") {
+                  stockContainer.style.display = "none";
+                  fileContainer.style.display = "block";
+              } else {
+                  stockContainer.style.display = "block";
+                  fileContainer.style.display = "none";
+              }
+          }
+
+          productType.addEventListener("change", updateFormFields);
+          updateFormFields();
+      });
+  </script>
+{% endblock content %}

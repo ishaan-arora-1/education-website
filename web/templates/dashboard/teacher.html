@@ -185,5 +185,55 @@
         </div>
       </div>
     </div>
+    <!-- Merchandise Section -->
+    {% if storefront %}
+      <div class="mt-12 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Storefront Management</h2>
+        <p class="text-gray-600 dark:text-gray-400 mb-4">Manage your digital storefront, products, and sales analytics.</p>
+        <div class="flex flex-wrap gap-4">
+          <!-- Add New Product -->
+          <a href="{% url 'goods_create' store_slug=storefront.store_slug %}"
+             class="bg-green-500 hover:bg-green-600 text-white font-semibold px-5 py-3 rounded-lg flex items-center">
+            <i class="fas fa-plus-circle mr-2"></i> New Product
+          </a>
+          <!-- Product Management -->
+          <a href="{% url 'goods_list' %}"
+             class="bg-teal-500 hover:bg-teal-600 text-white font-semibold px-5 py-3 rounded-lg flex items-center">
+            <i class="fas fa-boxes mr-2"></i> Manage Products
+          </a>
+          <!-- Order Management -->
+          <a href="{% url 'store_order_management' store_slug=storefront.store_slug %}"
+             class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-5 py-3 rounded-lg flex items-center">
+            <i class="fas fa-clipboard-list mr-2"></i> View Orders
+          </a>
+          <!-- Analytics -->
+          <a href="{% url 'store_analytics' store_slug=storefront.store_slug %}"
+             class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-5 py-3 rounded-lg flex items-center">
+            <i class="fas fa-chart-bar mr-2"></i> Sales Analytics
+          </a>
+          <!-- Storefront Settings -->
+          <a href="{% url 'storefront_update' store_slug=storefront.store_slug %}"
+             class="bg-purple-500 hover:bg-purple-600 text-white font-semibold px-5 py-3 rounded-lg flex items-center">
+            <i class="fas fa-store mr-2"></i> Store Settings
+          </a>
+          <!-- Preview Store -->
+          <a href="{% url 'storefront_detail' store_slug=storefront.store_slug %}"
+             class="bg-gray-500 hover:bg-gray-600 text-white font-semibold px-5 py-3 rounded-lg flex items-center">
+            <i class="fas fa-eye mr-2"></i> Preview Store
+          </a>
+        </div>
+      </div>
+    {% else %}
+      <div class="mt-12 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Create Your Storefront</h2>
+        <p class="text-gray-600 dark:text-gray-400 mb-4">
+          You don't have a storefront yet. Create one to start selling your merchandise.
+        </p>
+        <a href="{% url 'storefront_create' %}"
+           class="bg-green-500 hover:bg-green-600 text-white font-semibold px-5 py-3 rounded-lg flex items-center">
+          <i class="fas fa-plus-circle mr-2"></i> Create Storefront
+        </a>
+      </div>
+    {% endif %}
   </div>
 {% endblock content %}

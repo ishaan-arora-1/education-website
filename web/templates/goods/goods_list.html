@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Manage Products - {{ user.get_full_name|default:user.username }}
+{% endblock title %}
+{% block content %}
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-4xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+      <i class="fas fa-box-open text-teal-600"></i> Manage Your Products
+    </h1>
+    <!-- Add New Product Button -->
+    <div class="flex justify-start mt-6">
+      <a href="{% url 'goods_create' store_slug=request.user.storefront.store_slug %}"
+         class="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-lg flex items-center shadow-md transition-all">
+        <i class="fas fa-plus-circle mr-2"></i> Add New Product
+      </a>
+    </div>
+    <!-- Product Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
+      {% for product in products %}
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-5 transition-transform transform hover:scale-105 flex flex-col border border-gray-200">
+          <div class="h-48 w-full overflow-hidden rounded-md">
+            <img src="{{ product.image.url }}"
+                 alt="{{ product.name|default:'Product Image' }}"
+                 class="w-full h-full object-cover aspect-[4/3]" />
+          </div>
+          <h3 class="mt-4 text-lg font-bold text-gray-900 dark:text-white">{{ product.name }}</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">{{ product.description|truncatewords:15 }}</p>
+          <div class="flex justify-between mt-auto gap-2">
+            <a href="{% url 'goods_detail' pk=product.id %}"
+               class="flex-1 text-center bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg shadow-md">
+              <i class="fas fa-eye"></i> View
+            </a>
+            <a href="{% url 'goods_update' pk=product.id %}"
+               class="flex-1 text-center bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg shadow-md">
+              <i class="fas fa-edit"></i> Edit
+            </a>
+            <a href="{% url 'goods_delete' pk=product.id %}"
+               class="flex-1 text-center bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-md">
+              <i class="fas fa-trash"></i> Delete
+            </a>
+          </div>
+        </div>
+      {% empty %}
+        <p class="text-gray-500 dark:text-gray-400 text-center col-span-full mt-6">No products found.</p>
+      {% endfor %}
+    </div>
+  </div>
+{% endblock content %}

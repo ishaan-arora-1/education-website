@@ -1,9 +1,11 @@
 from django.conf import settings
 from django.conf.urls.i18n import i18n_patterns
 from django.contrib import admin
+from django.contrib.auth.decorators import login_required
 from django.urls import include, path
 
 from . import admin_views, views
+from .views import GoodsListingView, add_goods_to_cart, sales_analytics, sales_data
 
 # Non-prefixed URLs
 urlpatterns = [
@@ -167,6 +169,43 @@ urlpatterns += i18n_patterns(
     path("challenges/<int:week_number>/submit/", views.challenge_submit, name="challenge_submit"),
     path("current-weekly-challenge/", views.current_weekly_challenge, name="current_weekly_challenge"),
     path("fetch-video-title/", views.fetch_video_title, name="fetch_video_title"),
+    # Storefront Management
+    path("store/create/", login_required(views.StorefrontCreateView.as_view()), name="storefront_create"),
+    path(
+        "store/<slug:store_slug>/edit/",
+        login_required(views.StorefrontUpdateView.as_view()),
+        name="storefront_update",
+    ),
+    path("storefront/<slug:store_slug>/", views.StorefrontDetailView.as_view(), name="storefront_detail"),
+    # Product (Goods) Management
+    path("goods/", views.GoodsListView.as_view(), name="goods_list"),
+    path("goods/<int:pk>/", views.GoodsDetailView.as_view(), name="goods_detail"),
+    path("store/<slug:store_slug>/goods/create/", login_required(views.GoodsCreateView.as_view()), name="goods_create"),
+    path("goods/<int:pk>/edit/", views.GoodsUpdateView.as_view(), name="goods_update"),
+    path("goods/delete/<int:pk>/", views.GoodsDeleteView.as_view(), name="goods_delete"),
+    path("goods/add-to-cart/<int:pk>/", add_goods_to_cart, name="add_goods_to_cart"),
+    path("products/", GoodsListingView.as_view(), name="goods_listing"),
+    # Order Management
+    path("orders/<int:pk>/", login_required(views.OrderDetailView.as_view()), name="order_detail"),
+    path(
+        "store/<slug:store_slug>/orders/",
+        login_required(views.OrderManagementView.as_view()),
+        name="store_order_management",
+    ),
+    path("orders/item/<int:item_id>/update-status/", views.update_order_status, name="update_order_status"),
+    # Analytics
+    path(
+        "store/<slug:store_slug>/analytics/",
+        login_required(views.StoreAnalyticsView.as_view()),
+        name="store_analytics",
+    ),
+    path(
+        "admin/merchandise-analytics/",
+        login_required(views.AdminMerchAnalyticsView.as_view()),
+        name="admin_merch_analytics",
+    ),
+    path("analytics/", sales_analytics, name="sales_analytics"),
+    path("analytics/data/", sales_data, name="sales_data"),
     prefix_default_language=True,
 )
 

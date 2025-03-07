@@ -23,7 +23,7 @@
                         <p>Teacher: {{ item.course.teacher.get_full_name|default:item.course.teacher.username }}</p>
                       </div>
                       <p class="text-lg font-semibold mt-2">${{ item.course.price }}</p>
-                    {% else %}
+                    {% elif item.session %}
                       <!-- Individual Session Item -->
                       <h3 class="text-xl font-semibold mb-2">{{ item.session.title }}</h3>
                       <p class="text-gray-600 dark:text-gray-400 mb-2">Individual Session from {{ item.session.course.title }}</p>
@@ -33,6 +33,18 @@
                         <p>Teacher: {{ item.session.course.teacher.get_full_name|default:item.session.course.teacher.username }}</p>
                       </div>
                       <p class="text-lg font-semibold mt-2">${{ item.session.price }}</p>
+                    {% elif item.goods %}
+                      <!-- Goods Item -->
+                      <h3 class="text-xl font-semibold mb-2">{{ item.goods.name }}</h3>
+                      <p class="text-gray-600 dark:text-gray-400 mb-2">{{ item.goods.description }}</p>
+                      <p class="text-lg font-semibold mt-2">
+                        {% if item.goods.discount_price %}
+                          <span class="line-through text-gray-500">${{ item.goods.price }}</span>
+                          <span class="text-red-500">${{ item.goods.discount_price }}</span>
+                        {% else %}
+                          ${{ item.goods.price }}
+                        {% endif %}
+                      </p>
                     {% endif %}
                   </div>
                   <form method="post"
@@ -56,7 +68,10 @@
             <div class="flex justify-end">
               <form id="checkout-form"
                     class="w-full"
+                    method="post"
+                    action="{% url 'checkout_success' %}"
                     data-is-authenticated="{% if request.user.is_authenticated %}true{% else %}false{% endif %}">
+                {% csrf_token %}
                 {% if not request.user.is_authenticated %}
                   <div class="mb-4">
                     <label for="email"
@@ -70,6 +85,43 @@
                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800"
                            placeholder="Enter your email address" />
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">We'll create an account for you to access your courses.</p>
+                  </div>
+                {% endif %}
+                {% if cart.has_goods %}
+                  <div class="mb-4">
+                    <label for="address"
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Shipping Address
+                    </label>
+                    <textarea id="address"
+                              name="address"
+                              required
+                              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800"
+                              placeholder="Enter your shipping address"></textarea>
+                    <input type="text"
+                           id="city"
+                           name="city"
+                           placeholder="City"
+                           required
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 mt-2" />
+                    <input type="text"
+                           id="state"
+                           name="state"
+                           placeholder="State"
+                           required
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 mt-2" />
+                    <input type="text"
+                           id="postal_code"
+                           name="postal_code"
+                           placeholder="Postal Code"
+                           required
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 mt-2" />
+                    <input type="text"
+                           id="country"
+                           name="country"
+                           placeholder="Country"
+                           required
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 mt-2" />
                   </div>
                 {% endif %}
                 <div id="payment-element" class="mb-4">
@@ -216,6 +268,24 @@
                     return;
                 }
                 confirmParams.receipt_email = emailInput.value;
+            }
+
+            const addressInput = document.getElementById('address');
+            const cityInput = document.getElementById('city');
+            const stateInput = document.getElementById('state');
+            const postalCodeInput = document.getElementById('postal_code');
+            const countryInput = document.getElementById('country');
+            if (addressInput && cityInput && stateInput && postalCodeInput && countryInput) {
+                confirmParams.shipping = {
+                    name: isAuthenticated ? '{{ request.user.get_full_name }}' : 'Guest',
+                    address: {
+                        line1: addressInput.value,
+                        city: cityInput.value,
+                        state: stateInput.value,
+                        postal_code: postalCodeInput.value,
+                        country: countryInput.value
+                    }
+                };
             }
 
             try {

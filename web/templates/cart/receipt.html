@@ -25,6 +25,7 @@
               <h1 class="text-2xl font-bold mb-2">Order Receipt</h1>
               <p class="text-gray-600 dark:text-gray-400">Order Date: {{ order_date|date:"F j, Y, g:i a" }}</p>
               <p class="text-gray-600 dark:text-gray-400">Order ID: {{ payment_intent_id }}</p>
+              <p class="text-gray-600 dark:text-gray-400">Tracking Number: {{ order.tracking_number }}</p>
             </div>
             <a href="#"
                onclick="window.print()"
@@ -41,6 +42,24 @@
             <p class="text-gray-600 dark:text-gray-400">{{ user.email }}</p>
           {% else %}
             <p class="text-gray-700 dark:text-gray-300">{{ user.email }}</p>
+          {% endif %}
+        </div>
+        <!-- Shipping Address -->
+        <div class="border-b border-gray-200 dark:border-gray-700 p-6">
+          <h2 class="text-lg font-semibold mb-3">Shipping Address</h2>
+          {% if shipping_address %}
+            <div class="text-gray-700 dark:text-gray-300 space-y-1">
+              <div>{{ shipping_address.line1 }}</div>
+              {% if shipping_address.line2 %}<div>{{ shipping_address.line2 }}</div>{% endif %}
+              <div>
+                {{ shipping_address.city }},
+                {{ shipping_address.state }}
+                {{ shipping_address.postal_code }}
+              </div>
+              <div>{{ shipping_address.country }}</div>
+            </div>
+          {% else %}
+            <p class="text-gray-700 dark:text-gray-300">No shipping address available.</p>
           {% endif %}
         </div>
         <!-- Order Items -->
@@ -74,6 +93,25 @@
                     </p>
                   </div>
                   <p class="font-semibold">${{ session_enrollment.session.price }}</p>
+                </div>
+              </div>
+            {% endfor %}
+            {% for goods_item in goods_items %}
+              <div class="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
+                <div class="flex justify-between">
+                  <div>
+                    <h3 class="font-medium">{{ goods_item.goods.name }}</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ goods_item.goods.description }}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Category: {{ goods_item.goods.category }}</p>
+                  </div>
+                  <p class="font-semibold">
+                    {% if goods_item.goods.discount_price %}
+                      <span class="line-through text-gray-500">${{ goods_item.goods.price }}</span>
+                      <span class="text-red-500">${{ goods_item.goods.discount_price }}</span>
+                    {% else %}
+                      ${{ goods_item.goods.price }}
+                    {% endif %}
+                  </p>
                 </div>
               </div>
             {% endfor %}

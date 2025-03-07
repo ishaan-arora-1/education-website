@@ -23,13 +23,18 @@ from .models import (
     ForumCategory,
     ForumReply,
     ForumTopic,
+    Goods,
     Notification,
+    Order,
+    OrderItem,
     Payment,
+    ProductImage,
     Profile,
     Review,
     SearchLog,
     Session,
     SessionAttendance,
+    Storefront,
     Subject,
     WebRequest,
 )
@@ -382,6 +387,128 @@ class ChallengeAdmin(admin.ModelAdmin):
 @admin.register(ChallengeSubmission)
 class ChallengeSubmissionAdmin(admin.ModelAdmin):
     list_display = ("user", "challenge", "submitted_at")
+
+
+# Unregister the default User admin and register our custom one
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)
+
+
+@admin.register(Storefront)
+class StorefrontAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "teacher", "is_active", "created_at")
+    list_filter = ("is_active", "created_at")
+    search_fields = ("teacher__username", "store_name", "store_description")
+    readonly_fields = ("id", "created_at", "updated_at")
+    fieldsets = (
+        (None, {"fields": ("teacher", "store_name", "is_active")}),
+        ("Content", {"fields": ("store_description", "store_logo", "store_banner")}),
+        ("Policies", {"fields": ("refund_policy", "privacy_policy")}),
+        ("Metadata", {"fields": ("store_slug", "created_at", "updated_at")}),
+    )
+    autocomplete_fields = ["teacher"]
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # Editing existing object
+            return self.readonly_fields + ("teacher",)
+        return self.readonly_fields
+
+
+@admin.register(Goods)
+class GoodsAdmin(admin.ModelAdmin):
+    list_display = ("name", "storefront", "price", "stock_status", "product_type", "is_available")
+    list_filter = ("product_type", "is_available", "created_at")
+    search_fields = ("name", "description", "sku", "storefront__store_name")
+    readonly_fields = ("sku", "created_at", "updated_at")
+    raw_id_fields = ("storefront",)
+    list_editable = ("is_available",)
+    date_hierarchy = "created_at"
+    fieldsets = (
+        (None, {"fields": ("name", "storefront", "is_available")}),
+        ("Pricing", {"fields": ("price", "discount_price")}),
+        ("Inventory", {"fields": ("product_type", "stock", "sku", "file")}),
+        ("Content", {"fields": ("description", "category", "images")}),
+        ("Dates", {"fields": ("created_at", "updated_at")}),
+    )
+
+    def stock_status(self, obj):
+        if obj.product_type == "digital":
+            return "N/A"
+        return f"{obj.stock} in stock" if obj.stock else "Out of stock"
+
+    stock_status.short_description = "Stock"
+
+
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
+    extra = 1
+    readonly_fields = ("preview",)
+
+    def preview(self, obj):
+        return format_html('<img src="{}" height="50" />', obj.image.url) if obj.image else "-"
+
+    preview.short_description = "Preview"
+
+
+@admin.register(ProductImage)
+class ProductImageAdmin(admin.ModelAdmin):
+    list_display = ("goods", "preview", "alt_text")
+    search_fields = ("goods__name", "alt_text")
+    readonly_fields = ("preview",)
+    raw_id_fields = ("goods",)
+
+    def preview(self, obj):
+        return format_html('<img src="{}" height="50" />', obj.image.url) if obj.image else "-"
+
+    preview.short_description = "Preview"
+
+
+class OrderItemInline(admin.TabularInline):
+    model = OrderItem
+    extra = 0
+    readonly_fields = ("goods", "quantity", "price_at_purchase", "discounted_price_at_purchase")
+    can_delete = False
+
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "status", "created_at", "updated_at")
+    list_filter = ("status", "created_at")
+    search_fields = ("user__email", "tracking_number")
+    readonly_fields = ("id", "created_at", "updated_at")
+    raw_id_fields = ("user",)
+    date_hierarchy = "created_at"
+    inlines = [OrderItemInline]
+    actions = ["mark_as_completed"]
+
+    fieldsets = (
+        (None, {"fields": ("user", "status")}),
+        ("Financials", {"fields": ("currency", "tax_rate")}),
+        ("Fulfillment", {"fields": ("shipping_address", "tracking_number")}),
+        ("Compliance", {"fields": ("terms_accepted", "transaction_log")}),
+        ("Dates", {"fields": ("created_at", "updated_at")}),
+    )
+
+    def mark_as_completed(self, request, queryset):
+        queryset.update(status="completed")
+
+    mark_as_completed.short_description = "Mark selected orders as completed"
+
+
+@admin.register(OrderItem)
+class OrderItemAdmin(admin.ModelAdmin):
+    list_display = ("id", "order", "goods", "quantity", "price_at_purchase")
+    list_filter = ("order__status",)
+    search_fields = ("goods__name", "order__id")
+    readonly_fields = ("id",)
+    raw_id_fields = ("order", "goods")
+
+    def price_display(self, obj):
+        if obj.discounted_price_at_purchase:
+            return f"${obj.discounted_price_at_purchase} (Discounted from ${obj.price_at_purchase})"
+        return f"${obj.price_at_purchase}"
+
+    price_display.short_description = "Price"
 
 
 # Unregister the default User admin and register our custom one

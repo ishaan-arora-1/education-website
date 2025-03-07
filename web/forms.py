@@ -13,9 +13,12 @@ from .models import (
     Course,
     CourseMaterial,
     ForumCategory,
+    Goods,
+    ProductImage,
     Profile,
     Review,
     Session,
+    Storefront,
     Subject,
 )
 from .referrals import handle_referral
@@ -51,6 +54,8 @@ __all__ = [
     "BlogPostForm",
     "MessageTeacherForm",
     "FeedbackForm",
+    "GoodsForm",
+    "StorefrontForm",
 ]
 
 
@@ -877,3 +882,118 @@ class ChallengeSubmissionForm(forms.ModelForm):
                 attrs={"rows": 5, "placeholder": "Describe your results or reflections..."}
             ),
         }
+
+
+class TailwindInput(forms.widgets.Input):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("attrs", {}).update(
+            {"class": "w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"}
+        )
+        super().__init__(*args, **kwargs)
+
+
+class TailwindTextarea(forms.widgets.Textarea):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("attrs", {}).update(
+            {"class": "w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"}
+        )
+        super().__init__(*args, **kwargs)
+
+
+class GoodsForm(forms.ModelForm):
+    """Form for creating/updating goods with full validation"""
+
+    class Meta:
+        model = Goods
+        fields = [
+            "name",
+            "description",
+            "price",
+            "discount_price",
+            "product_type",
+            "stock",
+            "file",
+            "category",
+            "is_available",
+        ]
+        widgets = {
+            "name": TailwindInput(attrs={"placeholder": "Algebra Basics Workbook"}),
+            "description": TailwindTextarea(attrs={"rows": 4, "placeholder": "Detailed product description"}),
+            "price": forms.NumberInput(attrs={"class": "tailwind-input-class", "min": "0", "step": "0.01"}),
+            "discount_price": forms.NumberInput(attrs={"class": "tailwind-input-class", "min": "0", "step": "0.01"}),
+            "product_type": forms.Select(attrs={"onchange": "toggleDigitalFields(this.value)"}),
+            "stock": forms.NumberInput(attrs={"data-product-type": "physical"}),
+            "file": forms.FileInput(attrs={"accept": ".pdf,.zip,.mp4,.docx", "data-product-type": "digital"}),
+            "category": forms.TextInput(attrs={"placeholder": "Educational Materials"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["product_type"].initial = "physical"
+
+        if self.instance and self.instance.pk:
+            if self.instance.product_type == "digital":
+                self.fields["file"].required = True
+                self.fields["stock"].required = False
+            else:
+                self.fields["stock"].required = True
+
+    def clean(self):
+        cleaned_data = super().clean()
+        product_type = cleaned_data.get("product_type")
+        price = cleaned_data.get("price")
+        discount_price = cleaned_data.get("discount_price")
+        stock = cleaned_data.get("stock")
+        file = cleaned_data.get("file")
+
+        if discount_price and discount_price >= price:
+            self.add_error("discount_price", "Discount must be lower than base price")
+
+        if product_type == "digital":
+            if stock is not None:
+                self.add_error("stock", "Digital products can't have stock")
+            if not file and not self.instance.file:
+                self.add_error("file", "File required for digital products")
+        else:
+            if stock is None:
+                self.add_error("stock", "Stock required for physical products")
+            if file:
+                self.add_error("file", "Files only for digital products")
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        goods = super().save(commit=False)
+
+        # Handle product type specific fields
+        if goods.product_type == "digital":
+            goods.stock = None
+        else:
+            goods.file = None
+
+        if commit:
+            goods.save()
+            self.save_images(goods)
+
+        return goods
+
+    def save_images(self, goods):
+        # Delete existing images if replacing
+        if "images" in self.changed_data:
+            goods.images.all().delete()
+
+        # Create new ProductImage instances
+        for img in self.files.getlist("images"):
+            ProductImage.objects.create(goods=goods, image=img)
+
+
+class StorefrontForm(forms.ModelForm):
+    class Meta:
+        model = Storefront
+        fields = [
+            "name",
+            "description",
+            "store_slug",
+            "logo",
+            "is_active",
+        ]
