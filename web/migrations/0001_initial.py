@@ -707,7 +707,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="cart",
             constraint=models.CheckConstraint(
-                condition=models.Q(("user__isnull", False), ("session_key__gt", ""), _connector="OR"),
+                check=models.Q(("user__isnull", False), ("session_key__gt", ""), _connector="OR"),
                 name="cart_user_or_session_key",
             ),
         ),

@@ -2,8 +2,13 @@ from unittest.mock import patch
 
 from allauth.account.models import EmailAddress
 from django.contrib.auth.models import User
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+
+# Mock staticfiles_storage.url to avoid static files issues
+original_url = staticfiles_storage.url
+staticfiles_storage.url = lambda path: f"/static/{path}"
 
 
 @override_settings(
@@ -36,8 +41,8 @@ class SignupFormTest(TestCase):
         self.referrer.profile.referral_code = "TEST123"
         self.referrer.profile.save()
 
-    def test_signup_requires_referral_code(self):
-        """Test that signup requires a valid referral code"""
+    def test_signup_with_referral_code(self):
+        """Test that signup works with and without a referral code"""
         # Test without referral code
         data = {
             "email": "newuser@example.com",
@@ -49,11 +54,23 @@ class SignupFormTest(TestCase):
             "captcha_1": "PASSED",
         }
         response = self.client.post(self.signup_url, data)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("This field is required", str(response.context["form"].errors["referral_code"]))
+        self.assertEqual(response.status_code, 302)  # Should redirect after successful signup
+
+        # Verify user was created without referral
+        new_user = User.objects.get(email="newuser@example.com")
+        self.assertIsNone(new_user.profile.referred_by)
 
         # Test with invalid referral code
-        data["referral_code"] = "INVALID"
+        data = {
+            "email": "anotheruser@example.com",
+            "first_name": "Another",
+            "last_name": "User",
+            "password1": "testpass123",
+            "password2": "testpass123",
+            "referral_code": "INVALID",
+            "captcha_0": "dummy-hash",
+            "captcha_1": "PASSED",
+        }
         response = self.client.post(self.signup_url, data)
         self.assertEqual(response.status_code, 200)
         self.assertIn("Invalid referral code", str(response.context["form"].errors["referral_code"]))
@@ -64,8 +81,8 @@ class SignupFormTest(TestCase):
         self.assertEqual(response.status_code, 302)  # Should redirect after successful signup
 
         # Verify user was created and referral was handled
-        new_user = User.objects.get(email="newuser@example.com")
-        self.assertEqual(new_user.profile.referred_by, self.referrer.profile)
+        another_user = User.objects.get(email="anotheruser@example.com")
+        self.assertEqual(another_user.profile.referred_by, self.referrer.profile)
 
     def test_signup_form_validation(self):
         """Test form validation for invalid submissions"""
@@ -73,7 +90,6 @@ class SignupFormTest(TestCase):
         response = self.client.post(self.signup_url, {})
         self.assertEqual(response.status_code, 200)
         self.assertIn("This field is required.", str(response.context["form"].errors["email"]))
-        self.assertIn("This field is required.", str(response.context["form"].errors["referral_code"]))
 
         # Test invalid email
         data = {

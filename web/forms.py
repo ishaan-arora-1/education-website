@@ -77,9 +77,9 @@ class UserRegistrationForm(SignupForm):
     )
     referral_code = forms.CharField(
         max_length=20,
-        required=True,
+        required=False,
         widget=TailwindInput(attrs={"placeholder": "Enter referral code"}),
-        help_text="Required - Ask an existing member for their referral code",
+        help_text="Optional - Enter a referral code if you have one",
     )
     captcha = CaptchaField(widget=TailwindCaptchaTextInput)
 
@@ -135,8 +135,9 @@ class UserRegistrationForm(SignupForm):
 
     def clean_referral_code(self):
         referral_code = self.cleaned_data.get("referral_code")
-        if not Profile.objects.filter(referral_code=referral_code).exists():
-            raise forms.ValidationError("Invalid referral code. Please check and try again.")
+        if referral_code:
+            if not Profile.objects.filter(referral_code=referral_code).exists():
+                raise forms.ValidationError("Invalid referral code. Please check and try again.")
         return referral_code
 
     def save(self, request):
