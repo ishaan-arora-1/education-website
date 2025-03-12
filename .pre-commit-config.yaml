@@ -3,7 +3,7 @@ repos:
     hooks:
       - id: poetry-check
         name: Poetry Environment Check
-        entry: bash -c 'poetry install && poetry run pip list | grep -q django || (echo "Django not found in Poetry environment. Run poetry install." && exit 1)'
+        entry: bash -c 'if [ -z "$GITHUB_ACTIONS" ]; then poetry install && poetry run pip list | grep -q django || (echo "Django not found in Poetry environment. Run poetry install." && exit 1); fi'
         language: system
         pass_filenames: false
         always_run: true
