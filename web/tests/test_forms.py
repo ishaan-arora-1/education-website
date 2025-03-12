@@ -108,8 +108,9 @@ class UserRegistrationFormTests(TestCase):
         self.assertIn("Enter a valid email address", str(form.errors))
 
         # Test with missing required field
-        form_data.pop("email")  # Remove required field
-        form = UserRegistrationForm(data=form_data)
+        form_data_without_email = form_data.copy()
+        form_data_without_email.pop("email")  # Remove required field
+        form = UserRegistrationForm(data=form_data_without_email)
         self.assertFalse(form.is_valid())
         self.assertIn("This field is required", str(form.errors))
 

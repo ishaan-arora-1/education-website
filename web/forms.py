@@ -119,8 +119,8 @@ class UserRegistrationForm(SignupForm):
 
         # Preserve values on form errors
         if self.data:
-            for field_name in ["first_name", "last_name", "email", "referral_code"]:
-                if field_name in self.data:
+            for field_name in ["first_name", "last_name", "email", "referral_code", "username"]:
+                if field_name in self.data and field_name in self.fields:
                     self.fields[field_name].widget.attrs["value"] = self.data[field_name]
 
     def clean_username(self):
