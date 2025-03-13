@@ -3097,3 +3097,28 @@ class StorefrontDetailView(LoginRequiredMixin, generic.DetailView):
 
     def get_object(self):
         return get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])
+
+
+def meme_list(request):
+    memes_data = [
+        {
+            "title": "Physics Meme",
+            "image": "/static/images/physicsmeme.jpg",
+            "caption": "Its just the beginning",
+            "subject": "Physics",
+        },
+        {
+            "title": "Chemistry Meme",
+            "image": "/static/images/chemmeme.jpeg",
+            "caption": "Dont believe it (but you will)",
+            "subject": "Chemistry",
+        },
+        {
+            "title": "Maths Meme",
+            "image": "/static/images/mathsmeme.png",
+            "caption": "Calculate your way out!",
+            "subject": "Maths",
+        },
+    ]
+    subjects = sorted({m["subject"] for m in memes_data})
+    return render(request, "memes.html", {"memes": memes_data, "subjects": subjects})

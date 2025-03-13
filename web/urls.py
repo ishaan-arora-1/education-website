@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.conf.urls.i18n import i18n_patterns
+from django.conf.urls.static import static  # Add this import
 from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import include, path
@@ -15,6 +16,7 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns.append(path("__reload__/", include("django_browser_reload.urls")))  # Browser reload URLs
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)  # Add this line
 
 # Language-prefixed URLs
 urlpatterns += i18n_patterns(
@@ -206,6 +208,7 @@ urlpatterns += i18n_patterns(
     ),
     path("analytics/", sales_analytics, name="sales_analytics"),
     path("analytics/data/", sales_data, name="sales_data"),
+    path("memes/", views.meme_list, name="meme_list"),
     prefix_default_language=True,
 )
 

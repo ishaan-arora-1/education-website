@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Educational Memes{% endblock %}
+{% block content %}
+  <div class="container mx-auto mt-8 px-4">
+    <h1 class="text-2xl font-bold mb-6">Educational Memes</h1>
+    {% for subj in subjects %}
+      <div class="mb-8">
+        <h2 class="text-xl font-semibold mb-4">{{ subj }}</h2>
+        <div class="flex flex-nowrap overflow-x-auto space-x-6 pb-4 -mx-4 px-4">
+          {% for meme in memes %}
+            {% if meme.subject == subj %}
+              <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl flex-none"
+                   style="width: 280px;
+                          min-width: 280px">
+                <div class="w-full h-48 overflow-hidden">
+                  <img src="{{ meme.image }}"
+                       alt="{{ meme.title }}"
+                       class="w-full h-full object-contain" />
+                </div>
+                <div class="p-4">
+                  <h3 class="text-lg font-bold text-gray-900 dark:text-white">{{ meme.title }}</h3>
+                  <p class="text-gray-600 dark:text-gray-300 mt-2">{{ meme.caption }}</p>
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}
