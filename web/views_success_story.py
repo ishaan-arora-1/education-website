@@ -10,12 +10,12 @@ from .models import SuccessStory
 def success_story_list(request):
     """View for listing published success stories."""
     success_stories = SuccessStory.objects.filter(status="published").order_by("-published_at")
-    
+
     # Paginate results
     paginator = Paginator(success_stories, 9)  # 9 stories per page
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         "success_stories": page_obj,
         "is_paginated": paginator.num_pages > 1,
@@ -27,14 +27,14 @@ def success_story_list(request):
 def success_story_detail(request, slug):
     """View for displaying a single success story."""
     success_story = get_object_or_404(SuccessStory, slug=slug, status="published")
-    
+
     # Get related success stories (same author or similar content)
     related_stories = SuccessStory.objects.filter(
         status="published"
     ).exclude(
         id=success_story.id
     ).order_by("-published_at")[:3]
-    
+
     context = {
         "success_story": success_story,
         "related_stories": related_stories,
@@ -55,7 +55,7 @@ def create_success_story(request):
             return redirect("success_story_detail", slug=success_story.slug)
     else:
         form = SuccessStoryForm()
-    
+
     context = {
         "form": form,
     }
@@ -66,7 +66,7 @@ def create_success_story(request):
 def edit_success_story(request, slug):
     """View for editing an existing success story."""
     success_story = get_object_or_404(SuccessStory, slug=slug, author=request.user)
-    
+
     if request.method == "POST":
         form = SuccessStoryForm(request.POST, request.FILES, instance=success_story)
         if form.is_valid():
@@ -75,7 +75,7 @@ def edit_success_story(request, slug):
             return redirect("success_story_detail", slug=success_story.slug)
     else:
         form = SuccessStoryForm(instance=success_story)
-    
+
     context = {
         "form": form,
         "success_story": success_story,
@@ -88,12 +88,12 @@ def edit_success_story(request, slug):
 def delete_success_story(request, slug):
     """View for deleting a success story."""
     success_story = get_object_or_404(SuccessStory, slug=slug, author=request.user)
-    
+
     if request.method == "POST":
         success_story.delete()
         messages.success(request, "Success story deleted successfully!")
         return redirect("success_story_list")
-    
+
     context = {
         "success_story": success_story,
     }
