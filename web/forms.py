@@ -12,6 +12,7 @@ from .models import (
     ChallengeSubmission,
     Course,
     CourseMaterial,
+    EducationalVideo,
     ForumCategory,
     Goods,
     ProductImage,
@@ -56,6 +57,7 @@ __all__ = [
     "FeedbackForm",
     "GoodsForm",
     "StorefrontForm",
+    "EducationalVideoForm",
 ]
 
 
@@ -564,6 +566,24 @@ class CustomLoginForm(LoginForm):
 
         return cleaned_data
 
+class EducationalVideoForm(forms.ModelForm):
+     class Meta:
+         model = EducationalVideo
+         fields = ['title', 'description', 'video_url', 'category']
+         widgets = {
+             'title': TailwindInput(attrs={'placeholder': 'Video title'}),
+             'description': TailwindTextarea(attrs={'rows': 4, 'placeholder': 'Describe what viewers will learn from this video'}),
+             'video_url': TailwindInput(attrs={'placeholder': 'YouTube or Vimeo URL', 'type': 'url'}),
+             'category': TailwindSelect(),
+         }
+         
+     def clean_video_url(self):
+         url = self.cleaned_data.get('video_url')
+         if url:
+             # Simple validation for YouTube and Vimeo URLs
+             if not ('youtube.com' in url or 'youtu.be' in url or 'vimeo.com' in url):
+                 raise forms.ValidationError("Please enter a valid YouTube or Vimeo URL")
+         return url
 
 class LearnForm(forms.Form):
     subject = forms.CharField(

@@ -520,6 +520,33 @@ class CourseProgress(models.Model):
     def __str__(self):
         return f"{self.enrollment.student.username}'s progress in {self.enrollment.course.title}"
 
+class EducationalVideo(models.Model):
+     """Model for educational videos shared by users."""
+     
+     VIDEO_CATEGORY_CHOICES = [
+         ('science', 'Science'),
+         ('technology', 'Technology'),
+         ('mathematics', 'Mathematics'),
+         ('programming', 'Programming'),
+         ('arts', 'Arts'),
+         ('language', 'Language Learning'),
+         ('other', 'Other'),
+     ]
+     
+     title = models.CharField(max_length=200)
+     description = models.TextField()
+     video_url = models.URLField(help_text='URL for external content like YouTube videos')
+     category = models.CharField(max_length=20, choices=VIDEO_CATEGORY_CHOICES, default='other')
+     uploader = models.ForeignKey(User, on_delete=models.CASCADE, related_name='educational_videos')
+     uploaded_at = models.DateTimeField(auto_now_add=True)
+     
+     class Meta:
+         verbose_name = 'Educational Video'
+         verbose_name_plural = 'Educational Videos'
+         ordering = ['-uploaded_at']
+     
+     def __str__(self):
+         return self.title
 
 class Achievement(models.Model):
     TYPES = [

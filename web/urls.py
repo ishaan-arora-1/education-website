@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import include, path
 
-from . import admin_views, views
+from . import admin_views, views, views_video
 from .views import GoodsListingView, add_goods_to_cart, sales_analytics, sales_data
 
 # Non-prefixed URLs
@@ -168,7 +168,9 @@ urlpatterns += i18n_patterns(
     path("challenges/<int:week_number>/", views.challenge_detail, name="challenge_detail"),
     path("challenges/<int:week_number>/submit/", views.challenge_submit, name="challenge_submit"),
     path("current-weekly-challenge/", views.current_weekly_challenge, name="current_weekly_challenge"),
-    path("fetch-video-title/", views.fetch_video_title, name="fetch_video_title"),
+    # Educational Videos URLs
+    path("videos/", views_video.educational_videos_list, name="educational_videos_list"),
+    path("videos/upload/", views_video.upload_educational_video, name="upload_educational_video"),
     # Storefront Management
     path("store/create/", login_required(views.StorefrontCreateView.as_view()), name="storefront_create"),
     path(
