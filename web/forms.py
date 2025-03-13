@@ -998,3 +998,10 @@ class StorefrontForm(forms.ModelForm):
             "logo",
             "is_active",
         ]
+
+
+ 
+class AddStudentForm(forms.Form):
+    student=forms.ModelChoiceField(queryset=User.objects.filter(is_active=True),
+                                   label="Select Student",
+                                   widget=forms.Select(attrs={"class":"form-control"}))

@@ -52,6 +52,7 @@ from .forms import (
     TeacherSignupForm,
     TeachForm,
     UserRegistrationForm,
+    AddStudentForm,
 )
 from .marketing import (
     generate_social_share_content,
@@ -90,6 +91,7 @@ from .models import (
     StudyGroup,
     TimeSlot,
     WebRequest,
+    User,
 )
 from .notifications import notify_session_reminder, notify_teacher_new_enrollment, send_enrollment_confirmation
 from .referrals import send_referral_reward_email
@@ -3097,3 +3099,35 @@ class StorefrontDetailView(LoginRequiredMixin, generic.DetailView):
 
     def get_object(self):
         return get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])
+    
+
+
+@login_required
+def add_student_to_course(request, slug):
+    """
+    Allows a teacher to directly enroll a student into a course.
+    """
+    # Ensure only the teacher who owns the course can access this view.
+    course = get_object_or_404(Course, slug=slug, teacher=request.user)
+    
+    if request.method == "POST":
+        form = AddStudentForm(request.POST)
+        if form.is_valid():
+            # Use the 'student' field from the form
+            student = form.cleaned_data["student"]
+            # Optionally, get the student's email if needed:
+            student_email = student.email
+            
+            # Check for duplicate enrollment.
+            if Enrollment.objects.filter(course=course, student=student).exists():
+                messages.error(request, f"{student.username} is already enrolled in {course.title}.")
+            else:
+                Enrollment.objects.create(course=course, student=student, status="approved")
+                messages.success(request, f"{student.username} has been successfully enrolled in {course.title}.")
+            return redirect("course_detail", slug=course.slug)
+        else:
+            messages.error(request, "There was an error with your submission. Please try again.")
+    else:
+        form = AddStudentForm()
+    
+    return render(request, "courses/add_student.html", {"form": form, "course": course})

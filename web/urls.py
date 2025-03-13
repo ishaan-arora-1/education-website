@@ -11,6 +11,7 @@ from .views import GoodsListingView, add_goods_to_cart, sales_analytics, sales_d
 urlpatterns = [
     path("i18n/", include("django.conf.urls.i18n")),  # Language selection URLs
     path("captcha/", include("captcha.urls")),  # CAPTCHA URLs should not be language-prefixed
+    #path('admin/', admin.site.urls),
 ]
 
 if settings.DEBUG:
@@ -48,6 +49,7 @@ urlpatterns += i18n_patterns(
     path("courses/<slug:slug>/add-session/", views.add_session, name="add_session"),
     path("courses/<slug:slug>/confirm-rolled-sessions/", views.confirm_rolled_sessions, name="confirm_rolled_sessions"),
     path("courses/<slug:slug>/message-students/", views.message_enrolled_students, name="message_students"),
+    path("courses/<slug:slug>/add-student/", views.add_student_to_course, name="add_student"),
     path("teachers/<int:teacher_id>/message/", views.message_teacher, name="message_teacher"),
     # Payment URLs
     path(
