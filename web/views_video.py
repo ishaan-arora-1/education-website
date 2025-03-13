@@ -57,7 +57,6 @@ def upload_educational_video(request):
              video.uploader = request.user
              video.save()
  
-             messages.success(request, "Video uploaded successfully!")
              return redirect('educational_videos_list')
      else:
          form = EducationalVideoForm()
