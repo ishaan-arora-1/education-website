@@ -136,7 +136,7 @@
           <div class="flex justify-center mt-6">
             <nav class="inline-flex rounded-md shadow">
               {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}&q={{ query }}&subject={{ subject }}&level={{ level }}&min_price={{ min_price }}&max_price={{ max_price }}&sort={{ sort_by }}"
+                <a href="?page={{ page_obj.previous_page_number }}&q={{ query }}&subject={{ subject }}&level={{ level }}&min_price={{ min_price }}&max_price={{ max_price }}&sort={{ sort_by }}&material_type={{ material_type }}"
                    class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50">
                   Previous
                 </a>
@@ -145,14 +145,14 @@
                 {% if num == page_obj.number %}
                   <span class="px-3 py-2 text-sm font-medium text-white bg-orange-500 border border-orange-500">{{ num }}</span>
                 {% else %}
-                  <a href="?page={{ num }}&q={{ query }}&subject={{ subject }}&level={{ level }}&min_price={{ min_price }}&max_price={{ max_price }}&sort={{ sort_by }}"
+                  <a href="?page={{ num }}&q={{ query }}&subject={{ subject }}&level={{ level }}&min_price={{ min_price }}&max_price={{ max_price }}&sort={{ sort_by }}&material_type={{ material_type }}"
                      class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50">
                     {{ num }}
                   </a>
                 {% endif %}
               {% endfor %}
               {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}&q={{ query }}&subject={{ subject }}&level={{ level }}&min_price={{ min_price }}&max_price={{ max_price }}&sort={{ sort_by }}"
+                <a href="?page={{ page_obj.next_page_number }}&q={{ query }}&subject={{ subject }}&level={{ level }}&min_price={{ min_price }}&max_price={{ max_price }}&sort={{ sort_by }}&material_type={{ material_type }}"
                    class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50">
                   Next
                 </a>
@@ -197,6 +197,22 @@
                 {% for value, label in level_choices %}
                   <option value="{{ value }}" {% if value == level %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
+              </select>
+            </div>
+            
+            <!-- Material Type -->
+            <div>
+              <label for="material_type" class="block text-sm font-medium mb-1">Material Type</label>
+              <select id="material_type"
+                      name="material_type"
+                      class="block w-full border border-gray-300 dark:border-gray-600 rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800">
+                <option value="">All Materials</option>
+                <option value="document" {% if material_type == "document" %}selected{% endif %}>Documents</option>
+                <option value="video" {% if material_type == "video" %}selected{% endif %}>Videos</option>
+                <option value="presentation" {% if material_type == "presentation" %}selected{% endif %}>Presentations</option>
+                <option value="assignment" {% if material_type == "assignment" %}selected{% endif %}>Assignments</option>
+                <option value="quiz" {% if material_type == "quiz" %}selected{% endif %}>Quizzes</option>
+                <option value="exercise" {% if material_type == "exercise" %}selected{% endif %}>Exercises</option>
               </select>
             </div>
             <!-- Price Range -->

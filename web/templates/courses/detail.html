@@ -407,13 +407,46 @@
                               <div>
                                 <h3 class="font-semibold">
                                   {% if is_enrolled or not material.requires_enrollment %}
-                                    {% if material.external_url %}
-                                      <a href="{{ material.external_url }}"
-                                         target="_blank"
-                                         class="text-blue-600 hover:text-blue-800 dark:text-blue-400">
-                                        {{ material.title }}
-                                        <i class="fas fa-external-link-alt ml-1 text-sm"></i>
-                                      </a>
+                                   {% if material.external_url %}
+                                      {% if material.material_type == 'video' %}
+                                        <a href="#material-{{ material.id }}" 
+                                           class="text-blue-600 hover:text-blue-800 dark:text-blue-400 video-link"
+                                           data-video-url="{{ material.external_url }}"
+                                           data-video-title="{{ material.title }}">
+                                          {{ material.title }}
+                                          <i class="fas fa-play-circle ml-1 text-sm"></i>
+                                        </a>
+                                        <div id="material-{{ material.id }}" class="video-container hidden mt-4">
+                                          <div class="aspect-w-16 aspect-h-9 bg-black rounded-lg overflow-hidden">
+                                            {% if "youtube.com" in material.external_url or "youtu.be" in material.external_url %}
+                                              {% if "youtube.com/watch?v=" in material.external_url %}
+                                                {% with video_id=material.external_url.split="watch?v="|last|slice:":11" %}
+                                                  <iframe src="https://www.youtube.com/embed/{{ video_id }}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                                {% endwith %}
+                                              {% elif "youtu.be/" in material.external_url %}
+                                                {% with video_id=material.external_url.split="youtu.be/"|last|slice:":11" %}
+                                                  <iframe src="https://www.youtube.com/embed/{{ video_id }}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                                {% endwith %}
+                                              {% endif %}
+                                            {% elif "vimeo.com" in material.external_url %}
+                                              {% with video_id=material.external_url.split="vimeo.com/"|last %}
+                                                <iframe src="https://player.vimeo.com/video/{{ video_id }}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
+                                              {% endwith %}
+                                            {% else %}
+                                              <a href="{{ material.external_url }}" target="_blank" class="w-full h-full flex items-center justify-center bg-gray-800 text-white">
+                                                <i class="fas fa-external-link-alt mr-2"></i> Open Video
+                                              </a>
+                                            {% endif %}
+                                          </div>
+                                        </div>
+                                      {% else %}
+                                        <a href="{{ material.external_url }}"
+                                           target="_blank"
+                                           class="text-blue-600 hover:text-blue-800 dark:text-blue-400">
+                                          {{ material.title }}
+                                          <i class="fas fa-external-link-alt ml-1 text-sm"></i>
+                                        </a>
+                                      {% endif %}
                                     {% else %}
                                       <a href="{% url 'download_material' course_slug=course.slug material_id=material.id %}"
                                          class="text-blue-600 hover:text-blue-800 dark:text-blue-400">
@@ -493,6 +526,28 @@
     <span x-text="message"></span>
   </div>
   <script>
+      // Toggle video containers when clicking on video links
+      document.addEventListener('DOMContentLoaded', function() {
+          const videoLinks = document.querySelectorAll('.video-link');
+          videoLinks.forEach(link => {
+              link.addEventListener('click', function(e) {
+                  e.preventDefault();
+                  const targetId = this.getAttribute('href').substring(1);
+                  const videoContainer = document.getElementById(targetId);
+                  
+                  // Hide all other video containers
+                  document.querySelectorAll('.video-container').forEach(container => {
+                      if (container.id !== targetId) {
+                          container.classList.add('hidden');
+                      }
+                  });
+                  
+                  // Toggle current video container
+                  videoContainer.classList.toggle('hidden');
+              });
+          });
+      });
+      
       function loadCalendar(year, month) {
           fetch(`/courses/{{ course.slug }}/calendar/?year=${year}&month=${month}`)
               .then(response => response.json())

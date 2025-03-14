@@ -220,6 +220,157 @@
             <i class="fas fa-arrow-right ml-2"></i>
           </a>
         </div>
+        
+        <!-- Educational Videos Section -->
+        <div class="mt-8">
+          <h2 class="text-2xl font-bold mb-4 flex items-center">
+            <i class="fas fa-video text-orange-500 mr-2"></i>
+            Educational Videos
+          </h2>
+          <p class="text-gray-600 dark:text-gray-300 mb-6">
+            Explore our collection of educational videos shared by our community of teachers. 
+            These videos cover a wide range of subjects and topics to enhance your learning experience.
+          </p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            {% for video in educational_videos %}
+              <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                <div class="aspect-w-16 aspect-h-9 bg-gray-100 dark:bg-gray-700">
+                  {% if video.external_url %}
+                    <div class="w-full h-full flex items-center justify-center relative group">
+                      {% if "youtube.com" in video.external_url or "youtu.be" in video.external_url %}
+                        {% if "youtube.com/watch?v=" in video.external_url %}
+                          {% with video_id=video.external_url.split="watch?v="|last|slice:":11" %}
+                            <img src="https://img.youtube.com/vi/{{ video_id }}/mqdefault.jpg" 
+                                 alt="{{ video.title }}" class="w-full h-full object-cover">
+                          {% endwith %}
+                        {% elif "youtu.be/" in video.external_url %}
+                          {% with video_id=video.external_url.split="youtu.be/"|last|slice:":11" %}
+                            <img src="https://img.youtube.com/vi/{{ video_id }}/mqdefault.jpg" 
+                                 alt="{{ video.title }}" class="w-full h-full object-cover">
+                          {% endwith %}
+                        {% else %}
+                          <div class="w-full h-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                            <i class="fas fa-video text-gray-400 dark:text-gray-500 text-5xl"></i>
+                          </div>
+                        {% endif %}
+                      {% else %}
+                        <div class="w-full h-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                          <i class="fas fa-video text-gray-400 dark:text-gray-500 text-5xl"></i>
+                        </div>
+                      {% endif %}
+                      <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <a href="{% url 'course_detail' video.course.slug %}#material-{{ video.id }}" class="text-white text-4xl">
+                          <i class="fas fa-play-circle"></i>
+                        </a>
+                      </div>
+                    </div>
+                  {% else %}
+                    <div class="w-full h-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                      <i class="fas fa-video text-gray-400 dark:text-gray-500 text-5xl"></i>
+                    </div>
+                  {% endif %}
+                </div>
+                
+                <div class="p-4">
+                  <h3 class="text-lg font-semibold mb-2 line-clamp-2">
+                    <a href="{% url 'course_detail' video.course.slug %}#material-{{ video.id }}" class="hover:text-orange-500 transition-colors">
+                      {{ video.title }}
+                    </a>
+                  </h3>
+                  
+                  <div class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-2">
+                    <span>{{ video.course.teacher.get_full_name|default:video.course.teacher.username }}</span>
+                    <span class="mx-2">•</span>
+                    <span>{{ video.created_at|date:"M j, Y" }}</span>
+                  </div>
+                  
+                  {% if video.description %}
+                    <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-2">{{ video.description }}</p>
+                  {% endif %}
+                  
+                  <a href="{% url 'course_detail' video.course.slug %}#material-{{ video.id }}" class="text-orange-500 hover:text-orange-600 font-medium transition-colors text-sm">
+                    Watch Video <i class="fas fa-play-circle ml-1"></i>
+                  </a>
+                </div>
+              </div>
+            {% empty %}
+              <div class="col-span-3 text-center py-8">
+                <div class="text-5xl text-gray-300 dark:text-gray-600 mb-4">
+                  <i class="fas fa-video-slash"></i>
+                </div>
+                <h3 class="text-xl font-medium mb-2">No videos available yet</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-6">Check back soon for educational videos from our teachers.</p>
+              </div>
+            {% endfor %}
+          </div>
+          
+          <div class="text-right mt-4">
+            <a href="{% url 'course_search' %}?material_type=video" class="text-orange-500 hover:text-orange-600 underline transition-colors duration-200">
+              <span>View All Videos</span>
+              <i class="fas fa-arrow-right ml-2"></i>
+            </a>
+          </div>
+        </div>
+        <!-- Success Stories Section -->
+        <div class="mt-8">
+          <h2 class="text-2xl font-bold mb-4 flex items-center">
+            <i class="fas fa-star text-yellow-500 mr-2"></i>
+            Success Stories
+          </h2>
+          <p class="text-gray-600 dark:text-gray-300 mb-6">
+            Read inspiring stories from students who have achieved their learning goals through our platform.
+            These success stories showcase the real-world impact of our educational community.
+          </p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            {% for story in success_stories %}
+              <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                {% if story.image %}
+                  <img src="{{ story.image.url }}" alt="{{ story.title }}" class="w-full h-48 object-cover">
+                {% else %}
+                  <div class="w-full h-48 bg-gradient-to-r from-orange-400 to-orange-600 flex items-center justify-center">
+                    <i class="fas fa-quote-left text-white text-5xl opacity-50"></i>
+                  </div>
+                {% endif %}
+                
+                <div class="p-4">
+                  <h3 class="text-lg font-semibold mb-2 line-clamp-2">
+                    <a href="{% url 'course_detail' story.course.slug %}" class="hover:text-orange-500 transition-colors">
+                      {{ story.title }}
+                    </a>
+                  </h3>
+                  
+                  <div class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-2">
+                    <span>{{ story.student.get_full_name|default:story.student.username }}</span>
+                    <span class="mx-2">•</span>
+                    <span>{{ story.created_at|date:"M j, Y" }}</span>
+                  </div>
+                  
+                  {% if story.content %}
+                    <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 mb-2">{{ story.content|truncatewords:30 }}</p>
+                  {% endif %}
+                </div>
+              </div>
+            {% empty %}
+              <div class="col-span-3 text-center py-8">
+                <div class="text-5xl text-gray-300 dark:text-gray-600 mb-4">
+                  <i class="fas fa-star"></i>
+                </div>
+                <h3 class="text-xl font-medium mb-2">No success stories available yet</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-6">Check back soon for inspiring stories from our students.</p>
+              </div>
+            {% endfor %}
+          </div>
+          
+          <div class="text-right mt-4">
+            <a href="{% url 'course_search' %}" class="text-orange-500 hover:text-orange-600 underline transition-colors duration-200">
+              <span>View All Success Stories</span>
+              <i class="fas fa-arrow-right ml-2"></i>
+            </a>
+          </div>
+        </div>
+
         <!-- GSoC Announcement -->
         <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white shadow-lg my-8">
           <div class="flex items-center justify-between">
@@ -472,6 +623,30 @@
           </p>
           <a href="{% url 'blog_list' %}"
              class="text-orange-500 dark:text-orange-400 text-sm hover:underline inline-block mt-2">Read More →</a>
+        </div>
+        
+        <!-- More Success Stories -->
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mt-4">
+          <h2 class="text-lg font-semibold mb-2 flex items-center">
+            <i class="fa-solid fa-star text-yellow-500 dark:text-yellow-400 mr-2"></i>
+            More Success Stories
+          </h2>
+          <div class="space-y-3">
+            <div>
+              <strong class="block text-gray-900 dark:text-gray-200 text-sm">Career Change Success</strong>
+              <p class="text-xs text-gray-600 dark:text-gray-400">
+                "After 10 years in finance, I successfully transitioned to web development thanks to the structured courses and supportive community."
+              </p>
+            </div>
+            <div>
+              <strong class="block text-gray-900 dark:text-gray-200 text-sm">Academic Achievement</strong>
+              <p class="text-xs text-gray-600 dark:text-gray-400">
+                "The supplementary materials helped me ace my university exams and secure a prestigious internship."
+              </p>
+            </div>
+          </div>
+          <a href="{% url 'blog_list' %}"
+             class="text-orange-500 dark:text-orange-400 text-sm hover:underline inline-block mt-2">View All Stories →</a>
         </div>
         <!-- Recent Contributors -->
         <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">

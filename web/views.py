@@ -146,7 +146,10 @@ def index(request):
     latest_post = BlogPost.objects.filter(status="published").order_by("-published_at").first()
 
     # Get educational videos
-    educational_videos = CourseMaterial.objects.filter(material_type="video").order_by("-created_at")[:5]
+    educational_videos = CourseMaterial.objects.filter(material_type="video").order_by("-created_at")[:6]
+    
+    # Get success stories (placeholder for future implementation)
+    success_stories = []
 
     # Get signup form if needed
     form = None
@@ -160,6 +163,7 @@ def index(request):
         "current_challenge": current_challenge,
         "latest_post": latest_post,
         "educational_videos": educational_videos,
+        "success_stories": success_stories,
         "form": form,
     }
     return render(request, "index.html", context)
