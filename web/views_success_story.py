@@ -13,7 +13,7 @@ def success_story_list(request):
 
     # Paginate results
     paginator = Paginator(success_stories, 9)  # 9 stories per page
-    page_number = request.GET.get('page', 1)
+    page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
     context = {
@@ -29,11 +29,9 @@ def success_story_detail(request, slug):
     success_story = get_object_or_404(SuccessStory, slug=slug, status="published")
 
     # Get related success stories (same author or similar content)
-    related_stories = SuccessStory.objects.filter(
-        status="published"
-    ).exclude(
-        id=success_story.id
-    ).order_by("-published_at")[:3]
+    related_stories = (
+        SuccessStory.objects.filter(status="published").exclude(id=success_story.id).order_by("-published_at")[:3]
+    )
 
     context = {
         "success_story": success_story,

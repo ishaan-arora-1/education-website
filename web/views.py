@@ -144,10 +144,10 @@ def index(request):
     current_challenge = Challenge.objects.filter(start_date__lte=timezone.now(), end_date__gte=timezone.now()).first()
 
     # Get latest blog post
-    latest_post = BlogPost.objects.filter(status='published').order_by('-published_at').first()
+    latest_post = BlogPost.objects.filter(status="published").order_by("-published_at").first()
 
     # Get latest success story
-    latest_success_story = SuccessStory.objects.filter(status='published').order_by('-published_at').first()
+    latest_success_story = SuccessStory.objects.filter(status="published").order_by("-published_at").first()
 
     # Get signup form if needed
     form = None
