@@ -39,7 +39,11 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('published_at', models.DateTimeField(blank=True, null=True)),
-                ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='success_stories', to=settings.AUTH_USER_MODEL)),
+                ('author', models.ForeignKey(
+                    on_delete=django.db.models.deletion.CASCADE,
+                    related_name='success_stories',
+                    to=settings.AUTH_USER_MODEL
+                )),
             ],
             options={
                 'verbose_name': 'Success Story',
