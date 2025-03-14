@@ -141,6 +141,12 @@ def index(request):
 
     # Get current challenge
     current_challenge = Challenge.objects.filter(start_date__lte=timezone.now(), end_date__gte=timezone.now()).first()
+    
+    # Get latest blog post
+    latest_post = BlogPost.objects.filter(status='published').order_by('-published_at').first()
+    
+    # Get educational videos
+    educational_videos = CourseMaterial.objects.filter(material_type='video').order_by('-created_at')[:5]
 
     # Get signup form if needed
     form = None
@@ -152,6 +158,8 @@ def index(request):
         "top_referrers": top_referrers,
         "featured_courses": featured_courses,
         "current_challenge": current_challenge,
+        "latest_post": latest_post,
+        "educational_videos": educational_videos,
         "form": form,
     }
     return render(request, "index.html", context)
@@ -619,6 +627,7 @@ def course_search(request):
     min_price = request.GET.get("min_price", "")
     max_price = request.GET.get("max_price", "")
     sort_by = request.GET.get("sort", "-created_at")
+    material_type = request.GET.get("material_type", "")
 
     courses = Course.objects.filter(status="published")
 
@@ -655,6 +664,10 @@ def course_search(request):
             courses = courses.filter(price__lte=max_price)
         except ValueError:
             pass
+            
+    # Filter by material type if specified
+    if material_type:
+        courses = courses.filter(materials__material_type=material_type).distinct()
 
     # Annotate with average rating for sorting
     courses = courses.annotate(
@@ -707,6 +720,7 @@ def course_search(request):
         "min_price": min_price,
         "max_price": max_price,
         "sort_by": sort_by,
+        "material_type": material_type,
         "subject_choices": Course._meta.get_field("subject").choices,
         "level_choices": Course._meta.get_field("level").choices,
         "total_results": total_results,
@@ -946,13 +960,40 @@ def course_progress_overview(request, slug):
 
 
 @login_required
-def upload_material(request, slug):
-    course = get_object_or_404(Course, slug=slug)
-    if request.user != course.teacher:
-        return HttpResponseForbidden("You are not authorized to upload materials for this course.")
+def upload_material(request, course_slug):
+    """Upload course material, including general educational videos."""
+    # Handle the case for general educational videos
+    if course_slug == 'general':
+        # Get or create a general course for educational videos
+        from web.models import Subject
+        general_course, created = Course.objects.get_or_create(
+            slug='general-educational-content',
+            defaults={
+                'title': 'General Educational Content',
+                'teacher': request.user,
+                'description': 'Repository for general educational videos and materials.',
+                'learning_objectives': 'Share knowledge across various subjects.',
+                'price': 0,
+                'max_students': 9999,
+                'subject': Subject.objects.first(),  # Get the first subject as default
+                'status': 'published',
+                'invite_only': False,
+            }
+        )
+        course = general_course
+    else:
+        course = get_object_or_404(Course, slug=course_slug)
+        # Check if user is the teacher of the course
+        if request.user != course.teacher:
+            return HttpResponseForbidden("You are not authorized to upload materials for this course.")
+
+    # Pre-select video type if specified in query params
+    initial = {}
+    if request.GET.get('type') == 'video':
+        initial['material_type'] = 'video'
 
     if request.method == "POST":
-        form = CourseMaterialForm(request.POST, request.FILES, course=course)
+        form = CourseMaterialForm(request.POST, request.FILES, course=course, initial=initial)
         if form.is_valid():
             material = form.save(commit=False)
             material.course = course
@@ -960,7 +1001,7 @@ def upload_material(request, slug):
             messages.success(request, "Course material uploaded successfully!")
             return redirect("course_detail", slug=course.slug)
     else:
-        form = CourseMaterialForm(course=course)
+        form = CourseMaterialForm(course=course, initial=initial)
 
     return render(request, "courses/upload_material.html", {"form": form, "course": course})
 

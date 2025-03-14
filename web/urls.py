@@ -83,7 +83,7 @@ urlpatterns += i18n_patterns(
         name="course_progress_overview",
     ),
     path(
-        "courses/<slug:slug>/materials/upload/",
+        "courses/<slug:course_slug>/materials/upload/",
         views.upload_material,
         name="upload_material",
     ),
