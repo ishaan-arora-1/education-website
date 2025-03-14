@@ -20,9 +20,9 @@
     {% endif %}
   </div>
 
-  {% if success_stories %}
+  {% if stories %}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {% for story in success_stories %}
+      {% for story in stories %}
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
           {% if story.featured_image %}
             <div class="aspect-w-16 aspect-h-9 bg-gray-100 dark:bg-gray-700">
@@ -67,36 +67,26 @@
     </div>
 
     <!-- Pagination -->
-    {% if is_paginated %}
-      <div class="mt-8 flex justify-center">
-        <nav class="inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-          {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-              <span class="sr-only">Previous</span>
-              <i class="fas fa-chevron-left"></i>
-            </a>
-          {% endif %}
-
-          {% for i in page_obj.paginator.page_range %}
-            {% if i == page_obj.number %}
-              <span class="relative inline-flex items-center px-4 py-2 border border-orange-500 bg-orange-50 dark:bg-orange-900/30 text-sm font-medium text-orange-700 dark:text-orange-300">
-                {{ i }}
-              </span>
-            {% elif i > page_obj.number|add:"-3" and i < page_obj.number|add:"3" %}
-              <a href="?page={{ i }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                {{ i }}
-              </a>
-            {% endif %}
-          {% endfor %}
-
-          {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-              <span class="sr-only">Next</span>
-              <i class="fas fa-chevron-right"></i>
-            </a>
-          {% endif %}
-        </nav>
-      </div>
+    {% if stories.has_other_pages %}
+    <div class="mt-8 flex justify-center">
+      <nav class="inline-flex rounded-md shadow">
+        {% if stories.has_previous %}
+        <a href="?page={{ stories.previous_page_number }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50">Previous</a>
+        {% endif %}
+        
+        {% for i in stories.paginator.page_range %}
+        {% if i == stories.number %}
+        <span class="px-3 py-2 text-sm font-medium text-white bg-orange-500 border border-orange-500">{{ i }}</span>
+        {% elif i > stories.number|add:"-3" and i < stories.number|add:"3" %}
+        <a href="?page={{ i }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50">{{ i }}</a>
+        {% endif %}
+        {% endfor %}
+        
+        {% if stories.has_next %}
+        <a href="?page={{ stories.next_page_number }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50">Next</a>
+        {% endif %}
+      </nav>
+    </div>
     {% endif %}
   {% else %}
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center">

@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import include, path
 
-from . import admin_views, views
+from . import admin_views, views, views_success_story
 from .views import GoodsListingView, add_goods_to_cart, sales_analytics, sales_data
 
 # Non-prefixed URLs
@@ -26,6 +26,12 @@ urlpatterns += i18n_patterns(
     path("blog/create/", views.create_blog_post, name="create_blog_post"),
     path("blog/tag/<str:tag>/", views.blog_tag, name="blog_tag"),
     path("blog/<slug:slug>/", views.blog_detail, name="blog_detail"),
+    # Success Stories URLs
+    path("success-stories/", views_success_story.success_story_list, name="success_story_list"),
+    path("success-stories/create/", views_success_story.create_success_story, name="create_success_story"),
+    path("success-stories/<slug:slug>/", views_success_story.success_story_detail, name="success_story_detail"),
+    path("success-stories/<slug:slug>/edit/", views_success_story.edit_success_story, name="edit_success_story"),
+    path("success-stories/<slug:slug>/delete/", views_success_story.delete_success_story, name="delete_success_story"),
     # Authentication URLs
     path("accounts/signup/", views.signup_view, name="account_signup"),  # Our custom signup view
     path("accounts/", include("allauth.urls")),

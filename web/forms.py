@@ -572,7 +572,7 @@ class SuccessStoryForm(forms.ModelForm):
         label="Content",
         help_text="Use markdown for formatting. You can use **bold**, *italic*, lists, etc."
     )
-    
+
     class Meta:
         model = SuccessStory
         fields = ['title', 'content', 'excerpt', 'featured_image', 'status']
