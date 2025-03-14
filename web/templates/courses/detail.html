@@ -420,16 +420,16 @@
                                           <div class="aspect-w-16 aspect-h-9 bg-black rounded-lg overflow-hidden">
                                             {% if "youtube.com" in material.external_url or "youtu.be" in material.external_url %}
                                               {% if "youtube.com/watch?v=" in material.external_url %}
-                                                {% with video_id=material.external_url.split="watch?v="|last|slice:":11" %}
+                                                {% with video_id=material.external_url|slice:"-11:" %}
                                                   <iframe src="https://www.youtube.com/embed/{{ video_id }}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                                                 {% endwith %}
                                               {% elif "youtu.be/" in material.external_url %}
-                                                {% with video_id=material.external_url.split="youtu.be/"|last|slice:":11" %}
+                                                {% with video_id=material.external_url|slice:"-11:" %}
                                                   <iframe src="https://www.youtube.com/embed/{{ video_id }}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                                                 {% endwith %}
                                               {% endif %}
                                             {% elif "vimeo.com" in material.external_url %}
-                                              {% with video_id=material.external_url.split="vimeo.com/"|last %}
+                                              {% with video_id=material.external_url|slice:"-9:" %}
                                                 <iframe src="https://player.vimeo.com/video/{{ video_id }}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
                                               {% endwith %}
                                             {% else %}
