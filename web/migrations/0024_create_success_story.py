@@ -22,8 +22,20 @@ class Migration(migrations.Migration):
                 ('slug', models.SlugField(max_length=200, unique=True)),
                 ('content', markdownx.models.MarkdownxField()),
                 ('excerpt', models.TextField(blank=True)),
-                ('featured_image', models.ImageField(blank=True, help_text='Featured image for the success story', upload_to='success_stories/images/')),
-                ('status', models.CharField(choices=[('draft', 'Draft'), ('published', 'Published'), ('archived', 'Archived')], default='draft', max_length=10)),
+                ('featured_image', models.ImageField(
+                    blank=True, 
+                    help_text='Featured image for the success story', 
+                    upload_to='success_stories/images/'
+                )),
+                ('status', models.CharField(
+                    choices=[
+                        ('draft', 'Draft'), 
+                        ('published', 'Published'), 
+                        ('archived', 'Archived')
+                    ], 
+                    default='draft', 
+                    max_length=10
+                )),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('published_at', models.DateTimeField(blank=True, null=True)),

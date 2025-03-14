@@ -49,7 +49,6 @@ from .forms import (
     ReviewForm,
     SessionForm,
     StorefrontForm,
-    SuccessStoryForm,
     TeacherSignupForm,
     TeachForm,
     UserRegistrationForm,

@@ -20,7 +20,19 @@ class Migration(migrations.Migration):
                 ('title', models.CharField(max_length=200)),
                 ('description', models.TextField()),
                 ('video_url', models.URLField(help_text='URL for external content like YouTube videos')),
-                ('category', models.CharField(choices=[('science', 'Science'), ('technology', 'Technology'), ('mathematics', 'Mathematics'), ('programming', 'Programming'), ('arts', 'Arts'), ('language', 'Language Learning'), ('other', 'Other')], default='other', max_length=20)),
+                ('category', models.CharField(
+                    choices=[
+                        ('science', 'Science'), 
+                        ('technology', 'Technology'), 
+                        ('mathematics', 'Mathematics'),
+                        ('programming', 'Programming'), 
+                        ('arts', 'Arts'), 
+                        ('language', 'Language Learning'),
+                        ('other', 'Other')
+                    ], 
+                    default='other', 
+                    max_length=20
+                )),
                 ('uploaded_at', models.DateTimeField(auto_now_add=True)),
                 ('uploader', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='educational_videos', to=settings.AUTH_USER_MODEL)),
             ],
