@@ -143,10 +143,10 @@ def index(request):
     current_challenge = Challenge.objects.filter(start_date__lte=timezone.now(), end_date__gte=timezone.now()).first()
 
     # Get latest blog post
-    latest_post = BlogPost.objects.filter(status='published').order_by('-published_at').first()
+    latest_post = BlogPost.objects.filter(status="published").order_by("-published_at").first()
 
     # Get educational videos
-    educational_videos = CourseMaterial.objects.filter(material_type='video').order_by('-created_at')[:5]
+    educational_videos = CourseMaterial.objects.filter(material_type="video").order_by("-created_at")[:5]
 
     # Get signup form if needed
     form = None
@@ -963,22 +963,23 @@ def course_progress_overview(request, slug):
 def upload_material(request, course_slug):
     """Upload course material, including general educational videos."""
     # Handle the case for general educational videos
-    if course_slug == 'general':
+    if course_slug == "general":
         # Get or create a general course for educational videos
         from web.models import Subject
+
         general_course, created = Course.objects.get_or_create(
-            slug='general-educational-content',
+            slug="general-educational-content",
             defaults={
-                'title': 'General Educational Content',
-                'teacher': request.user,
-                'description': 'Repository for general educational videos and materials.',
-                'learning_objectives': 'Share knowledge across various subjects.',
-                'price': 0,
-                'max_students': 9999,
-                'subject': Subject.objects.first(),  # Get the first subject as default
-                'status': 'published',
-                'invite_only': False,
-            }
+                "title": "General Educational Content",
+                "teacher": request.user,
+                "description": "Repository for general educational videos and materials.",
+                "learning_objectives": "Share knowledge across various subjects.",
+                "price": 0,
+                "max_students": 9999,
+                "subject": Subject.objects.first(),  # Get the first subject as default
+                "status": "published",
+                "invite_only": False,
+            },
         )
         course = general_course
     else:
@@ -989,8 +990,8 @@ def upload_material(request, course_slug):
 
     # Pre-select video type if specified in query params
     initial = {}
-    if request.GET.get('type') == 'video':
-        initial['material_type'] = 'video'
+    if request.GET.get("type") == "video":
+        initial["material_type"] = "video"
 
     if request.method == "POST":
         form = CourseMaterialForm(request.POST, request.FILES, course=course, initial=initial)
