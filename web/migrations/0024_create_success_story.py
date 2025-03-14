@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('web', '0023_educationalvideo'),
+        ('web', '0022_goods_alter_cartitem_unique_together_cartitem_goods_and_more'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
