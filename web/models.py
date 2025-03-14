@@ -4,7 +4,6 @@ import string
 import time
 import uuid
 from io import BytesIO
-
 from allauth.account.signals import user_signed_up
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -803,25 +802,20 @@ class SuccessStory(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     published_at = models.DateTimeField(null=True, blank=True)
-
     class Meta:
         ordering = ["-published_at", "-created_at"]
         verbose_name = "Success Story"
         verbose_name_plural = "Success Stories"
-
     def __str__(self):
         return self.title
-
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.title)
         if self.status == "published" and not self.published_at:
             self.published_at = timezone.now()
         super().save(*args, **kwargs)
-
     def get_absolute_url(self):
         return reverse("success_story_detail", kwargs={"slug": self.slug})
-
     @property
     def reading_time(self):
         """Estimate reading time in minutes."""
