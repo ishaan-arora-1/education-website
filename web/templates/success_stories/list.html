@@ -66,25 +66,24 @@
       {% endfor %}
     </div>
 
-    <!-- Pagination -->
     {% if stories.has_other_pages %}
-    <div class="mt-8 flex justify-center">
-      <nav class="inline-flex rounded-md shadow">
-        {% if stories.has_previous %}
-          <a href="?page={{ stories.previous_page_number }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50">Previous</a>
-        {% endif %}
-        {% for i in stories.paginator.page_range %}
-          {% if i == stories.number %}
-            <span class="px-3 py-2 text-sm font-medium text-white bg-orange-500 border border-orange-500">{{ i }}</span>
-          {% elif i > stories.number|add:"-3" and i < stories.number|add:"3" %}
-            <a href="?page={{ i }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50">{{ i }}</a>
+      <div class="mt-8 flex justify-center">
+        <nav class="inline-flex rounded-md shadow">
+          {% if stories.has_previous %}
+            <a href="?page={{ stories.previous_page_number }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50">Previous</a>
           {% endif %}
-        {% endfor %}
-        {% if stories.has_next %}
-          <a href="?page={{ stories.next_page_number }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50">Next</a>
-        {% endif %}
-      </nav>
-    </div>
+          {% for i in stories.paginator.page_range %}
+            {% if i == stories.number %}
+              <span class="px-3 py-2 text-sm font-medium text-white bg-orange-500 border border-orange-500">{{ i }}</span>
+            {% elif i > stories.number|add:"-3" and i < stories.number|add:"3" %}
+              <a href="?page={{ i }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50">{{ i }}</a>
+            {% endif %}
+          {% endfor %}
+          {% if stories.has_next %}
+            <a href="?page={{ stories.next_page_number }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50">Next</a>
+          {% endif %}
+        </nav>
+      </div>
     {% endif %}
   {% else %}
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center">
