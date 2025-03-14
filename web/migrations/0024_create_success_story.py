@@ -23,17 +23,17 @@ class Migration(migrations.Migration):
                 ('content', markdownx.models.MarkdownxField()),
                 ('excerpt', models.TextField(blank=True)),
                 ('featured_image', models.ImageField(
-                    blank=True, 
-                    help_text='Featured image for the success story', 
+                    blank=True,
+                    help_text='Featured image for the success story',
                     upload_to='success_stories/images/'
                 )),
                 ('status', models.CharField(
                     choices=[
-                        ('draft', 'Draft'), 
-                        ('published', 'Published'), 
+                        ('draft', 'Draft'),
+                        ('published', 'Published'),
                         ('archived', 'Archived')
-                    ], 
-                    default='draft', 
+                    ],
+                    default='draft',
                     max_length=10
                 )),
                 ('created_at', models.DateTimeField(auto_now_add=True)),

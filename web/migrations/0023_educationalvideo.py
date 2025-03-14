@@ -22,15 +22,15 @@ class Migration(migrations.Migration):
                 ('video_url', models.URLField(help_text='URL for external content like YouTube videos')),
                 ('category', models.CharField(
                     choices=[
-                        ('science', 'Science'), 
-                        ('technology', 'Technology'), 
+                        ('science', 'Science'),
+                        ('technology', 'Technology'),
                         ('mathematics', 'Mathematics'),
-                        ('programming', 'Programming'), 
-                        ('arts', 'Arts'), 
+                        ('programming', 'Programming'),
+                        ('arts', 'Arts'),
                         ('language', 'Language Learning'),
                         ('other', 'Other')
-                    ], 
-                    default='other', 
+                    ],
+                    default='other',
                     max_length=20
                 )),
                 ('uploaded_at', models.DateTimeField(auto_now_add=True)),
