@@ -89,6 +89,7 @@ from .models import (
     Storefront,
     StudyGroup,
     TimeSlot,
+    SuccessStory,
     WebRequest,
 )
 from .notifications import notify_session_reminder, notify_teacher_new_enrollment, send_enrollment_confirmation
@@ -142,6 +143,12 @@ def index(request):
     # Get current challenge
     current_challenge = Challenge.objects.filter(start_date__lte=timezone.now(), end_date__gte=timezone.now()).first()
 
+    # Get latest blog post
+    latest_post = BlogPost.objects.filter(status="published").order_by("-published_at").first()
+
+    # Get latest success story
+    latest_success_story = SuccessStory.objects.filter(status="published").order_by("-published_at").first()
+
     # Get signup form if needed
     form = None
     if not request.user.is_authenticated or not request.user.profile.is_teacher:
@@ -152,6 +159,8 @@ def index(request):
         "top_referrers": top_referrers,
         "featured_courses": featured_courses,
         "current_challenge": current_challenge,
+        "latest_post": latest_post,
+        "latest_success_story": latest_success_story,
         "form": form,
     }
     return render(request, "index.html", context)
