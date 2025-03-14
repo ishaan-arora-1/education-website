@@ -48,7 +48,7 @@ urlpatterns += i18n_patterns(
     path("courses/<slug:slug>/add-session/", views.add_session, name="add_session"),
     path("courses/<slug:slug>/confirm-rolled-sessions/", views.confirm_rolled_sessions, name="confirm_rolled_sessions"),
     path("courses/<slug:slug>/message-students/", views.message_enrolled_students, name="message_students"),
-    path("courses/<slug:slug>/add-student/", views.add_student_to_course, name="add_student"),
+    path("courses/<slug:slug>/add-student/", views.add_student_to_course, name="add_student_to_course"),
     path("teachers/<int:teacher_id>/message/", views.message_teacher, name="message_teacher"),
     # Payment URLs
     path(

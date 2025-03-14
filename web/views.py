@@ -52,7 +52,7 @@ from .forms import (
     TeacherSignupForm,
     TeachForm,
     UserRegistrationForm,
-    AddStudentForm,
+    StudentEnrollmentForm,
 )
 from .marketing import (
     generate_social_share_content,
@@ -91,7 +91,6 @@ from .models import (
     StudyGroup,
     TimeSlot,
     WebRequest,
-    User,
 )
 from .notifications import notify_session_reminder, notify_teacher_new_enrollment, send_enrollment_confirmation
 from .referrals import send_referral_reward_email
@@ -3102,32 +3101,52 @@ class StorefrontDetailView(LoginRequiredMixin, generic.DetailView):
     
 
 
+
 @login_required
+@teacher_required
 def add_student_to_course(request, slug):
-    """
-    Allows a teacher to directly enroll a student into a course.
-    """
-    # Ensure only the teacher who owns the course can access this view.
-    course = get_object_or_404(Course, slug=slug, teacher=request.user)
+    course = get_object_or_404(Course, slug=slug)
     
     if request.method == "POST":
-        form = AddStudentForm(request.POST)
+        form = StudentEnrollmentForm(request.POST)
         if form.is_valid():
-            # Use the 'student' field from the form
-            student = form.cleaned_data["student"]
-            # Optionally, get the student's email if needed:
-            student_email = student.email
-            
-            # Check for duplicate enrollment.
-            if Enrollment.objects.filter(course=course, student=student).exists():
-                messages.error(request, f"{student.username} is already enrolled in {course.title}.")
+            first_name = form.cleaned_data["first_name"]
+            last_name = form.cleaned_data["last_name"]
+            email = form.cleaned_data["email"]
+
+            # Check if a user with this email already exists.
+            if User.objects.filter(email=email).exists():
+                form.add_error("email", "A user with this email already exists.")
             else:
-                Enrollment.objects.create(course=course, student=student, status="approved")
-                messages.success(request, f"{student.username} has been successfully enrolled in {course.title}.")
-            return redirect("course_detail", slug=course.slug)
-        else:
-            messages.error(request, "There was an error with your submission. Please try again.")
+                # Generate a username by combining the first name and the email prefix.
+                email_prefix = email.split('@')[0]
+                generated_username = f"{first_name}_{email_prefix}".lower()
+
+                # Ensure the username is unique; if not, append a random string.
+                if User.objects.filter(username=generated_username).exists():
+                    generated_username += get_random_string(4)
+
+                # Create a new student account with an auto-generated password.
+                random_password = get_random_string(10)
+                student = User.objects.create_user(
+                    username=generated_username,
+                    email=email,
+                    password=random_password,
+                    first_name=first_name,
+                    last_name=last_name
+                )
+                # Mark the new user as a student (not a teacher).
+                student.profile.is_teacher = False
+                student.profile.save()
+
+                # Enroll the new student in the course if not already enrolled.
+                if Enrollment.objects.filter(course=course, student=student).exists():
+                    form.add_error(None, "Student is already enrolled.")
+                else:
+                    Enrollment.objects.create(course=course, student=student, status="approved")
+                    messages.success(request, f"{first_name} {last_name} has been enrolled in the course.")
+                    return redirect("course_detail", slug=course.slug)
     else:
-        form = AddStudentForm()
+        form = StudentEnrollmentForm()
     
     return render(request, "courses/add_student.html", {"form": form, "course": course})

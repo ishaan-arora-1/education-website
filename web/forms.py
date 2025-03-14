@@ -999,9 +999,22 @@ class StorefrontForm(forms.ModelForm):
             "is_active",
         ]
 
-
- 
-class AddStudentForm(forms.Form):
-    student=forms.ModelChoiceField(queryset=User.objects.filter(is_active=True),
-                                   label="Select Student",
-                                   widget=forms.Select(attrs={"class":"form-control"}))
+class StudentEnrollmentForm(forms.Form):
+    first_name = forms.CharField(
+        max_length=30,
+        required=True,
+        widget=forms.TextInput(attrs={"placeholder": "First Name"}),
+        label="First Name"
+    )
+    last_name = forms.CharField(
+        max_length=30,
+        required=True,
+        widget=forms.TextInput(attrs={"placeholder": "Last Name"}),
+        label="Last Name"
+    )
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={"placeholder": "Student Email"}),
+        label="Student Email"
+    )
+       
