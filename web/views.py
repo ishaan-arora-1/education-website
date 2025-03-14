@@ -141,10 +141,10 @@ def index(request):
 
     # Get current challenge
     current_challenge = Challenge.objects.filter(start_date__lte=timezone.now(), end_date__gte=timezone.now()).first()
-    
+
     # Get latest blog post
     latest_post = BlogPost.objects.filter(status='published').order_by('-published_at').first()
-    
+
     # Get educational videos
     educational_videos = CourseMaterial.objects.filter(material_type='video').order_by('-created_at')[:5]
 
@@ -664,7 +664,7 @@ def course_search(request):
             courses = courses.filter(price__lte=max_price)
         except ValueError:
             pass
-            
+
     # Filter by material type if specified
     if material_type:
         courses = courses.filter(materials__material_type=material_type).distinct()
