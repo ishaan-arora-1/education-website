@@ -48,16 +48,21 @@ class DirectEnrollmentTest(TestCase):
         url = reverse("add_student_to_course", args=[self.course.slug])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+        # Check that the page contains the heading "Enroll Student in"
         self.assertContains(response, "Enroll Student in")
 
     def test_post_add_student_view(self):
         self.client.login(username="teacher1", password="pass")
         url = reverse("add_student_to_course", args=[self.course.slug])
         data = {"first_name": "New", "last_name": "Student", "email": "newstudent@example.com"}
-        response = self.client.post(url, data, follow=True)
-        self.assertEqual(response.status_code, 200)
+        response = self.client.post(url, data)
+        # Verify that the teacher is redirected to the course detail page upon success.
+        self.assertRedirects(response, reverse("course_detail", args=[self.course.slug]))
         # Verify that the enrollment is created.
-        self.assertTrue(Enrollment.objects.filter(course=self.course, student__email="newstudent@example.com").exists())
+        self.assertTrue(Enrollment.objects.filter(
+            course=self.course,
+            student__email="newstudent@example.com"
+        ).exists())
 
     def test_duplicate_enrollment(self):
         # Enroll the student once.
@@ -65,5 +70,29 @@ class DirectEnrollmentTest(TestCase):
         self.client.login(username="teacher1", password="pass")
         url = reverse("add_student_to_course", args=[self.course.slug])
         data = {"first_name": "New", "last_name": "Student", "email": self.student.email}
-        response = self.client.post(url, data, follow=True)
+        response = self.client.post(url, data)
+        # Verify that the error message is shown for duplicate enrollment.
         self.assertContains(response, "A user with this email already exists.")
+
+    def test_non_teacher_cannot_access_add_student_view(self):
+        # A non-teacher (student) should not be able to access the enrollment form.
+        self.client.login(username="student1", password="pass")
+        url = reverse("add_student_to_course", args=[self.course.slug])
+        response = self.client.get(url)
+        # Expect that the response status is not 200 (could be a redirect or 403)
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_form_validation(self):
+        # Test that a required field (email) is validated.
+        self.client.login(username="teacher1", password="pass")
+        url = reverse("add_student_to_course", args=[self.course.slug])
+        data = {"first_name": "New", "last_name": "Student", "email": ""}
+        response = self.client.post(url, data)
+        # Expect the form to be invalid so the page reloads with errors.
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Enrollment.objects.filter(
+            course=self.course, 
+            student__first_name="New", 
+            student__last_name="Student"
+        ).exists())
+        self.assertContains(response, "This field is required")

@@ -1003,18 +1003,18 @@ class StudentEnrollmentForm(forms.Form):
     first_name = forms.CharField(
         max_length=30,
         required=True,
-        widget=forms.TextInput(attrs={"placeholder": "First Name"}),
+        widget=TailwindInput(attrs={"placeholder": "First Name"}),
         label="First Name"
     )
     last_name = forms.CharField(
         max_length=30,
         required=True,
-        widget=forms.TextInput(attrs={"placeholder": "Last Name"}),
+        widget=TailwindInput(attrs={"placeholder": "Last Name"}),
         label="Last Name"
     )
     email = forms.EmailField(
         required=True,
-        widget=forms.EmailInput(attrs={"placeholder": "Student Email"}),
+        widget=TailwindEmailInput(attrs={"placeholder": "Student Email"}),
         label="Student Email"
     )
        
