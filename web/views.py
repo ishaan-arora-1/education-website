@@ -92,7 +92,6 @@ from .models import (
     Storefront,
     StudyGroup,
     TimeSlot,
-    SuccessStory,
     WebRequest,
 )
 from .notifications import notify_session_reminder, notify_teacher_new_enrollment, send_enrollment_confirmation
