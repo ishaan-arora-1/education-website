@@ -16,7 +16,7 @@ from web.forms_additional import (
     MessageForm,
     StudyGroupForm,
     TeachingInquiryForm,
-    TopicCreationForm,
+    TopicCreationForm
 )
 from web.models import Course, ForumCategory, Subject, User
 

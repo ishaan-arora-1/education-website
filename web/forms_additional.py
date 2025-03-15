@@ -9,7 +9,7 @@ from .widgets import (
     TailwindInput,
     TailwindNumberInput,
     TailwindSelect,
-    TailwindTextarea,
+    TailwindTextarea
 )
 
 

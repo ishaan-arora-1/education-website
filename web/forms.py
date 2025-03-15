@@ -20,7 +20,7 @@ from .models import (
     Review,
     Session,
     Storefront,
-    Subject,
+    Subject
 )
 from .referrals import handle_referral
 from .widgets import (
@@ -32,7 +32,7 @@ from .widgets import (
     TailwindInput,
     TailwindNumberInput,
     TailwindSelect,
-    TailwindTextarea,
+    TailwindTextarea
 )
 
 __all__ = [
@@ -574,17 +574,16 @@ class EducationalVideoForm(forms.ModelForm):
         widgets = {
             "title": TailwindInput(attrs={"placeholder": "Video title"}),
             "description": TailwindTextarea(
-                attrs={"rows": 4,
-                       "placeholder": "Describe what viewers will learn from this video"
+                attrs={
+                    "rows": 4,
+                    "placeholder": "Describe what viewers will learn from this video",
                 }
             ),
             "video_url": TailwindInput(attrs={"placeholder": "YouTube or Vimeo URL", "type": "url"}),
             "category": TailwindSelect(
                 attrs={
-                    "class": (
-                        "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 "
-                        "rounded-lg focus:ring-2 focus:ring-blue-500"
-                    )
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600"
+                    "rounded-lg focus:ring-2 focus:ring-blue-500"
                 }
             ),
         }

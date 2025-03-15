@@ -36,7 +36,7 @@ from .models import (
     SessionAttendance,
     Storefront,
     Subject,
-    WebRequest,
+    WebRequest
 )
 
 

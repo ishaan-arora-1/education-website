@@ -26,7 +26,7 @@ from web.models import (
     Session,
     SessionAttendance,
     StudyGroup,
-    Subject,
+    Subject
 )
 
 
