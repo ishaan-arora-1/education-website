@@ -159,6 +159,20 @@ def index(request):
         "current_challenge": current_challenge,
         "form": form,
     }
+    if request.user.is_authenticated:
+        user_team_goals = TeamGoal.objects.filter(
+            Q(creator=request.user) | Q(members__user=request.user)
+        ).distinct().order_by('-created_at')[:3]
+        
+        team_invites = TeamInvite.objects.filter(
+            recipient=request.user,
+            status='pending'
+        ).select_related('goal', 'sender')
+        
+        context.update({
+            "user_team_goals": user_team_goals,
+            "team_invites": team_invites,
+        })
     return render(request, "index.html", context)
 
 
@@ -3108,6 +3122,7 @@ def gsoc_landing_page(request):
     return render(request, "gsoc_landing_page.html")
 
 
+
 # Team Collaboration Views
 @login_required
 def team_goals(request):
@@ -3222,7 +3237,7 @@ def decline_team_invite(request, invite_id):
     invite.responded_at = timezone.now()
     invite.save()
     
-    messages.info(request, f'You have declined to join {invite.team_goal.title}.')
+    messages.info(request, f'You have declined to join {invite.goal.title}.')
     return redirect('team_goals')
 
 @login_required
