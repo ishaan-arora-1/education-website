@@ -5,60 +5,66 @@ from django.conf import settings
 from django.db import migrations, models
 from django.utils.text import slugify
 
+
 def create_subjects_from_categories(apps, schema_editor):
-    Subject = apps.get_model('web', 'Subject')
-    
+    Subject = apps.get_model("web", "Subject")
+
     # Create subjects for all possible categories
-    categories = [
-        'science', 'technology', 'mathematics', 
-        'programming', 'arts', 'language', 'other'
-    ]
-    
+    categories = ["science", "technology", "mathematics", "programming", "arts", "language", "other"]
+
     for category in categories:
         Subject.objects.get_or_create(
             name=category.title(),
             defaults={
-                'slug': slugify(category),
-                'description': f'Videos about {category.title()}',
-            }
+                "slug": slugify(category),
+                "description": f"Videos about {category.title()}",
+            },
         )
 
+
 def reverse_subject_creation(apps, schema_editor):
-    Subject = apps.get_model('web', 'Subject')
+    Subject = apps.get_model("web", "Subject")
     # Only delete subjects that were created by this migration
-    categories = [
-        'Science', 'Technology', 'Mathematics', 
-        'Programming', 'Arts', 'Language', 'Other'
-    ]
+    categories = ["Science", "Technology", "Mathematics", "Programming", "Arts", "Language", "Other"]
     Subject.objects.filter(name__in=categories).delete()
+
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('web', '0022_goods_alter_cartitem_unique_together_cartitem_goods_and_more'),
+        ("web", "0022_goods_alter_cartitem_unique_together_cartitem_goods_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
-        migrations.RunPython(
-            create_subjects_from_categories,
-            reverse_code=reverse_subject_creation
-        ),
+        migrations.RunPython(create_subjects_from_categories, reverse_code=reverse_subject_creation),
         migrations.CreateModel(
-            name='EducationalVideo',
+            name="EducationalVideo",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=200)),
-                ('description', models.TextField()),
-                ('video_url', models.URLField(help_text='URL for external content like YouTube videos')),
-                ('category', models.ForeignKey('web.Subject', on_delete=django.db.models.deletion.PROTECT, related_name='educational_videos')),
-                ('uploaded_at', models.DateTimeField(auto_now_add=True)),
-                ('uploader', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='educational_videos', to=settings.AUTH_USER_MODEL)),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("title", models.CharField(max_length=200)),
+                ("description", models.TextField()),
+                ("video_url", models.URLField(help_text="URL for external content like YouTube videos")),
+                (
+                    "category",
+                    models.ForeignKey(
+                        "web.Subject", on_delete=django.db.models.deletion.PROTECT, related_name="educational_videos"
+                    ),
+                ),
+                ("uploaded_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "uploader",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="educational_videos",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Educational Video',
-                'verbose_name_plural': 'Educational Videos',
-                'ordering': ['-uploaded_at'],
+                "verbose_name": "Educational Video",
+                "verbose_name_plural": "Educational Videos",
+                "ordering": ["-uploaded_at"],
             },
         ),
     ]
