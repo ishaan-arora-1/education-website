@@ -1144,3 +1144,116 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity}x {self.goods.name}"
+
+
+class TeamGoal(models.Model):
+    STATUS_CHOICES = [
+        ("active", "Active"),
+        ("completed", "Completed"),
+        ("expired", "Expired"),
+    ]
+
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_goals')
+    target_date = models.DateField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} (Due: {self.target_date})"
+
+    @property
+    def is_expired(self):
+        return self.target_date < timezone.now().date()
+
+    @property
+    def completion_percentage(self):
+        total_members = self.members.count()
+        if total_members == 0:
+            return 0
+        completed_members = self.members.filter(teamgoalmember__completed=True).count()
+        return int((completed_members / total_members) * 100)
+
+
+class TeamGoalMember(models.Model):
+    goal = models.ForeignKey(TeamGoal, on_delete=models.CASCADE, related_name='members')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='team_goals')
+    completed = models.BooleanField(default=False)
+    completion_date = models.DateTimeField(null=True, blank=True)
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['goal', 'user']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.goal.title}"
+
+    def mark_completed(self):
+        if not self.completed:
+            self.completed = True
+            self.completion_date = timezone.now()
+            self.save()
+            
+            # Create notification for goal creator
+            if self.user != self.goal.creator:
+                Notification.objects.create(
+                    user=self.goal.creator,
+                    title="Team Goal Progress",
+                    message=f"{self.user.username} has completed their part of the goal: {self.goal.title}",
+                    notification_type="success"
+                )
+
+
+class TeamInvite(models.Model):
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("accepted", "Accepted"),
+        ("declined", "Declined"),
+        ("expired", "Expired"),
+    ]
+
+    goal = models.ForeignKey(TeamGoal, on_delete=models.CASCADE, related_name='invites')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_team_invites')
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_team_invites')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    created_at = models.DateTimeField(auto_now_add=True)
+    responded_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ['goal', 'recipient']
+
+    def __str__(self):
+        return f"Invite for {self.recipient.username} to {self.goal.title}"
+
+    def accept(self):
+        if self.status == "pending":
+            self.status = "accepted"
+            self.responded_at = timezone.now()
+            self.save()
+            
+            # Create team goal member
+            TeamGoalMember.objects.create(goal=self.goal, user=self.recipient)
+            
+            # Notify goal creator
+            Notification.objects.create(
+                user=self.goal.creator,
+                title="Team Goal Invite Accepted",
+                message=f"{self.recipient.username} has joined your goal: {self.goal.title}",
+                notification_type="success"
+            )
+
+    def decline(self):
+        if self.status == "pending":
+            self.status = "declined"
+            self.responded_at = timezone.now()
+            self.save()
+            
+            # Notify goal creator
+            Notification.objects.create(
+                user=self.goal.creator,
+                title="Team Goal Invite Declined",
+                message=f"{self.recipient.username} has declined to join your goal: {self.goal.title}",
+                notification_type="warning"
+            )

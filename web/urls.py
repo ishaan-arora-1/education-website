@@ -5,7 +5,13 @@ from django.contrib.auth.decorators import login_required
 from django.urls import include, path
 
 from . import admin_views, views
-from .views import GoodsListingView, add_goods_to_cart, sales_analytics, sales_data
+from .views import (
+    GoodsListingView,
+    OrderDetailView,
+    OrderManagementView,
+    StoreAnalyticsView,
+    AdminMerchAnalyticsView,
+)
 
 # Non-prefixed URLs
 urlpatterns = [
@@ -183,7 +189,6 @@ urlpatterns += i18n_patterns(
     path("store/<slug:store_slug>/goods/create/", login_required(views.GoodsCreateView.as_view()), name="goods_create"),
     path("goods/<int:pk>/edit/", views.GoodsUpdateView.as_view(), name="goods_update"),
     path("goods/delete/<int:pk>/", views.GoodsDeleteView.as_view(), name="goods_delete"),
-    path("goods/add-to-cart/<int:pk>/", add_goods_to_cart, name="add_goods_to_cart"),
     path("products/", GoodsListingView.as_view(), name="goods_listing"),
     # Order Management
     path("orders/<int:pk>/", login_required(views.OrderDetailView.as_view()), name="order_detail"),
@@ -204,9 +209,15 @@ urlpatterns += i18n_patterns(
         login_required(views.AdminMerchAnalyticsView.as_view()),
         name="admin_merch_analytics",
     ),
-    path("analytics/", sales_analytics, name="sales_analytics"),
-    path("analytics/data/", sales_data, name="sales_data"),
+    path("analytics/", views.sales_analytics, name="sales_analytics"),
+    path("analytics/data/", views.sales_data, name="sales_data"),
     path("gsoc/", views.gsoc_landing_page, name="gsoc_landing_page"),
+    # Team Collaboration URLs
+    path("teams/", views.team_goals, name="team_goals"),
+    path("teams/create/", views.create_team_goal, name="create_team_goal"),
+    path("teams/<int:goal_id>/", views.team_goal_detail, name="team_goal_detail"),
+    path("teams/invite/<int:invite_id>/accept/", views.accept_team_invite, name="accept_team_invite"),
+    path("teams/invite/<int:invite_id>/decline/", views.decline_team_invite, name="decline_team_invite"),
     prefix_default_language=True,
 )
 

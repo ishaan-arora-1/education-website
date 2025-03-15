@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}{{ goal.title }} - Team Goal - Alpha One Labs{% endblock %}
+
+{% block content %}
+<main class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <div class="flex items-center space-x-4">
+                    <a href="{% url 'team_goals' %}" 
+                       class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{{ goal.title }}</h1>
+                </div>
+                <p class="text-gray-500 dark:text-gray-400 mt-2">
+                    Created by {{ goal.creator.get_full_name|default:goal.creator.username }}
+                    on {{ goal.created_at|date:"M j, Y" }}
+                </p>
+            </div>
+            <span class="px-3 py-1 text-sm rounded-full 
+                {% if goal.status == 'in_progress' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200
+                {% elif goal.status == 'completed' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
+                {% else %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300{% endif %}">
+                {{ goal.get_status_display }}
+            </span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Main Content -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Description -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Description</h2>
+                    <p class="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{{ goal.description }}</p>
+                </div>
+
+                <!-- Timeline -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Timeline</h2>
+                    <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+                        <div>
+                            <span class="block font-medium">Created</span>
+                            <span>{{ goal.created_at|date:"M j, Y" }}</span>
+                        </div>
+                        <div class="h-0.5 flex-1 bg-gray-200 dark:bg-gray-700 mx-4"></div>
+                        <div>
+                            <span class="block font-medium">Target Date</span>
+                            <span>{{ goal.target_date|date:"M j, Y" }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Members -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Team Members</h2>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">
+                            {{ goal.members.count }} members
+                        </span>
+                    </div>
+                    <div class="space-y-4">
+                        {% for member in goal.members.all %}
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    {% if member.user.profile.avatar %}
+                                        <img src="{{ member.user.profile.avatar.url }}" 
+                                             alt="{{ member.user.get_full_name|default:member.user.username }}"
+                                             class="w-10 h-10 rounded-full">
+                                    {% else %}
+                                        <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                            <i class="fas fa-user text-gray-400 dark:text-gray-500"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <span class="font-medium text-gray-900 dark:text-white">
+                                            {{ member.user.get_full_name|default:member.user.username }}
+                                        </span>
+                                        <span class="text-sm text-gray-500 dark:text-gray-400 block">
+                                            {{ member.get_role_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% if member.user == goal.creator %}
+                                    <span class="text-sm text-orange-600 dark:text-orange-400">
+                                        <i class="fas fa-crown mr-1"></i>
+                                        Creator
+                                    </span>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Invite Members -->
+                {% if user == goal.creator or goal.members.filter(user=user, role='leader').exists %}
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Invite Members</h2>
+                        <form method="post" class="space-y-4">
+                            {% csrf_token %}
+                            
+                            {% if invite_form.non_field_errors %}
+                                <div class="bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                                    {% for error in invite_form.non_field_errors %}
+                                        <p class="text-red-600 dark:text-red-400">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            <div>
+                                <label for="{{ invite_form.recipient.id_for_label }}" 
+                                       class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Select User
+                                </label>
+                                {{ invite_form.recipient }}
+                                {% if invite_form.recipient.errors %}
+                                    <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                                        {{ invite_form.recipient.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <button type="submit" 
+                                    class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition duration-200">
+                                <i class="fas fa-user-plus mr-2"></i>
+                                Send Invitation
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
+
+                <!-- Quick Stats -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Stats</h2>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 dark:text-gray-300">Days Remaining</span>
+                            <span class="font-medium text-gray-900 dark:text-white">
+                                {% if goal.target_date|timeuntil %}
+                                    {{ goal.target_date|timeuntil }}
+                                {% else %}
+                                    Overdue
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 dark:text-gray-300">Team Size</span>
+                            <span class="font-medium text-gray-900 dark:text-white">
+                                {{ goal.members.count }} members
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 dark:text-gray-300">Created</span>
+                            <span class="font-medium text-gray-900 dark:text-white">
+                                {{ goal.created_at|timesince }} ago
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %} 
