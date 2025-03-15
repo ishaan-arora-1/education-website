@@ -218,6 +218,7 @@ urlpatterns += i18n_patterns(
     path("teams/<int:goal_id>/", views.team_goal_detail, name="team_goal_detail"),
     path("teams/invite/<int:invite_id>/accept/", views.accept_team_invite, name="accept_team_invite"),
     path("teams/invite/<int:invite_id>/decline/", views.decline_team_invite, name="decline_team_invite"),
+    path("teams/<int:goal_id>/mark-contribution/", views.mark_team_contribution, name="mark_team_contribution"),
     prefix_default_language=True,
 )
 

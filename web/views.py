@@ -3224,3 +3224,24 @@ def decline_team_invite(request, invite_id):
     
     messages.info(request, f'You have declined to join {invite.team_goal.title}.')
     return redirect('team_goals')
+
+@login_required
+def mark_team_contribution(request, goal_id):
+    """Allow a team member to mark their contribution as complete."""
+    goal = get_object_or_404(TeamGoal, id=goal_id)
+    
+    # Find the current user's membership in this goal
+    member = goal.members.filter(user=request.user).first()
+    
+    if not member:
+        messages.error(request, "You are not a member of this team goal.")
+        return redirect('team_goal_detail', goal_id=goal_id)
+    
+    if member.completed:
+        messages.info(request, "Your contribution is already marked as complete.")
+        return redirect('team_goal_detail', goal_id=goal_id)
+    
+    # Mark the user's contribution as complete
+    member.mark_completed()
+    messages.success(request, "Your contribution has been marked as complete.")
+    return redirect('team_goal_detail', goal_id=goal_id)

@@ -41,7 +41,7 @@
             </div>
 
             <!-- Sidebar -->
-            <div class="lg:col-span-1">
+            <div class="lg:col-span-1 flex flex-col items-center">
                 <!-- Team Members -->
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
                     <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">{% trans "Team Members" %}</h2>
@@ -79,6 +79,12 @@
                     </form>
                 </div>
                 {% endif %}
+                <form action="{% url 'mark_team_contribution' goal.id %}" method="post" class="mt-6">
+                    {% csrf_token %}
+                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white text-lh px-2 py-1 rounded transition duration-200">
+                        {% trans "Mark Complete" %}
+                    </button>
+                </form>
             </div>
         </div>
     </div>
