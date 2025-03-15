@@ -789,15 +789,12 @@ class SuccessStory(models.Model):
         ("published", "Published"),
         ("archived", "Archived"),
     ]
-
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, max_length=200)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="success_stories")
     content = MarkdownxField()
     excerpt = models.TextField(blank=True)
-    featured_image = models.ImageField(
-        upload_to="success_stories/images/", blank=True, help_text="Featured image for the success story"
-    )
+    featured_image = models.ImageField(upload_to="success_stories/images/",blank=True,help_text="Featured image for the success story")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="draft")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -824,7 +821,6 @@ class SuccessStory(models.Model):
         minutes = word_count / words_per_minute
         return max(1, round(minutes))
     
-
 @receiver(user_signed_up)
 def set_user_type(sender, request, user, **kwargs):
     """Set the user type (teacher/student) when they sign up."""
@@ -832,7 +828,6 @@ def set_user_type(sender, request, user, **kwargs):
     profile = user.profile
     profile.is_teacher = is_teacher
     profile.save()
-
 
 class Cart(models.Model):
     user = models.OneToOneField(
