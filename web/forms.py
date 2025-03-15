@@ -579,7 +579,10 @@ class EducationalVideoForm(forms.ModelForm):
             "video_url": TailwindInput(attrs={"placeholder": "YouTube or Vimeo URL", "type": "url"}),
             "category": TailwindSelect(
                 attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    "class": (
+                        "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 "
+                        "rounded-lg focus:ring-2 focus:ring-blue-500"
+                    )
                 }
             ),
         }
