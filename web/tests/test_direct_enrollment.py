@@ -1,22 +1,19 @@
-from django.urls import reverse
 from django.contrib.auth.models import User
 from django.test import TestCase
-from web.models import Course, Enrollment, Subject
+from django.urls import reverse
 from django.utils.text import slugify
+
+from web.models import Course, Enrollment, Subject
+
 
 class DirectEnrollmentTest(TestCase):
     def setUp(self):
         # Create a subject for the course
         self.subject = Subject.objects.create(
-            name="Mathematics",
-            slug="mathematics",
-            description="Mathematics courses",
-            icon="fas fa-calculator"
+            name="Mathematics", slug="mathematics", description="Mathematics courses", icon="fas fa-calculator"
         )
         # Create a teacher with a unique email
-        self.teacher = User.objects.create_user(
-            username="teacher1", password="pass", email="teacher1@example.com"
-        )
+        self.teacher = User.objects.create_user(username="teacher1", password="pass", email="teacher1@example.com")
         self.teacher.profile.is_teacher = True
         self.teacher.profile.save()
 
@@ -34,13 +31,11 @@ class DirectEnrollmentTest(TestCase):
             max_students=30,
             subject=self.subject,  # Use the created subject
             level="beginner",
-            tags="test,course"
+            tags="test,course",
         )
 
         # Create a student with a unique email.
-        self.student = User.objects.create_user(
-            username="student1", password="pass", email="student1@example.com"
-        )
+        self.student = User.objects.create_user(username="student1", password="pass", email="student1@example.com")
 
     def test_get_add_student_view(self):
         # Teacher logs in and retrieves the enrollment form.
@@ -59,10 +54,7 @@ class DirectEnrollmentTest(TestCase):
         # Verify that the teacher is redirected to the course detail page upon success.
         self.assertRedirects(response, reverse("course_detail", args=[self.course.slug]))
         # Verify that the enrollment is created.
-        self.assertTrue(Enrollment.objects.filter(
-            course=self.course,
-            student__email="newstudent@example.com"
-        ).exists())
+        self.assertTrue(Enrollment.objects.filter(course=self.course, student__email="newstudent@example.com").exists())
 
     def test_duplicate_enrollment(self):
         # Enroll the student once.
@@ -90,9 +82,9 @@ class DirectEnrollmentTest(TestCase):
         response = self.client.post(url, data)
         # Expect the form to be invalid so the page reloads with errors.
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(Enrollment.objects.filter(
-            course=self.course, 
-            student__first_name="New", 
-            student__last_name="Student"
-        ).exists())
+        self.assertFalse(
+            Enrollment.objects.filter(
+                course=self.course, student__first_name="New", student__last_name="Student"
+            ).exists()
+        )
         self.assertContains(response, "This field is required")

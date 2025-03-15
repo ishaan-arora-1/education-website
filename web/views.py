@@ -49,10 +49,10 @@ from .forms import (
     ReviewForm,
     SessionForm,
     StorefrontForm,
+    StudentEnrollmentForm,
     TeacherSignupForm,
     TeachForm,
     UserRegistrationForm,
-    StudentEnrollmentForm,
 )
 from .marketing import (
     generate_social_share_content,
@@ -3102,15 +3102,13 @@ class StorefrontDetailView(LoginRequiredMixin, generic.DetailView):
 
 def gsoc_landing_page(request):
     return render(request, "gsoc_landing_page.html")
-    
-
 
 
 @login_required
 @teacher_required
 def add_student_to_course(request, slug):
     course = get_object_or_404(Course, slug=slug)
-    
+
     if request.method == "POST":
         form = StudentEnrollmentForm(request.POST)
         if form.is_valid():
@@ -3123,7 +3121,7 @@ def add_student_to_course(request, slug):
                 form.add_error("email", "A user with this email already exists.")
             else:
                 # Generate a username by combining the first name and the email prefix.
-                email_prefix = email.split('@')[0]
+                email_prefix = email.split("@")[0]
                 generated_username = f"{first_name}_{email_prefix}".lower()
 
                 # Ensure the username is unique; if not, append a random string.
@@ -3137,7 +3135,7 @@ def add_student_to_course(request, slug):
                         email=email,
                         password=random_password,
                         first_name=first_name,
-                        last_name=last_name
+                        last_name=last_name,
                     )
                     # Mark the new user as a student (not a teacher).
                     student.profile.is_teacher = False
@@ -3151,18 +3149,19 @@ def add_student_to_course(request, slug):
                         messages.success(request, f"{first_name} {last_name} has been enrolled in the course.")
 
                         # Send enrollment notification and password reset link to student
-                        reset_link = request.build_absolute_uri(reverse('account_reset_password'))
+                        reset_link = request.build_absolute_uri(reverse("account_reset_password"))
                         context = {
-                            'student': student,
-                            'course': course,
-                            'teacher': request.user,
-                            'reset_link': reset_link,
+                            "student": student,
+                            "course": course,
+                            "teacher": request.user,
+                            "reset_link": reset_link,
                         }
-                        html_message = render_to_string('emails/student_enrollment.html', context)
+                        html_message = render_to_string("emails/student_enrollment.html", context)
                         send_mail(
-                            f'You have been enrolled in {course.title}',
-                            f'You have been enrolled in {course.title} by {request.user.get_full_name() or request.user.username}. '
-                            f'Please visit {reset_link} to set your password.',
+                            f"You have been enrolled in {course.title}",
+                            f"You have been enrolled in {course.title} by\
+                                {request.user.get_full_name() or request.user.username}. "
+                            f"Please visit {reset_link} to set your password.",
                             settings.DEFAULT_FROM_EMAIL,
                             [email],
                             html_message=html_message,
@@ -3173,5 +3172,5 @@ def add_student_to_course(request, slug):
                     form.add_error(None, "Failed to create user account. Please try again.")
     else:
         form = StudentEnrollmentForm()
-    
+
     return render(request, "courses/add_student.html", {"form": form, "course": course})
