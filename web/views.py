@@ -20,22 +20,16 @@ from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.db import IntegrityError, models, transaction
 from django.db.models import Avg, Count, Q, Sum
-from django.http import (
-    Http404,
-    HttpResponse,
-    HttpResponseBadRequest,
-    HttpResponseForbidden,
-    JsonResponse,
-)
+from django.http import FileResponse, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
-from django.urls import reverse, reverse_lazy
+from django.urls import NoReverseMatch, reverse, reverse_lazy
 from django.utils import timezone
-from django.utils.text import slugify
+from django.utils.crypto import get_random_string
+from django.views import generic
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
-from django.views.generic.base import TemplateView
+from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
 from .calendar_sync import generate_google_calendar_link, generate_ical_feed, generate_outlook_calendar_link
 from .decorators import teacher_required
@@ -58,8 +52,6 @@ from .forms import (
     TeacherSignupForm,
     TeachForm,
     UserRegistrationForm,
-    TeamGoalForm,
-    TeamInviteForm,
 )
 from .marketing import (
     generate_social_share_content,
@@ -98,9 +90,6 @@ from .models import (
     StudyGroup,
     TimeSlot,
     WebRequest,
-    TeamGoal,
-    TeamGoalMember,
-    TeamInvite,
 )
 from .notifications import notify_session_reminder, notify_teacher_new_enrollment, send_enrollment_confirmation
 from .referrals import send_referral_reward_email
@@ -153,19 +142,6 @@ def index(request):
     # Get current challenge
     current_challenge = Challenge.objects.filter(start_date__lte=timezone.now(), end_date__gte=timezone.now()).first()
 
-    # Get team collaboration data for authenticated users
-    user_team_goals = []
-    team_invites = []
-    if request.user.is_authenticated:
-        user_team_goals = TeamGoal.objects.filter(
-            Q(creator=request.user) | Q(members__user=request.user)
-        ).distinct().order_by('-created_at')[:3]
-        
-        team_invites = TeamInvite.objects.filter(
-            recipient=request.user,
-            status='pending'
-        ).select_related('team_goal', 'sender').order_by('-created_at')[:3]
-
     # Get signup form if needed
     form = None
     if not request.user.is_authenticated or not request.user.profile.is_teacher:
@@ -177,8 +153,6 @@ def index(request):
         "featured_courses": featured_courses,
         "current_challenge": current_challenge,
         "form": form,
-        "user_team_goals": user_team_goals,
-        "team_invites": team_invites,
     }
     return render(request, "index.html", context)
 
@@ -2772,53 +2746,81 @@ def referral_leaderboard(request):
 
 
 # Goods Views
-class GoodsListView(LoginRequiredMixin, ListView):
+class GoodsListView(LoginRequiredMixin, generic.ListView):
     model = Goods
     template_name = "goods/goods_list.html"
     context_object_name = "products"
 
     def get_queryset(self):
-        return super().get_queryset()
+        return Goods.objects.filter(storefront__teacher=self.request.user)
 
 
-class GoodsDetailView(LoginRequiredMixin, DetailView):
+class GoodsDetailView(LoginRequiredMixin, generic.DetailView):
     model = Goods
     template_name = "goods/goods_detail.html"
     context_object_name = "product"
 
     def get_object(self):
-        return super().get_object()
+        return get_object_or_404(Goods, pk=self.kwargs["pk"])
 
 
-class GoodsCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+class GoodsCreateView(LoginRequiredMixin, UserPassesTestMixin, generic.CreateView):
     model = Goods
     form_class = GoodsForm
     template_name = "goods/goods_form.html"
 
     def test_func(self):
-        return self.request.user.profile.is_teacher
+        return hasattr(self.request.user, "storefront")
 
     def form_valid(self, form):
-        form.instance.seller = self.request.user
-        return super().form_valid(form)
+        form.instance.storefront = self.request.user.storefront
+        images = self.request.FILES.getlist("images")
+        product_type = form.cleaned_data.get("product_type")
+
+        # Validate digital product images
+        if product_type == "digital" and not images:
+            form.add_error(None, "Digital products require at least one image")
+            return self.form_invalid(form)
+
+        # Validate image constraints
+        if len(images) > 8:
+            form.add_error(None, "Maximum 8 images allowed")
+            return self.form_invalid(form)
+
+        for img in images:
+            if img.size > 5 * 1024 * 1024:
+                form.add_error(None, f"{img.name} exceeds 5MB size limit")
+                return self.form_invalid(form)
+
+        # Save main product first
+        super().form_valid(form)
+
+        # Save images after product creation
+        for image_file in images:
+            ProductImage.objects.create(goods=self.object, image=image_file)
+
+        return render(self.request, "goods/goods_create_success.html", {"product": self.object})
 
     def form_invalid(self, form):
+        messages.error(self.request, f"Creation failed: {form.errors.as_text()}")
         return super().form_invalid(form)
 
     def get_success_url(self):
         return reverse("goods_list")
 
 
-class GoodsUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+class GoodsUpdateView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView):
     model = Goods
     form_class = GoodsForm
     template_name = "goods/goods_update.html"
 
+    # Filter by user's products only
     def get_queryset(self):
-        return super().get_queryset().filter(seller=self.request.user)
+        return Goods.objects.filter(storefront__teacher=self.request.user)
 
+    # Verify ownership
     def test_func(self):
-        return self.request.user.profile.is_teacher
+        return self.get_object().storefront.teacher == self.request.user
 
     def get_success_url(self):
         return reverse("goods_list")
@@ -2830,7 +2832,26 @@ class GoodsDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     success_url = reverse_lazy("goods_list")
 
     def test_func(self):
-        return self.request.user.profile.is_teacher
+        return self.request.user == self.get_object().storefront.teacher
+
+
+@login_required
+def add_goods_to_cart(request, pk):
+    product = get_object_or_404(Goods, pk=pk)
+    # Prevent adding out-of-stock items
+    if product.stock is None or product.stock <= 0:
+        messages.error(request, f"{product.name} is out of stock and cannot be added to cart.")
+        return redirect("goods_detail", pk=pk)  # Redirect back to product page
+
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_item, created = CartItem.objects.get_or_create(cart=cart, goods=product)
+
+    if created:
+        messages.success(request, f"{product.name} added to cart.")
+    else:
+        messages.info(request, f"{product.name} is already in your cart.")
+
+    return redirect("cart_view")
 
 
 class GoodsListingView(ListView):
@@ -2840,72 +2861,62 @@ class GoodsListingView(ListView):
     paginate_by = 15
 
     def get_queryset(self):
-        queryset = super().get_queryset().filter(is_available=True)
+        queryset = Goods.objects.all()
+        store_name = self.request.GET.get("store_name")
+        product_type = self.request.GET.get("product_type")
         category = self.request.GET.get("category")
-        product_type = self.request.GET.get("type")
         min_price = self.request.GET.get("min_price")
         max_price = self.request.GET.get("max_price")
-        sort = self.request.GET.get("sort")
 
-        if category:
-            queryset = queryset.filter(category=category)
+        if store_name:
+            queryset = queryset.filter(storefront__name__icontains=store_name)
         if product_type:
             queryset = queryset.filter(product_type=product_type)
+        if category:
+            queryset = queryset.filter(category__icontains=category)
         if min_price:
             queryset = queryset.filter(price__gte=min_price)
         if max_price:
             queryset = queryset.filter(price__lte=max_price)
 
-        if sort == "price_low":
-            queryset = queryset.order_by("price")
-        elif sort == "price_high":
-            queryset = queryset.order_by("-price")
-        elif sort == "newest":
-            queryset = queryset.order_by("-created_at")
-        else:
-            queryset = queryset.order_by("name")
-
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["store_names"] = Storefront.objects.values_list("name", flat=True).distinct()
         context["categories"] = Goods.objects.values_list("category", flat=True).distinct()
-        context["product_types"] = dict(Goods.PRODUCT_TYPE_CHOICES)
         return context
 
 
 # Order Management
-class OrderManagementView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+class OrderManagementView(LoginRequiredMixin, UserPassesTestMixin, generic.ListView):
     model = Order
     template_name = "orders/order_management.html"
     context_object_name = "orders"
     paginate_by = 20
 
     def test_func(self):
-        return self.request.user.profile.is_teacher
+        storefront = get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])
+        return self.request.user == storefront.teacher
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        status = self.request.GET.get("status")
-        date_from = self.request.GET.get("date_from")
-        date_to = self.request.GET.get("date_to")
+        queryset = Order.objects.filter(items__goods__storefront__store_slug=self.kwargs["store_slug"]).distinct()
 
-        if status:
-            queryset = queryset.filter(status=status)
-        if date_from:
-            queryset = queryset.filter(created_at__gte=date_from)
-        if date_to:
-            queryset = queryset.filter(created_at__lte=date_to)
+        # Get status from request and filter
+        selected_status = self.request.GET.get("status")
+        if selected_status and selected_status != "all":
+            queryset = queryset.filter(status=selected_status)
 
-        return queryset.filter(items__product__seller=self.request.user).distinct()
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["order_statuses"] = Order.STATUS_CHOICES
+        context["statuses"] = Order.STATUS_CHOICES  # Directly from model
+        context["selected_status"] = self.request.GET.get("status", "")
         return context
 
 
-class OrderDetailView(LoginRequiredMixin, DetailView):
+class OrderDetailView(LoginRequiredMixin, generic.DetailView):
     model = Order
     template_name = "orders/order_detail.html"
     context_object_name = "order"
@@ -2931,66 +2942,35 @@ def update_order_status(request, item_id):
 
 
 # Analytics
-class StoreAnalyticsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class StoreAnalyticsView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
     template_name = "analytics/analytics_dashboard.html"
 
     def test_func(self):
-        return self.request.user.profile.is_teacher
+        storefront = get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])
+        return self.request.user == storefront.teacher
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        seller = self.request.user
-        today = timezone.now()
-        thirty_days_ago = today - timedelta(days=30)
+        storefront = get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])
 
-        # Get orders for the seller's products
-        orders = Order.objects.filter(
-            items__product__seller=seller,
-            created_at__gte=thirty_days_ago,
-            status="completed",
-        )
-
-        # Calculate revenue
-        total_revenue = sum(
-            order.items.filter(product__seller=seller).aggregate(
-                total=models.Sum(models.F("quantity") * models.F("price"))
-            )["total"]
-            or Decimal("0")
-            for order in orders
-        )
-
-        # Get product performance
-        products = Goods.objects.filter(seller=seller)
-        product_stats = []
-        for product in products:
-            sales = OrderItem.objects.filter(
-                product=product,
-                order__status="completed",
-                order__created_at__gte=thirty_days_ago,
-            ).aggregate(
-                total_quantity=models.Sum("quantity"),
-                total_revenue=models.Sum(models.F("quantity") * models.F("price")),
-            )
-
-            product_stats.append(
-                {
-                    "product": product,
-                    "quantity_sold": sales["total_quantity"] or 0,
-                    "revenue": sales["total_revenue"] or Decimal("0"),
-                }
-            )
+        # Store-specific analytics
+        orders = Order.objects.filter(storefront=storefront, status="completed")
 
         context.update(
             {
-                "total_revenue": total_revenue,
-                "total_orders": orders.count(),
-                "product_stats": product_stats,
+                "total_sales": orders.count(),
+                "total_revenue": orders.aggregate(Sum("total_price"))["total_price__sum"] or 0,
+                "top_products": OrderItem.objects.filter(order__storefront=storefront)
+                .values("goods__name")
+                .annotate(total_sold=Sum("quantity"))
+                .order_by("-total_sold")[:5],
+                "storefront": storefront,
             }
         )
         return context
 
 
-class AdminMerchAnalyticsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class AdminMerchAnalyticsView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
     template_name = "analytics/admin_analytics.html"
 
     def test_func(self):
@@ -2998,38 +2978,18 @@ class AdminMerchAnalyticsView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        today = timezone.now()
-        thirty_days_ago = today - timedelta(days=30)
 
-        # Overall platform metrics
-        total_orders = Order.objects.filter(status="completed", created_at__gte=thirty_days_ago)
-        total_revenue = total_orders.aggregate(
-            total=models.Sum(
-                models.F("items__quantity") * models.F("items__price"),
-                output_field=models.DecimalField(),
-            )
-        )["total"]
-        total_sellers = User.objects.filter(goods__isnull=False).distinct().count()
-
-        # Top selling products
-        top_products = (
-            Goods.objects.filter(orderitem__order__status="completed")
-            .annotate(
-                total_quantity=models.Sum("orderitem__quantity"),
-                total_revenue=models.Sum(
-                    models.F("orderitem__quantity") * models.F("orderitem__price"),
-                    output_field=models.DecimalField(),
-                ),
-            )
-            .order_by("-total_quantity")[:10]
-        )
-
+        # Platform-wide analytics
         context.update(
             {
-                "total_revenue": total_revenue or Decimal("0"),
-                "total_orders": total_orders.count(),
-                "total_sellers": total_sellers,
-                "top_products": top_products,
+                "total_sales": Order.objects.filter(status="completed").count(),
+                "total_revenue": Order.objects.filter(status="completed").aggregate(Sum("total_price"))[
+                    "total_price__sum"
+                ]
+                or 0,
+                "top_storefronts": Storefront.objects.annotate(total_sales=Count("goods__orderitem")).order_by(
+                    "-total_sales"
+                )[:5],
             }
         )
         return context
@@ -3111,12 +3071,12 @@ class StorefrontCreateView(LoginRequiredMixin, CreateView):
     success_url = "/dashboard/teacher/"
 
     def dispatch(self, request, *args, **kwargs):
-        if hasattr(request.user, "storefront"):
-            return redirect("storefront_update")
+        if Storefront.objects.filter(teacher=request.user).exists():
+            return redirect("storefront_update", store_slug=request.user.storefront.store_slug)
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        form.instance.owner = self.request.user
+        form.instance.teacher = self.request.user  # Set the teacher field to the current user
         return super().form_valid(form)
 
 
@@ -3130,7 +3090,7 @@ class StorefrontUpdateView(LoginRequiredMixin, UpdateView):
         return get_object_or_404(Storefront, teacher=self.request.user)
 
 
-class StorefrontDetailView(LoginRequiredMixin, DetailView):
+class StorefrontDetailView(LoginRequiredMixin, generic.DetailView):
     model = Storefront
     template_name = "storefront/storefront_detail.html"
     context_object_name = "storefront"
@@ -3141,119 +3101,3 @@ class StorefrontDetailView(LoginRequiredMixin, DetailView):
 
 def gsoc_landing_page(request):
     return render(request, "gsoc_landing_page.html")
-
-@login_required
-def team_goals(request):
-    """List all team goals the user is part of or has created."""
-    user_goals = TeamGoal.objects.filter(
-        Q(creator=request.user) | Q(members__user=request.user)
-    ).distinct().order_by('-created_at')
-    
-    pending_invites = TeamInvite.objects.filter(
-        recipient=request.user,
-        status='pending'
-    ).select_related('team_goal', 'sender')
-    
-    context = {
-        'goals': user_goals,
-        'pending_invites': pending_invites,
-    }
-    return render(request, 'teams/list.html', context)
-
-@login_required
-def create_team_goal(request):
-    """Create a new team goal."""
-    if request.method == 'POST':
-        form = TeamGoalForm(request.POST)
-        if form.is_valid():
-            goal = form.save(commit=False)
-            goal.creator = request.user
-            goal.save()
-            
-            # Add creator as a member
-            TeamGoalMember.objects.create(
-                team_goal=goal,
-                user=request.user,
-                role='leader'
-            )
-            
-            messages.success(request, 'Team goal created successfully!')
-            return redirect('team_goal_detail', goal_id=goal.id)
-    else:
-        form = TeamGoalForm()
-    
-    return render(request, 'teams/create.html', {'form': form})
-
-@login_required
-def team_goal_detail(request, goal_id):
-    """View and manage a specific team goal."""
-    goal = get_object_or_404(
-        TeamGoal.objects.prefetch_related('members__user'),
-        id=goal_id
-    )
-    
-    # Check if user has access to this goal
-    if not (goal.creator == request.user or goal.members.filter(user=request.user).exists()):
-        messages.error(request, 'You do not have access to this team goal.')
-        return redirect('team_goals')
-    
-    # Handle inviting new members
-    if request.method == 'POST':
-        form = TeamInviteForm(request.POST)
-        if form.is_valid():
-            invite = form.save(commit=False)
-            invite.sender = request.user
-            invite.team_goal = goal
-            invite.save()
-            messages.success(request, f'Invitation sent to {invite.recipient.email}!')
-            return redirect('team_goal_detail', goal_id=goal.id)
-    else:
-        form = TeamInviteForm()
-    
-    context = {
-        'goal': goal,
-        'invite_form': form,
-    }
-    return render(request, 'teams/detail.html', context)
-
-@login_required
-def accept_team_invite(request, invite_id):
-    """Accept a team invitation."""
-    invite = get_object_or_404(
-        TeamInvite.objects.select_related('team_goal'),
-        id=invite_id,
-        recipient=request.user,
-        status='pending'
-    )
-    
-    # Create team member
-    TeamGoalMember.objects.create(
-        team_goal=invite.team_goal,
-        user=request.user,
-        role='member'
-    )
-    
-    # Update invite status
-    invite.status = 'accepted'
-    invite.responded_at = timezone.now()
-    invite.save()
-    
-    messages.success(request, f'You have joined {invite.team_goal.title}!')
-    return redirect('team_goal_detail', goal_id=invite.team_goal.id)
-
-@login_required
-def decline_team_invite(request, invite_id):
-    """Decline a team invitation."""
-    invite = get_object_or_404(
-        TeamInvite,
-        id=invite_id,
-        recipient=request.user,
-        status='pending'
-    )
-    
-    invite.status = 'declined'
-    invite.responded_at = timezone.now()
-    invite.save()
-    
-    messages.info(request, f'You have declined to join {invite.team_goal.title}.')
-    return redirect('team_goals')
