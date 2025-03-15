@@ -1005,46 +1005,21 @@ class StorefrontForm(forms.ModelForm):
 
 
 class TeamGoalForm(forms.ModelForm):
-    """Form for creating and updating team goals."""
-    
+    """Form for creating and editing team goals."""
     class Meta:
         model = TeamGoal
-        fields = ['title', 'description', 'target_date', 'status']
+        fields = ['title', 'description', 'deadline']
         widgets = {
-            'title': TailwindInput(attrs={
-                'placeholder': 'Enter your team goal title',
-                'class': 'block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
-            }),
-            'description': TailwindTextarea(attrs={
-                'placeholder': 'Describe your team goal...',
-                'rows': 4,
-                'class': 'block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
-            }),
-            'target_date': TailwindDateTimeInput(attrs={
-                'class': 'block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
-            }),
-            'status': TailwindSelect(attrs={
-                'class': 'block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
-            })
+            'deadline': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'description': forms.Textarea(attrs={'rows': 4}),
         }
 
 
 class TeamInviteForm(forms.ModelForm):
-    """Form for inviting users to a team."""
-    
+    """Form for inviting users to a team goal."""
     class Meta:
         model = TeamInvite
         fields = ['recipient']
         widgets = {
-            'recipient': TailwindSelect(attrs={
-                'class': 'block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
-            })
+            'recipient': forms.Select(attrs={'class': 'form-select'}),
         }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Only show users who are not already members of the team
-        if 'instance' in kwargs and kwargs['instance']:
-            team = kwargs['instance'].team_goal
-            existing_members = team.members.values_list('user', flat=True)
-            self.fields['recipient'].queryset = User.objects.exclude(id__in=existing_members)

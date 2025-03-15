@@ -1147,113 +1147,76 @@ class OrderItem(models.Model):
 
 
 class TeamGoal(models.Model):
-    STATUS_CHOICES = [
-        ("active", "Active"),
-        ("completed", "Completed"),
-        ("expired", "Expired"),
-    ]
-
+    """A goal that team members work together to achieve."""
     title = models.CharField(max_length=200)
     description = models.TextField()
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_goals')
-    target_date = models.DateField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
+    deadline = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled')
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    
     def __str__(self):
-        return f"{self.title} (Due: {self.target_date})"
-
-    @property
-    def is_expired(self):
-        return self.target_date < timezone.now().date()
-
+        return self.title
+    
     @property
     def completion_percentage(self):
+        """Calculate the percentage of members who have completed the goal."""
         total_members = self.members.count()
         if total_members == 0:
             return 0
         completed_members = self.members.filter(teamgoalmember__completed=True).count()
         return int((completed_members / total_members) * 100)
 
-
 class TeamGoalMember(models.Model):
-    goal = models.ForeignKey(TeamGoal, on_delete=models.CASCADE, related_name='members')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='team_goals')
-    completed = models.BooleanField(default=False)
-    completion_date = models.DateTimeField(null=True, blank=True)
+    """Represents a member of a team goal."""
+    team_goal = models.ForeignKey(TeamGoal, on_delete=models.CASCADE, related_name='members')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     joined_at = models.DateTimeField(auto_now_add=True)
-
+    completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    
+    ROLE_CHOICES = [
+        ('leader', 'Team Leader'),
+        ('member', 'Team Member')
+    ]
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='member')
+    
     class Meta:
-        unique_together = ['goal', 'user']
-
+        unique_together = ['team_goal', 'user']
+    
     def __str__(self):
-        return f"{self.user.username} - {self.goal.title}"
-
+        return f"{self.user.username} - {self.team_goal.title}"
+    
     def mark_completed(self):
-        if not self.completed:
-            self.completed = True
-            self.completion_date = timezone.now()
-            self.save()
-            
-            # Create notification for goal creator
-            if self.user != self.goal.creator:
-                Notification.objects.create(
-                    user=self.goal.creator,
-                    title="Team Goal Progress",
-                    message=f"{self.user.username} has completed their part of the goal: {self.goal.title}",
-                    notification_type="success"
-                )
-
+        """Mark this member's participation as completed."""
+        self.completed = True
+        self.completed_at = timezone.now()
+        self.save()
 
 class TeamInvite(models.Model):
-    STATUS_CHOICES = [
-        ("pending", "Pending"),
-        ("accepted", "Accepted"),
-        ("declined", "Declined"),
-        ("expired", "Expired"),
-    ]
-
+    """Invitation to join a team goal."""
     goal = models.ForeignKey(TeamGoal, on_delete=models.CASCADE, related_name='invites')
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_team_invites')
-    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_team_invites')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_invites')
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_invites')
     created_at = models.DateTimeField(auto_now_add=True)
     responded_at = models.DateTimeField(null=True, blank=True)
-
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('declined', 'Declined')
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
     class Meta:
         unique_together = ['goal', 'recipient']
-
+    
     def __str__(self):
-        return f"Invite for {self.recipient.username} to {self.goal.title}"
-
-    def accept(self):
-        if self.status == "pending":
-            self.status = "accepted"
-            self.responded_at = timezone.now()
-            self.save()
-            
-            # Create team goal member
-            TeamGoalMember.objects.create(goal=self.goal, user=self.recipient)
-            
-            # Notify goal creator
-            Notification.objects.create(
-                user=self.goal.creator,
-                title="Team Goal Invite Accepted",
-                message=f"{self.recipient.username} has joined your goal: {self.goal.title}",
-                notification_type="success"
-            )
-
-    def decline(self):
-        if self.status == "pending":
-            self.status = "declined"
-            self.responded_at = timezone.now()
-            self.save()
-            
-            # Notify goal creator
-            Notification.objects.create(
-                user=self.goal.creator,
-                title="Team Goal Invite Declined",
-                message=f"{self.recipient.username} has declined to join your goal: {self.goal.title}",
-                notification_type="warning"
-            )
+        return f"Invite to {self.goal.title} for {self.recipient.username}"
