@@ -785,10 +785,7 @@ class BlogComment(models.Model):
         return f"Comment by {self.author.username} on {self.post.title}"
     
 class SuccessStory(models.Model):
-    STATUS_CHOICES = [
-        ("published", "Published"),
-        ("archived", "Archived"),
-    ]
+    STATUS_CHOICES = [("published", "Published"),("archived", "Archived"),]
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, max_length=200)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="success_stories")
@@ -820,7 +817,7 @@ class SuccessStory(models.Model):
         word_count = len(self.content.split())
         minutes = word_count / words_per_minute
         return max(1, round(minutes))
-    
+
 @receiver(user_signed_up)
 def set_user_type(sender, request, user, **kwargs):
     """Set the user type (teacher/student) when they sign up."""
