@@ -17,6 +17,7 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns.append(path("__reload__/", include("django_browser_reload.urls")))  # Browser reload URLs
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)  # Add this line
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Language-prefixed URLs
 urlpatterns += i18n_patterns(
@@ -209,6 +210,7 @@ urlpatterns += i18n_patterns(
     path("analytics/", sales_analytics, name="sales_analytics"),
     path("analytics/data/", sales_data, name="sales_data"),
     path("memes/", views.meme_list, name="meme_list"),
+    path("memes/add/", views.add_meme, name="add_meme"),
     prefix_default_language=True,
 )
 

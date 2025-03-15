@@ -44,6 +44,7 @@ from .forms import (
     GoodsForm,
     InviteStudentForm,
     LearnForm,
+    MemeForm,
     MessageTeacherForm,
     ProfileUpdateForm,
     ReviewForm,
@@ -76,6 +77,7 @@ from .models import (
     ForumReply,
     ForumTopic,
     Goods,
+    Meme,
     Order,
     OrderItem,
     PeerConnection,
@@ -3100,25 +3102,26 @@ class StorefrontDetailView(LoginRequiredMixin, generic.DetailView):
 
 
 def meme_list(request):
-    memes_data = [
-        {
-            "title": "Physics Meme",
-            "image": "/static/images/physicsmeme.jpg",
-            "caption": "Its just the beginning",
-            "subject": "Physics",
-        },
-        {
-            "title": "Chemistry Meme",
-            "image": "/static/images/chemmeme.jpeg",
-            "caption": "Dont believe it (but you will)",
-            "subject": "Chemistry",
-        },
-        {
-            "title": "Maths Meme",
-            "image": "/static/images/mathsmeme.png",
-            "caption": "Calculate your way out!",
-            "subject": "Maths",
-        },
-    ]
-    subjects = sorted({m["subject"] for m in memes_data})
-    return render(request, "memes.html", {"memes": memes_data, "subjects": subjects})
+    memes = Meme.objects.all()
+    subjects = sorted({meme.subject for meme in memes})
+    # Filter by subject if provided
+    subject_filter = request.GET.get("subject")
+    if subject_filter:
+        memes = memes.filter(subject=subject_filter)
+
+    return render(request, "memes.html", {"memes": memes, "subjects": subjects, "selected_subject": subject_filter})
+
+
+@login_required
+def add_meme(request):
+    if request.method == "POST":
+        form = MemeForm(request.POST, request.FILES)
+        if form.is_valid():
+            meme = form.save(commit=False)
+            meme.uploader = request.user
+            meme.save()
+            messages.success(request, "Your meme has been uploaded successfully!")
+            return redirect("meme_list")
+    else:
+        form = MemeForm()
+    return render(request, "add_meme.html", {"form": form})

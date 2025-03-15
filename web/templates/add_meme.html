@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Add Educational Meme
+{% endblock title %}
+{% block content %}
+  <div class="container mx-auto mt-8 px-4 max-w-2xl">
+    <h1 class="text-2xl font-bold mb-6">Add a New Educational Meme</h1>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+      <form method="post" enctype="multipart/form-data" class="space-y-4">
+        {% csrf_token %}
+        <div>
+          <label for="{{ form.title.id_for_label }}" class="block mb-2 font-medium">Title</label>
+          {{ form.title }}
+          {% if form.title.errors %}<p class="text-red-500 text-sm mt-1">{{ form.title.errors.0 }}</p>{% endif %}
+        </div>
+        <div>
+          <label for="{{ form.subject.id_for_label }}" class="block mb-2 font-medium">Subject</label>
+          {{ form.subject }}
+          {% if form.subject.errors %}<p class="text-red-500 text-sm mt-1">{{ form.subject.errors.0 }}</p>{% endif %}
+          <p class="text-sm text-gray-500 mt-1">Examples: Math, Physics, Chemistry, Biology, etc.</p>
+        </div>
+        <div>
+          <label for="{{ form.caption.id_for_label }}" class="block mb-2 font-medium">Caption</label>
+          {{ form.caption }}
+          {% if form.caption.errors %}<p class="text-red-500 text-sm mt-1">{{ form.caption.errors.0 }}</p>{% endif %}
+        </div>
+        <div>
+          <label for="{{ form.image.id_for_label }}" class="block mb-2 font-medium">Meme Image</label>
+          {{ form.image }}
+          {% if form.image.errors %}<p class="text-red-500 text-sm mt-1">{{ form.image.errors.0 }}</p>{% endif %}
+          <p class="text-sm text-gray-500 mt-1">Recommended: PNG or JPEG, max 2MB</p>
+        </div>
+        <div class="pt-4">
+          <button type="submit"
+                  class="bg-teal-600 hover:bg-teal-700 text-white py-2 px-6 rounded-lg">Upload Meme</button>
+          <a href="{% url 'meme_list' %}"
+             class="ml-4 text-gray-600 dark:text-gray-400 hover:underline">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock content %}
