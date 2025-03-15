@@ -3170,7 +3170,7 @@ def team_goal_detail(request, goal_id):
         if form.is_valid():
             invite = form.save(commit=False)
             invite.sender = request.user
-            invite.team_goal = goal
+            invite.goal = goal
             invite.save()
             messages.success(request, f'Invitation sent to {invite.recipient.email}!')
             return redirect('team_goal_detail', goal_id=goal.id)
@@ -3187,7 +3187,7 @@ def team_goal_detail(request, goal_id):
 def accept_team_invite(request, invite_id):
     """Accept a team invitation."""
     invite = get_object_or_404(
-        TeamInvite.objects.select_related('team_goal'),
+        TeamInvite.objects.select_related('goal'),
         id=invite_id,
         recipient=request.user,
         status='pending'
@@ -3195,7 +3195,7 @@ def accept_team_invite(request, invite_id):
     
     # Create team member
     TeamGoalMember.objects.create(
-        team_goal=invite.team_goal,
+        team_goal=invite.goal,
         user=request.user,
         role='member'
     )
@@ -3205,8 +3205,8 @@ def accept_team_invite(request, invite_id):
     invite.responded_at = timezone.now()
     invite.save()
     
-    messages.success(request, f'You have joined {invite.team_goal.title}!')
-    return redirect('team_goal_detail', goal_id=invite.team_goal.id)
+    messages.success(request, f'You have joined {invite.goal.title}!')
+    return redirect('team_goal_detail', goal_id=invite.goal.id)
 
 @login_required
 def decline_team_invite(request, invite_id):
