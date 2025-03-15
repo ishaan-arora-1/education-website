@@ -1171,7 +1171,7 @@ class TeamGoal(models.Model):
         total_members = self.members.count()
         if total_members == 0:
             return 0
-        completed_members = self.members.filter(teamgoalmember__completed=True).count()
+        completed_members = self.members.filter(completed=True).count()
         return int((completed_members / total_members) * 100)
 
 class TeamGoalMember(models.Model):
