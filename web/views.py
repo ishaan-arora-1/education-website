@@ -3209,11 +3209,15 @@ def accept_team_invite(request, invite_id):
     )
     
     # Create team member
-    TeamGoalMember.objects.create(
-        team_goal=invite.goal,
-        user=request.user,
-        role='member'
-    )
+    # Check if already a member first
+    if TeamGoalMember.objects.filter(team_goal=invite.goal, user=request.user).exists():
+        messages.info(request, f'You are already a member of {invite.goal.title}.')
+    else:
+        TeamGoalMember.objects.create(
+            team_goal=invite.goal,
+            user=request.user,
+            role='member'
+        )
     
     # Update invite status
     invite.status = 'accepted'
