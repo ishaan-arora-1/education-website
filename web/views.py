@@ -3114,60 +3114,60 @@ def add_student_to_course(request, slug):
             last_name = form.cleaned_data["last_name"]
             email = form.cleaned_data["email"]
 
-            # Check if a user with this email already exists.
-            if User.objects.filter(email=email).exists():
-                form.add_error("email", "A user with this email already exists.")
-            else:
-                # Generate a username by combining the first name and the email prefix.
-                email_prefix = email.split('@')[0]
-                generated_username = f"{first_name}_{email_prefix}".lower()
-
-                # Ensure the username is unique; if not, append a random string.
-                if User.objects.filter(username=generated_username).exists():
-                    generated_username += get_random_string(4)
-
-                # Create a new student account with an auto-generated password.
-                random_password = get_random_string(10)
-                try:
-                    student = User.objects.create_user(
-                        username=generated_username,
-                        email=email,
-                        password=random_password,
-                        first_name=first_name,
-                        last_name=last_name
-                    )
-                    # Mark the new user as a student (not a teacher).
-                    student.profile.is_teacher = False
-                    student.profile.save()
-
-                    # Enroll the new student in the course if not already enrolled.
-                    if Enrollment.objects.filter(course=course, student=student).exists():
-                        form.add_error(None, "Student is already enrolled.")
-                    else:
-                        Enrollment.objects.create(course=course, student=student, status="approved")
-                        messages.success(request, f"{first_name} {last_name} has been enrolled in the course.")
-
-                        # Send enrollment notification and password reset link to student
-                        reset_link = request.build_absolute_uri(reverse('account_reset_password'))
-                        context = {
-                            'student': student,
-                            'course': course,
-                            'teacher': request.user,
-                            'reset_link': reset_link,
-                        }
-                        html_message = render_to_string('emails/student_enrollment.html', context)
-                        send_mail(
-                            f'You have been enrolled in {course.title}',
-                            f'You have been enrolled in {course.title} by {request.user.get_full_name() or request.user.username}. '
-                            f'Please visit {reset_link} to set your password.',
-                            settings.DEFAULT_FROM_EMAIL,
-                            [email],
-                            html_message=html_message,
-                            fail_silently=False,
+            with transaction.atomic():
+                # Check if a user with this email already exists.
+                if User.objects.filter(email=email).exists():
+                    form.add_error("email", "A user with this email already exists.")
+                else:
+                    # Generate a username by combining first name and the email prefix.
+                    email_prefix = email.split('@')[0]
+                    generated_username = f"{first_name}_{email_prefix}".lower()
+                    if User.objects.filter(username=generated_username).exists():
+                        generated_username += get_random_string(4)
+                    
+                    # Create a new student account with an auto-generated password.
+                    random_password = get_random_string(10)
+                    try:
+                        student = User.objects.create_user(
+                            username=generated_username,
+                            email=email,
+                            password=random_password,
+                            first_name=first_name,
+                            last_name=last_name
                         )
-                        return redirect("course_detail", slug=course.slug)
-                except IntegrityError:
-                    form.add_error(None, "Failed to create user account. Please try again.")
+                        # Mark the new user as a student (not a teacher).
+                        student.profile.is_teacher = False
+                        student.profile.save()
+                        
+                        # Enroll the new student in the course if not already enrolled.
+                        if Enrollment.objects.filter(course=course, student=student).exists():
+                            form.add_error(None, "Student is already enrolled.")
+                        else:
+                            Enrollment.objects.create(course=course, student=student, status="approved")
+                            messages.success(request, f"{first_name} {last_name} has been enrolled in the course.")
+                            
+                            # Send an enrollment notification email with a password reset link.
+                            reset_link = request.build_absolute_uri(reverse('account_reset_password'))
+                            context = {
+                                'student': student,
+                                'course': course,
+                                'teacher': request.user,
+                                'reset_link': reset_link,
+                            }
+                            html_message = render_to_string('emails/student_enrollment.html', context)
+                            send_mail(
+                                f'You have been enrolled in {course.title}',
+                                f'You have been enrolled in {course.title} by {request.user.get_full_name() or request.user.username}. '
+                                f'Please visit {reset_link} to set your password.',
+                                settings.DEFAULT_FROM_EMAIL,
+                                [email],
+                                html_message=html_message,
+                                fail_silently=False,
+                            )
+                            
+                            return redirect("course_detail", slug=course.slug)
+                    except IntegrityError:
+                        form.add_error(None, "Failed to create user account. Please try again.")
     else:
         form = StudentEnrollmentForm()
     
