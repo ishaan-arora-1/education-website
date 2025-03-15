@@ -3101,6 +3101,10 @@ class StorefrontDetailView(LoginRequiredMixin, generic.DetailView):
         return get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])
 
 
+def gsoc_landing_page(request):
+    return render(request, "gsoc_landing_page.html")
+
+
 def meme_list(request):
     memes = Meme.objects.all()
     subjects = sorted({meme.subject for meme in memes})

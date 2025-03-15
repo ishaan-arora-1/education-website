@@ -211,6 +211,7 @@ urlpatterns += i18n_patterns(
     path("analytics/data/", sales_data, name="sales_data"),
     path("memes/", views.meme_list, name="meme_list"),
     path("memes/add/", views.add_meme, name="add_meme"),
+    path("gsoc/", views.gsoc_landing_page, name="gsoc_landing_page"),
     prefix_default_language=True,
 )
 
