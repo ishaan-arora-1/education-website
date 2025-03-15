@@ -523,20 +523,11 @@ class CourseProgress(models.Model):
 class EducationalVideo(models.Model):
      """Model for educational videos shared by users."""
      
-     VIDEO_CATEGORY_CHOICES = [
-         ('science', 'Science'),
-         ('technology', 'Technology'),
-         ('mathematics', 'Mathematics'),
-         ('programming', 'Programming'),
-         ('arts', 'Arts'),
-         ('language', 'Language Learning'),
-         ('other', 'Other'),
-     ]
      
      title = models.CharField(max_length=200)
      description = models.TextField()
      video_url = models.URLField(help_text='URL for external content like YouTube videos')
-     category = models.CharField(max_length=20, choices=VIDEO_CATEGORY_CHOICES, default='other')
+     category = models.ForeignKey(Subject, on_delete=models.PROTECT, related_name='educational_videos')
      uploader = models.ForeignKey(User, on_delete=models.CASCADE, related_name='educational_videos')
      uploaded_at = models.DateTimeField(auto_now_add=True)
      

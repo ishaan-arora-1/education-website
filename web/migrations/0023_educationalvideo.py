@@ -3,7 +3,34 @@
 import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
+from django.utils.text import slugify
 
+def create_subjects_from_categories(apps, schema_editor):
+    Subject = apps.get_model('web', 'Subject')
+    
+    # Create subjects for all possible categories
+    categories = [
+        'science', 'technology', 'mathematics', 
+        'programming', 'arts', 'language', 'other'
+    ]
+    
+    for category in categories:
+        Subject.objects.get_or_create(
+            name=category.title(),
+            defaults={
+                'slug': slugify(category),
+                'description': f'Videos about {category.title()}',
+            }
+        )
+
+def reverse_subject_creation(apps, schema_editor):
+    Subject = apps.get_model('web', 'Subject')
+    # Only delete subjects that were created by this migration
+    categories = [
+        'Science', 'Technology', 'Mathematics', 
+        'Programming', 'Arts', 'Language', 'Other'
+    ]
+    Subject.objects.filter(name__in=categories).delete()
 
 class Migration(migrations.Migration):
 
@@ -13,6 +40,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(
+            create_subjects_from_categories,
+            reverse_code=reverse_subject_creation
+        ),
         migrations.CreateModel(
             name='EducationalVideo',
             fields=[
@@ -20,7 +51,7 @@ class Migration(migrations.Migration):
                 ('title', models.CharField(max_length=200)),
                 ('description', models.TextField()),
                 ('video_url', models.URLField(help_text='URL for external content like YouTube videos')),
-                ('category', models.CharField(choices=[('science', 'Science'), ('technology', 'Technology'), ('mathematics', 'Mathematics'), ('programming', 'Programming'), ('arts', 'Arts'), ('language', 'Language Learning'), ('other', 'Other')], default='other', max_length=20)),
+                ('category', models.ForeignKey('web.Subject', on_delete=django.db.models.deletion.PROTECT, related_name='educational_videos')),
                 ('uploaded_at', models.DateTimeField(auto_now_add=True)),
                 ('uploader', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='educational_videos', to=settings.AUTH_USER_MODEL)),
             ],

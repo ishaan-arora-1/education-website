@@ -1,10 +1,10 @@
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, get_object_or_404
 
 from .forms import EducationalVideoForm
-from .models import EducationalVideo
+from .models import EducationalVideo, Subject
  
  
 def educational_videos_list(request):
@@ -13,21 +13,25 @@ def educational_videos_list(request):
      selected_category = request.GET.get('category')
  
      # Base queryset
-     videos = EducationalVideo.objects.select_related('uploader').order_by('-uploaded_at')
+     videos = EducationalVideo.objects.select_related('uploader', 'category').order_by('-uploaded_at')
  
      # Apply category filter if provided
      if selected_category:
-         videos = videos.filter(category=selected_category)
-         selected_category_display = dict(EducationalVideo.VIDEO_CATEGORY_CHOICES).get(selected_category)
+         videos = videos.filter(category__slug=selected_category)
+         selected_category_obj = get_object_or_404(Subject, slug=selected_category)
+         selected_category_display = selected_category_obj.name
      else:
          selected_category_display = None
  
      # Get category counts for sidebar
      category_counts = dict(
-         EducationalVideo.objects.values_list('category')
+         EducationalVideo.objects.values('category__name', 'category__slug')
          .annotate(count=Count('id'))
-         .values_list('category', 'count')
+         .values_list('category__slug', 'count')
      )
+
+     # Get all subjects for the dropdown
+     subjects = Subject.objects.all().order_by('order', 'name')
  
      # Paginate results
      paginator = Paginator(videos, 12)  # 12 videos per page
@@ -38,7 +42,7 @@ def educational_videos_list(request):
          'videos': page_obj,
          'is_paginated': paginator.num_pages > 1,
          'page_obj': page_obj,
-         'category_choices': EducationalVideo.VIDEO_CATEGORY_CHOICES,
+         'subjects': subjects,
          'selected_category': selected_category,
          'selected_category_display': selected_category_display,
          'category_counts': category_counts,
