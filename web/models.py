@@ -782,7 +782,7 @@ class BlogComment(models.Model):
 
     def __str__(self):
         return f"Comment by {self.author.username} on {self.post.title}"
-    
+
 class SuccessStory(models.Model):
     STATUS_CHOICES = [("published", "Published"),("archived", "Archived"),]
     title = models.CharField(max_length=200)
@@ -791,7 +791,7 @@ class SuccessStory(models.Model):
     content = MarkdownxField()
     excerpt = models.TextField(blank=True)
     featured_image = models.ImageField(upload_to="success_stories/images/",blank=True,help_text="Featured image for the success story")
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="draft")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="published")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     published_at = models.DateTimeField(null=True, blank=True)
