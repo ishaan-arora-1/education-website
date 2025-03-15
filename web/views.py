@@ -3123,9 +3123,8 @@ def add_student_to_course(request, slug):
                 generated_username = f"{first_name}_{email_prefix}".lower()
 
                 # Ensure the username is unique; if not, append a random string.
-                if User.objects.filter(username=generated_username).exists():
-                    generated_username += get_random_string(4)
-
+                while User.objects.filter(username=generated_username).exists():
+                    generated_username = f"{generated_username}{get_random_string(4)}"
                 # Create a new student account with an auto-generated password.
                 random_password = get_random_string(10)
                 try:
