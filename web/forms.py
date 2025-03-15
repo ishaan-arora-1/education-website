@@ -574,7 +574,9 @@ class EducationalVideoForm(forms.ModelForm):
         widgets = {
             "title": TailwindInput(attrs={"placeholder": "Video title"}),
             "description": TailwindTextarea(
-                attrs={"rows": 4, "placeholder": "Describe what viewers will learn from this video"}
+                attrs={"rows": 4,
+                       "placeholder": "Describe what viewers will learn from this video"
+                }
             ),
             "video_url": TailwindInput(attrs={"placeholder": "YouTube or Vimeo URL", "type": "url"}),
             "category": TailwindSelect(
