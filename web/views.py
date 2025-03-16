@@ -3109,6 +3109,7 @@ class StorefrontDetailView(LoginRequiredMixin, generic.DetailView):
     def get_object(self):
         return get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])
 
+
 def success_story_list(request):
     """View for listing published success stories."""
     success_stories = SuccessStory.objects.filter(status="published").order_by("-published_at")
@@ -3198,3 +3199,8 @@ def delete_success_story(request, slug):
         "success_story": success_story,
     }
     return render(request, "success_stories/delete_confirm.html", context)
+
+
+def gsoc_landing_page(request):
+    return render(request, "gsoc_landing_page.html")
+
