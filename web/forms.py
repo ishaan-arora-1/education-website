@@ -5,7 +5,9 @@ from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
+from django.core.exceptions import ValidationError
 from markdownx.fields import MarkdownxFormField
+import re
 
 from .models import (
     BlogPost,
@@ -587,6 +589,14 @@ class EducationalVideoForm(forms.ModelForm):
                 }
             ),
         }
+
+        def clean_video_url(self):
+            url = self.cleaned_data.get('video_url')
+            # Example: Validate YouTube URLs
+            youtube_pattern = r'^(https?://)?(www\.)?(youtube\.com|youtu\.be)/.+$'
+            if not re.match(youtube_pattern, url):
+                raise ValidationError("Please enter a valid YouTube URL.")
+            return url
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
