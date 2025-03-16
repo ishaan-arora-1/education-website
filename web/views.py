@@ -3097,3 +3097,4 @@ class StorefrontDetailView(LoginRequiredMixin, generic.DetailView):
 
     def get_object(self):
         return get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])
+
