@@ -1,9 +1,7 @@
-{% extends "base.html" %}
+{% endblock %}{% extends "base.html" %}
 {% load static %}
 {% load dict_filters %}
-
 {% block title %}Educational Videos{% endblock %}
-
 {% block content %}
 <main class="flex-1 w-full max-w-7xl mx-auto px-4 md:px-6 py-8">
   <div class="flex flex-col md:flex-row gap-6">
@@ -31,7 +29,6 @@
             </li>
           {% endfor %}
         </ul>
-
         {% if user.is_authenticated %}
           <div class="mt-6">
             <a href="{% url 'upload_educational_video' %}" class="block w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg text-center transition-colors">
@@ -41,7 +38,6 @@
         {% endif %}
       </div>
     </div>
-
     <!-- Main Content -->
     <div class="flex-1">
       <div class="flex justify-between items-center mb-6">
@@ -52,14 +48,12 @@
             Educational Videos
           {% endif %}
         </h1>
-
         {% if user.is_authenticated %}
           <a href="{% url 'upload_educational_video' %}" class="inline-flex items-center bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">
             <i class="fas fa-upload mr-2"></i> Upload Video
           </a>
         {% endif %}
       </div>
-
       {% if videos %}
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for video in videos %}
@@ -103,7 +97,6 @@
                 </div>
               {% endif %}
             </div>
-
             <!-- Video Info -->
             <div class="p-4">
               <h3 class="text-lg font-semibold mb-2 line-clamp-2">
@@ -111,26 +104,22 @@
                   {{ video.title }}
                 </a>
               </h3>
-
               <div class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-2">
                 <span class="mr-2">{{ video.uploader.get_full_name|default:video.uploader.username }}</span>
                 <span class="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full">
                   {{ video.category.name }}
                 </span>
               </div>
-
               <p class="text-gray-600 dark:text-gray-300 text-sm line-clamp-3 mb-3">
                 {{ video.description }}
               </p>
-
               <div class="text-xs text-gray-500 dark:text-gray-400">
                 Uploaded {{ video.uploaded_at|date:"F j, Y" }}
               </div>
             </div>
           </div>
-          {% endfor %}
-        </div>
-
+        {% endfor %}
+      </div>
         <!-- Pagination -->
         {% if is_paginated %}
           <div class="mt-8 flex justify-center">
@@ -141,19 +130,13 @@
                   <i class="fas fa-chevron-left"></i>
                 </a>
               {% endif %}
-
               {% for i in page_obj.paginator.page_range %}
                 {% if i == page_obj.number %}
-                  <span class="relative inline-flex items-center px-4 py-2 border border-orange-500 bg-orange-50 dark:bg-orange-900/30 text-sm font-medium text-orange-700 dark:text-orange-300">
-                    {{ i }}
-                  </span>
+                  <span class="relative inline-flex items-center px-4 py-2 border border-orange-500 bg-orange-50 dark:bg-orange-900/30 text-sm font-medium text-orange-700 dark:text-orange-300">{{ i }}</span>
                 {% elif i > page_obj.number|add:"-3" and i < page_obj.number|add:"3" %}
-                  <a href="?page={{ i }}{% if selected_category %}&category={{ selected_category }}{% endif %}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                    {{ i }}
-                  </a>
+                  <a href="?page={{ i }}{% if selected_category %}&category={{ selected_category }}{% endif %}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">{{ i }}</a>
                 {% endif %}
               {% endfor %}
-
               {% if page_obj.has_next %}
                 <a href="?page={{ page_obj.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                   <span class="sr-only">Next</span>
@@ -176,7 +159,6 @@
               There are no educational videos available yet.
             {% endif %}
           </p>
-
           {% if user.is_authenticated %}
             <a href="{% url 'upload_educational_video' %}" class="inline-flex items-center bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">
               <i class="fas fa-upload mr-2"></i> Upload the first video
