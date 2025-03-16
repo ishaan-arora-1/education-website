@@ -5,7 +5,6 @@ from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
-from django.core.exceptions import ValidationError
 from markdownx.fields import MarkdownxFormField
 import re
 
