@@ -163,12 +163,12 @@ def index(request):
         user_team_goals = TeamGoal.objects.filter(
             Q(creator=request.user) | Q(members__user=request.user)
         ).distinct().order_by('-created_at')[:3]
-        
+
         team_invites = TeamInvite.objects.filter(
             recipient=request.user,
             status='pending'
         ).select_related('goal', 'sender')
-        
+
         context.update({
             "user_team_goals": user_team_goals,
             "team_invites": team_invites,
@@ -3130,12 +3130,12 @@ def team_goals(request):
     user_goals = TeamGoal.objects.filter(
         Q(creator=request.user) | Q(members__user=request.user)
     ).distinct().order_by('-created_at')
-    
+
     pending_invites = TeamInvite.objects.filter(
         recipient=request.user,
         status='pending'
     ).select_related('goal', 'sender')
-    
+
     context = {
         'goals': user_goals,
         'pending_invites': pending_invites,
@@ -3151,19 +3151,19 @@ def create_team_goal(request):
             goal = form.save(commit=False)
             goal.creator = request.user
             goal.save()
-            
+
             # Add creator as a member
             TeamGoalMember.objects.create(
                 team_goal=goal,
                 user=request.user,
                 role='leader'
             )
-            
+
             messages.success(request, 'Team goal created successfully!')
             return redirect('team_goal_detail', goal_id=goal.id)
     else:
         form = TeamGoalForm()
-    
+
     return render(request, 'teams/create.html', {'form': form})
 
 @login_required
@@ -3173,12 +3173,12 @@ def team_goal_detail(request, goal_id):
         TeamGoal.objects.prefetch_related('members__user'),
         id=goal_id
     )
-    
+
     # Check if user has access to this goal
     if not (goal.creator == request.user or goal.members.filter(user=request.user).exists()):
         messages.error(request, 'You do not have access to this team goal.')
         return redirect('team_goals')
-    
+
     # Handle inviting new members
     if request.method == 'POST':
         form = TeamInviteForm(request.POST)
@@ -3191,7 +3191,7 @@ def team_goal_detail(request, goal_id):
             return redirect('team_goal_detail', goal_id=goal.id)
     else:
         form = TeamInviteForm()
-    
+
     context = {
         'goal': goal,
         'invite_form': form,
@@ -3207,7 +3207,7 @@ def accept_team_invite(request, invite_id):
         recipient=request.user,
         status='pending'
     )
-    
+
     # Create team member
     # Check if already a member first
     if TeamGoalMember.objects.filter(team_goal=invite.goal, user=request.user).exists():
@@ -3218,12 +3218,12 @@ def accept_team_invite(request, invite_id):
             user=request.user,
             role='member'
         )
-    
+
     # Update invite status
     invite.status = 'accepted'
     invite.responded_at = timezone.now()
     invite.save()
-    
+
     messages.success(request, f'You have joined {invite.goal.title}!')
     return redirect('team_goal_detail', goal_id=invite.goal.id)
 
@@ -3236,11 +3236,11 @@ def decline_team_invite(request, invite_id):
         recipient=request.user,
         status='pending'
     )
-    
+
     invite.status = 'declined'
     invite.responded_at = timezone.now()
     invite.save()
-    
+
     messages.info(request, f'You have declined to join {invite.goal.title}.')
     return redirect('team_goals')
 
@@ -3248,18 +3248,18 @@ def decline_team_invite(request, invite_id):
 def mark_team_contribution(request, goal_id):
     """Allow a team member to mark their contribution as complete."""
     goal = get_object_or_404(TeamGoal, id=goal_id)
-    
+
     # Find the current user's membership in this goal
     member = goal.members.filter(user=request.user).first()
-    
+
     if not member:
         messages.error(request, "You are not a member of this team goal.")
         return redirect('team_goal_detail', goal_id=goal_id)
-    
+
     if member.completed:
         messages.info(request, "Your contribution is already marked as complete.")
         return redirect('team_goal_detail', goal_id=goal_id)
-    
+
     # Mark the user's contribution as complete
     member.mark_completed()
     messages.success(request, "Your contribution has been marked as complete.")
