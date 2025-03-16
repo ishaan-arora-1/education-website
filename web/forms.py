@@ -589,13 +589,6 @@ class EducationalVideoForm(forms.ModelForm):
                 }
             ),
         }
-        def clean_video_url(self):
-            url = self.cleaned_data.get('video_url')
-            # Example: Validate YouTube URLs
-            youtube_pattern = r'^(https?://)?(www\.)?(youtube\.com|youtu\.be)/.+$'
-            if not re.match(youtube_pattern, url):
-                raise ValidationError("Please enter a valid YouTube URL.")
-            return url
         
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
