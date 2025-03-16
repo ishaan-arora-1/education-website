@@ -3120,7 +3120,8 @@ def gsoc_landing_page(request):
 @teacher_required
 def add_student_to_course(request, slug):
     course = get_object_or_404(Course, slug=slug)
-
+    if course.teacher != request.user:
+        return HttpResponseForbidden("You are not authorized to enroll students in this course.")
     if request.method == "POST":
         form = StudentEnrollmentForm(request.POST)
         if form.is_valid():
