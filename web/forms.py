@@ -20,7 +20,7 @@ from .models import (
     Review,
     Session,
     Storefront,
-    Subject
+    Subject,
 )
 from .referrals import handle_referral
 from .widgets import (
@@ -32,7 +32,7 @@ from .widgets import (
     TailwindInput,
     TailwindNumberInput,
     TailwindSelect,
-    TailwindTextarea
+    TailwindTextarea,
 )
 
 __all__ = [

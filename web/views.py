@@ -51,13 +51,13 @@ from .forms import (
     StorefrontForm,
     TeacherSignupForm,
     TeachForm,
-    UserRegistrationForm
+    UserRegistrationForm,
 )
 from .marketing import (
     generate_social_share_content,
     get_course_analytics,
     get_promotion_recommendations,
-    send_course_promotion_email
+    send_course_promotion_email,
 )
 from .models import (
     Achievement,
@@ -89,7 +89,7 @@ from .models import (
     Storefront,
     StudyGroup,
     TimeSlot,
-    WebRequest
+    WebRequest,
 )
 from .notifications import notify_session_reminder, notify_teacher_new_enrollment, send_enrollment_confirmation
 from .referrals import send_referral_reward_email
