@@ -584,12 +584,11 @@ class EducationalVideoForm(forms.ModelForm):
             "video_url": TailwindInput(attrs={"placeholder": "YouTube or Vimeo URL", "type": "url"}),
             "category": TailwindSelect(
                 attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600" + 
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600" +
                     " rounded-lg focus:ring-2 focus:ring-blue-500"
                 }
             ),
         }
-
         def clean_video_url(self):
             url = self.cleaned_data.get('video_url')
             # Example: Validate YouTube URLs
@@ -597,12 +596,11 @@ class EducationalVideoForm(forms.ModelForm):
             if not re.match(youtube_pattern, url):
                 raise ValidationError("Please enter a valid YouTube URL.")
             return url
-
+        
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Order subjects by name
         self.fields["category"].queryset = Subject.objects.all().order_by("order", "name")
-
     def clean_video_url(self):
         url = self.cleaned_data.get("video_url")
         if url:
