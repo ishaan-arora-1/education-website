@@ -597,8 +597,11 @@ class EducationalVideoForm(forms.ModelForm):
     def clean_video_url(self):
         url = self.cleaned_data.get("video_url")
         if url:
-            # Simple validation for YouTube and Vimeo URLs
-            if not ("youtube.com" in url or "youtu.be" in url or "vimeo.com" in url):
+            # More robust validation with regex
+            youtube_pattern = r'^(https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)[a-zA-Z0-9_-]{11}.*$'
+            vimeo_pattern = r'^(https?://)?(www\.)?vimeo\.com/[0-9]{8,}.*$'
+            
+            if not (re.match(youtube_pattern, url) or re.match(vimeo_pattern, url)):
                 raise forms.ValidationError("Please enter a valid YouTube or Vimeo URL")
         return url
 
