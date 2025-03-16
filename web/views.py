@@ -3187,7 +3187,7 @@ def add_student_to_course(request, slug):
 
     return render(request, "courses/add_student.html", {"form": form, "course": course})
 
-  
+
 def donate(request):
     """Display the donation page with options for one-time donations and subscriptions."""
     # Get recent public donations to display
