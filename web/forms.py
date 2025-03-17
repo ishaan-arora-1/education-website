@@ -1,3 +1,5 @@
+import re
+
 from allauth.account.forms import LoginForm, SignupForm
 from captcha.fields import CaptchaField
 from django import forms
@@ -6,7 +8,6 @@ from django.db import IntegrityError
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 from markdownx.fields import MarkdownxFormField
-import re
 
 from .models import (
     BlogPost,
@@ -583,8 +584,10 @@ class EducationalVideoForm(forms.ModelForm):
             "video_url": TailwindInput(attrs={"placeholder": "YouTube or Vimeo URL", "type": "url"}),
             "category": TailwindSelect(
                 attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600" +
-                    " rounded-lg focus:ring-2 focus:ring-blue-500"
+                    "class": (
+                        "w-full px-4 py-2 border border-gray-300 dark:border-gray-600"
+                        " rounded-lg focus:ring-2 focus:ring-blue-500"
+                    )
                 }
             ),
         }
@@ -593,12 +596,13 @@ class EducationalVideoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Order subjects by name
         self.fields["category"].queryset = Subject.objects.all().order_by("order", "name")
+
     def clean_video_url(self):
         url = self.cleaned_data.get("video_url")
         if url:
             # More robust validation with regex
-            youtube_pattern = r'^(https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)[a-zA-Z0-9_-]{11}.*$'
-            vimeo_pattern = r'^(https?://)?(www\.)?vimeo\.com/[0-9]{8,}.*$'
+            youtube_pattern = r"^(https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)[a-zA-Z0-9_-]{11}.*$"
+            vimeo_pattern = r"^(https?://)?(www\.)?vimeo\.com/[0-9]{8,}.*$"
             if not (re.match(youtube_pattern, url) or re.match(vimeo_pattern, url)):
                 raise forms.ValidationError("Please enter a valid YouTube or Vimeo URL")
         return url

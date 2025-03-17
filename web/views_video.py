@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from .forms import EducationalVideoForm
 from .models import EducationalVideo, Subject
 
+
 def educational_videos_list(request):
     """View for listing educational videos with optional category filtering."""
     # Get category filter from query params

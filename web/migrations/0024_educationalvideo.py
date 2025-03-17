@@ -32,7 +32,7 @@ def reverse_subject_creation(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("web", "0022_goods_alter_cartitem_unique_together_cartitem_goods_and_more"),
+        ("web", "0023_donation"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
