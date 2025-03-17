@@ -566,6 +566,7 @@ class CustomLoginForm(LoginForm):
 
         return cleaned_data
 
+
 class SuccessStoryForm(forms.ModelForm):
     content = MarkdownxFormField(
         label="Content", help_text="Use markdown for formatting. You can use **bold**, *italic*, lists, etc."
@@ -584,6 +585,7 @@ class SuccessStoryForm(forms.ModelForm):
             ),
             "status": TailwindSelect(),
         }
+
 
 class LearnForm(forms.Form):
     subject = forms.CharField(

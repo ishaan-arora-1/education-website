@@ -338,6 +338,7 @@ class BlogPostAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("title",)}
     raw_id_fields = ("author",)
 
+
 @admin.register(SuccessStory)
 class SuccessStoryAdmin(admin.ModelAdmin):
     list_display = ("title", "author", "status", "published_at", "created_at")
