@@ -60,6 +60,7 @@ from .forms import (
     ReviewForm,
     SessionForm,
     StorefrontForm,
+    StudentEnrollmentForm,
     TeacherSignupForm,
     TeachForm,
     UserRegistrationForm,
@@ -3113,6 +3114,79 @@ class StorefrontDetailView(LoginRequiredMixin, generic.DetailView):
 
 def gsoc_landing_page(request):
     return render(request, "gsoc_landing_page.html")
+
+
+@login_required
+@teacher_required
+def add_student_to_course(request, slug):
+    course = get_object_or_404(Course, slug=slug)
+    if course.teacher != request.user:
+        return HttpResponseForbidden("You are not authorized to enroll students in this course.")
+    if request.method == "POST":
+        form = StudentEnrollmentForm(request.POST)
+        if form.is_valid():
+            first_name = form.cleaned_data["first_name"]
+            last_name = form.cleaned_data["last_name"]
+            email = form.cleaned_data["email"]
+
+            # Check if a user with this email already exists.
+            if User.objects.filter(email=email).exists():
+                form.add_error("email", "A user with this email already exists.")
+            else:
+                # Generate a username by combining the first name and the email prefix.
+                email_prefix = email.split("@")[0]
+                generated_username = f"{first_name}_{email_prefix}".lower()
+
+                # Ensure the username is unique; if not, append a random string.
+                while User.objects.filter(username=generated_username).exists():
+                    generated_username = f"{generated_username}{get_random_string(4)}"
+                # Create a new student account with an auto-generated password.
+                random_password = get_random_string(10)
+                try:
+                    student = User.objects.create_user(
+                        username=generated_username,
+                        email=email,
+                        password=random_password,
+                        first_name=first_name,
+                        last_name=last_name,
+                    )
+                    # Mark the new user as a student (not a teacher).
+                    student.profile.is_teacher = False
+                    student.profile.save()
+
+                    # Enroll the new student in the course if not already enrolled.
+                    if Enrollment.objects.filter(course=course, student=student).exists():
+                        form.add_error(None, "Student is already enrolled.")
+                    else:
+                        Enrollment.objects.create(course=course, student=student, status="approved")
+                        messages.success(request, f"{first_name} {last_name} has been enrolled in the course.")
+
+                        # Send enrollment notification and password reset link to student
+                        reset_link = request.build_absolute_uri(reverse("account_reset_password"))
+                        context = {
+                            "student": student,
+                            "course": course,
+                            "teacher": request.user,
+                            "reset_link": reset_link,
+                        }
+                        html_message = render_to_string("emails/student_enrollment.html", context)
+                        send_mail(
+                            f"You have been enrolled in {course.title}",
+                            f"You have been enrolled in {course.title} by\
+                                {request.user.get_full_name() or request.user.username}. "
+                            f"Please visit {reset_link} to set your password.",
+                            settings.DEFAULT_FROM_EMAIL,
+                            [email],
+                            html_message=html_message,
+                            fail_silently=False,
+                        )
+                        return redirect("course_detail", slug=course.slug)
+                except IntegrityError:
+                    form.add_error(None, "Failed to create user account. Please try again.")
+    else:
+        form = StudentEnrollmentForm()
+
+    return render(request, "courses/add_student.html", {"form": form, "course": course})
 
 
 def donate(request):
