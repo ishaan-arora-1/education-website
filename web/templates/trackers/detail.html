@@ -45,10 +45,12 @@
                      max="{{ tracker.target_value }}"
                      class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500" />
             </div>
-            <button type="submit"
+            <button id="update-button"
+                    type="submit"
                     class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-2 rounded-lg transition duration-200 flex items-center">
               <i class="fas fa-check mr-2"></i> Update
             </button>
+            <span id="update-loading" class="hidden"></span>
           </div>
           <p id="update-message" class="text-green-600 mt-2 flex items-center">
             <i class="fas fa-check-circle mr-1"></i> Progress updated successfully!
