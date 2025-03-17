@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("web", "0022_goods_alter_cartitem_unique_together_cartitem_goods_and_more"),
+        ("web", "0023_donation"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -33,8 +33,8 @@ class Migration(migrations.Migration):
                 (
                     "status",
                     models.CharField(
-                        choices=[("draft", "Draft"), ("published", "Published"), ("archived", "Archived")],
-                        default="draft",
+                        choices=[("published", "Published"), ("archived", "Archived")],
+                        default="published",
                         max_length=10,
                     ),
                 ),
