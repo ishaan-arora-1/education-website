@@ -57,6 +57,7 @@ __all__ = [
     "FeedbackForm",
     "GoodsForm",
     "StorefrontForm",
+    "MemeForm",
 ]
 
 
@@ -1009,4 +1010,16 @@ class MemeForm(forms.ModelForm):
             "title": forms.TextInput(attrs={"class": "w-full px-3 py-2 border rounded-lg"}),
             "subject": forms.TextInput(attrs={"class": "w-full px-3 py-2 border rounded-lg"}),
             "caption": forms.Textarea(attrs={"class": "w-full px-3 py-2 border rounded-lg", "rows": 3}),
+            "image": forms.FileInput(
+                attrs={"class": "w-full px-3 py-2 border rounded-lg", "accept": "image/png,image/jpeg"}
+            ),
         }
+
+    def clean_image(self):
+        image = self.cleaned_data.get("image")
+        if image:
+            if image.size > 2 * 1024 * 1024:  # 2MB limit
+                raise forms.ValidationError("Image file too large ( > 2MB )")
+            if not image.name.lower().endswith((".png", ".jpg", ".jpeg")):
+                raise forms.ValidationError("Unsupported file type. Please use PNG or JPEG.")
+        return image

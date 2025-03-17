@@ -3112,8 +3112,11 @@ def meme_list(request):
     subject_filter = request.GET.get("subject")
     if subject_filter:
         memes = memes.filter(subject=subject_filter)
+    paginator = Paginator(memes, 12)  # Show 12 memes per page
+    page_number = request.GET.get("page", 1)
+    page_obj = paginator.get_page(page_number)
 
-    return render(request, "memes.html", {"memes": memes, "subjects": subjects, "selected_subject": subject_filter})
+    return render(request, "memes.html", {"memes": page_obj, "subjects": subjects, "selected_subject": subject_filter})
 
 
 @login_required

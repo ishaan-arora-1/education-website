@@ -1148,12 +1148,12 @@ class OrderItem(models.Model):
 
 class Meme(models.Model):
     title = models.CharField(max_length=200)
-    subject = models.CharField(max_length=100)
-    caption = models.TextField()
+    subject = models.CharField(max_length=100, help_text="Educational subject related to this meme")
+    caption = models.TextField(help_text="The text content of the meme")
     image = models.ImageField(upload_to="memes/")
     uploader = models.ForeignKey(User, on_delete=models.CASCADE, related_name="memes")
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.title
