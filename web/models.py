@@ -796,9 +796,7 @@ class SuccessStory(models.Model):
     content = MarkdownxField()
     excerpt = models.TextField(blank=True)
     featured_image = models.ImageField(
-        upload_to="success_stories/images/",
-        blank=True,
-        help_text="Featured image for the success story"
+        upload_to="success_stories/images/", blank=True, help_text="Featured image for the success story"
     )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="published")
     created_at = models.DateTimeField(auto_now_add=True)
