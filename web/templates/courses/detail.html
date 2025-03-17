@@ -30,11 +30,15 @@
               {% if course.image %}
                 <img src="{{ course.image.url }}"
                      alt="{{ course.title }}"
-                     class="w-full h-full object-cover" />
+                     class="w-full h-full object-cover"
+                     height=""
+                     width="" />
               {% else %}
                 <img src="{% static 'images/default-course.jpg' %}"
                      alt="{{ course.title }}"
-                     class="w-full h-full object-cover" />
+                     class="w-full h-full object-cover"
+                     height=""
+                     width="" />
               {% endif %}
             </div>
             <!-- Quick Stats -->
@@ -382,123 +386,121 @@
               </div>
               <!-- Course Description -->
               <div class="markdown-content space-y-6 text-gray-800 dark:text-gray-200">
-                <div class="space-y-4">
+                <div class="space-y-2">
                   <!-- Course Progress -->
                   {% if is_enrolled and enrollment %}
-                  <div class="mt-8" x-data="{ showAllSessions: false, activeSession: null }">
-                    <h2 class="text-xl font-bold mb-4 flex items-center">
-                      <i class="fas fa-chart-line text-teal-500 dark:text-teal-400 mr-2"></i>
-                      Your Progress
-                    </h2>
-                    <div class="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-xl p-6 border border-gray-100 dark:border-gray-700 hover:shadow-2xl transition-all duration-300">
-                      <!-- Progress Header -->
-                      <div class="relative mb-8">
-                        <div class="flex justify-between items-center mb-2">
-                          <h3 class="font-semibold text-xl bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-blue-600 dark:from-teal-400 dark:to-blue-400">
-                            {{ course.title }}
-                          </h3>
-                          <div class="flex items-center">
-                            <div class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-blue-600 dark:from-teal-400 dark:to-blue-400">
-                              {{ enrollment.progress.completion_percentage }}%
+                    <div x-data="{ showAllSessions: false, activeSession: null }">
+                      <h2 class="text-xl font-bold mb-4 flex items-center">
+                        <i class="fas fa-chart-line text-teal-500 dark:text-teal-400 mr-2"></i>
+                        Your Progress
+                      </h2>
+                      <div class="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-xl p-6 border border-gray-100 dark:border-gray-700 hover:shadow-2xl transition-all duration-300">
+                        <!-- Progress Header -->
+                        <div class="relative mb-3">
+                          <div class="flex justify-between items-center">
+                            <h3 class="font-semibold text-xl bg-clip-text text-transparent from-teal-600 to-blue-600 dark:from-teal-400 dark:to-blue-400">
+                              {{ course.title }}
+                            </h3>
+                            <div class="flex items-center">
+                              <div class="text-2xl font-bold bg-clip-text text-transparent from-teal-600 to-blue-600 dark:from-teal-400 dark:to-blue-400">
+                                {{ enrollment.progress.completion_percentage }}%
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        
-                        <!-- Stylish Progress Bar -->
-                        <div class="w-full h-4 bg-gray-200 dark:bg-gray-700 rounded-full mb-2 overflow-hidden shadow-inner">
-                          <div class="h-full rounded-full bg-gradient-to-r from-teal-400 via-blue-500 to-indigo-500 dark:from-teal-500 dark:via-blue-400 dark:to-indigo-400 relative overflow-hidden transition-all duration-1000 ease-out"
-                               style="width: {{ enrollment.progress.completion_percentage }}%">
-                            <div class="absolute inset-0 bg-white/20 dark:bg-white/10 w-full h-full transform -skew-x-12 animate-pulse opacity-75"></div>
+                          <!-- Green Gradient Progress Bar -->
+                          <div class="w-full h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full mb-1 overflow-hidden shadow-inner">
+                            <div class="h-full rounded-full bg-gradient-to-r from-green-400 to-teal-500 dark:from-green-500 dark:to-teal-400 relative overflow-hidden transition-all duration-500 ease-out"
+                                 style="width: {{ enrollment.progress.completion_percentage }}%"></div>
+                          </div>
+                          <!-- Progress Milestones -->
+                          <div class="w-full flex justify-between px-1 text-xs text-gray-500 dark:text-gray-400">
+                            <span>Start</span>
+                            <span>25%</span>
+                            <span>50%</span>
+                            <span>75%</span>
+                            <span>Complete</span>
                           </div>
                         </div>
-                        
-                        <!-- Progress Milestones -->
-                        <div class="w-full flex justify-between px-1 text-xs text-gray-500 dark:text-gray-400">
-                          <span>Start</span>
-                          <span>25%</span>
-                          <span>50%</span>
-                          <span>75%</span>
-                          <span>Complete</span>
-                        </div>
-                      </div>
-                      
-                      <!-- Stats Cards -->
-                      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1 border-l-4 border-indigo-500 dark:border-indigo-400">
-                          <div class="flex items-center justify-between">
-                            <div>
-                              <p class="text-sm text-gray-500 dark:text-gray-400">Completed</p>
-                              <h3 class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{{ enrollment.progress.completed_sessions.count }}</h3>
+                        <!-- Compact Stats -->
+                        <div class="flex flex-wrap items-center justify-between bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2 mb-3 text-sm">
+                          <div class="flex items-center space-x-2">
+                            <div class="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
+                              <i class="fas fa-check-circle text-indigo-500 dark:text-indigo-400 text-xs"></i>
                             </div>
-                            <div class="bg-indigo-100 dark:bg-indigo-900/50 rounded-full p-3">
-                              <i class="fas fa-check-circle text-indigo-500 dark:text-indigo-400 text-xl"></i>
-                            </div>
+                            <span class="text-gray-500 dark:text-gray-400">Completed:</span>
+                            <span class="font-bold text-indigo-600 dark:text-indigo-400">{{ enrollment.progress.completed_sessions.count }}</span>
                           </div>
-                        </div>
-                      </div>  
-                      
-                      <!-- Sessions Progress Details -->
-                      <div class="mt-4 mb-5">
-                        <div class="flex justify-between items-center mb-3">
-                          <h4 class="font-medium">Session Completion</h4>
-                          <span class="text-sm text-gray-600 dark:text-gray-400">
-                            <i class="fas fa-check-circle text-green-500 dark:text-green-400"></i>
-                            <span class="ml-1">
-                              <span class="font-semibold">{{ enrollment.progress.completed_sessions.count }}</span> of
-                              <span class="font-semibold">{{ course.sessions.count }}</span> sessions completed
+                          <div class="flex items-center space-x-2">
+                            <div class="w-6 h-6 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
+                              <i class="fas fa-hourglass-half text-orange-500 dark:text-orange-400 text-xs"></i>
+                            </div>
+                            <span class="text-gray-500 dark:text-gray-400">Remaining:</span>
+                            <span class="font-bold text-orange-600 dark:text-orange-400"
+                                  id="remaining-count">
+                              <!-- Will be filled by JavaScript -->
                             </span>
-                          </span>
-                        </div>
-
-                        <div class="space-y-3 max-h-60 overflow-y-auto pr-2">
-                          {% for session in course.sessions.all %}
-                            <div class="flex items-center justify-between p-2 {% if session in enrollment.progress.completed_sessions.all %}bg-green-50 dark:bg-green-900/20{% else %}bg-gray-50 dark:bg-gray-700/50{% endif %} rounded-lg border border-gray-100 dark:border-gray-700">
-                              <div class="flex items-center space-x-2">
-                                {% if session in enrollment.progress.completed_sessions.all %}
-                                  <i class="fas fa-check-circle text-green-500 dark:text-green-400"></i>
-                                {% elif session.end_time < now %}
-                                  <i class="fas fa-circle text-red-500 dark:text-red-400"></i>
-                                {% else %}
-                                  <i class="far fa-circle text-gray-400 dark:text-gray-500"></i>
-                                {% endif %}
-                                <span class="font-medium">{{ session.title }}</span>
-                              </div>
-                              <div class="text-sm text-gray-600 dark:text-gray-400">
-                                {{ session.start_time|date:"M d, Y" }}
-                                {% if session in enrollment.progress.completed_sessions.all %}
-                                  <span class="ml-2 text-green-600 dark:text-green-400">Completed</span>
-                                {% elif session.end_time < now %}
-                                  <span class="ml-2 text-red-600 dark:text-red-400">Missed</span>
-                                {% else %}
-                                  <span class="ml-2 text-blue-600 dark:text-blue-400">Upcoming</span>
-                                {% endif %}
-                              </div>
-                            </div>
-                          {% endfor %}
-                        </div>
-                      </div>
-
-                      <div class="flex justify-between items-center border-t border-gray-200 dark:border-gray-700 pt-4">
-                        <div class="flex items-center space-x-2 text-gray-700 dark:text-gray-300">
-                          <div class="flex items-center">
-                            <i class="fas fa-graduation-cap text-indigo-500 dark:text-indigo-400 mr-1"></i>
-                            <span>Enrolled {{ enrollment.created_at|date:"M d, Y" }}</span>
                           </div>
                         </div>
-                        <a href="{% url 'student_progress' enrollment.id %}"
-                           class="inline-flex items-center px-4 py-2 bg-teal-300 hover:bg-teal-600 font-bold rounded-lg transition duration-200 transform hover:-translate-y-1">
-                          <i class="fas fa-chart-bar mr-2"></i>
-                          Detailed Report
-                        </a>
+                        <!-- Session Completion -->
+                        <div>
+                          <div class="flex justify-between items-center">
+                            <h4 class="font-medium">Session Completion</h4>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">
+                              <i class="fas fa-check-circle text-green-500 dark:text-green-400"></i>
+                              <span class="ml-1">
+                                <span class="font-semibold">{{ enrollment.progress.completed_sessions.count }}</span> of
+                                <span class="font-semibold">{{ course.sessions.count }}</span> sessions completed
+                              </span>
+                            </span>
+                          </div>
+                          <div class="h-24 relative overflow-y-auto pr-2 space-y-2">
+                            <!-- Fade effect at bottom -->
+                            <div class="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white dark:from-gray-800 to-transparent pointer-events-none">
+                            </div>
+                            {% for session in course.sessions.all %}
+                              <div class="flex items-center justify-between p-2 {% if session in enrollment.progress.completed_sessions.all %}bg-green-50 dark:bg-green-900/20{% else %}bg-gray-50 dark:bg-gray-700/50{% endif %} rounded-lg border border-gray-100 dark:border-gray-700">
+                                <div class="flex items-center space-x-2">
+                                  {% if session in enrollment.progress.completed_sessions.all %}
+                                    <i class="fas fa-check-circle text-green-500 dark:text-green-400"></i>
+                                  {% elif session.end_time < now %}
+                                    <i class="fas fa-circle text-red-500 dark:text-red-400"></i>
+                                  {% else %}
+                                    <i class="far fa-circle text-gray-400 dark:text-gray-500"></i>
+                                  {% endif %}
+                                  <span class="font-medium">{{ session.title }}</span>
+                                </div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">
+                                  {{ session.start_time|date:"M d, Y" }}
+                                  {% if session in enrollment.progress.completed_sessions.all %}
+                                    <span class="ml-2 text-green-600 dark:text-green-400">Completed</span>
+                                  {% elif session.end_time < now %}
+                                    <span class="ml-2 text-red-600 dark:text-red-400">Missed</span>
+                                  {% else %}
+                                    <span class="ml-2 text-blue-600 dark:text-blue-400">Upcoming</span>
+                                  {% endif %}
+                                </div>
+                              </div>
+                            {% endfor %}
+                          </div>
+                        </div>
+                        <div class="flex justify-between items-center border-t border-gray-200 dark:border-gray-700 pt-4">
+                          <div class="flex items-center space-x-2 text-gray-700 dark:text-gray-300">
+                            <div class="flex items-center">
+                              <i class="fas fa-graduation-cap text-indigo-500 dark:text-indigo-400 mr-1"></i>
+                              <span>Enrolled {{ enrollment.created_at|date:"M d, Y" }}</span>
+                            </div>
+                          </div>
+                          <a href="{% url 'student_progress' enrollment.id %}"
+                             class="inline-flex items-center px-4 py-2 bg-teal-300 hover:bg-teal-600 font-bold rounded-lg transition duration-200 transform hover:-translate-y-1">
+                            <i class="fas fa-chart-bar mr-2"></i>
+                            Detailed Report
+                          </a>
+                        </div>
                       </div>
                     </div>
-                  </div>
                   {% endif %}
-                                
-                                
-
                   <!-- Course Materials -->
-                  <div class="mt-8">
+                  <div>
                     <div class="flex justify-between items-center mb-4">
                       <h2 class="text-xl font-bold">Course Materials</h2>
                       {% if user == course.teacher %}
@@ -643,5 +645,19 @@
               })
               .catch(error => console.error('Error loading calendar:', error));
       }
+      document.addEventListener('DOMContentLoaded', function() {
+          const total = {
+              {
+                  course.sessions.count
+              }
+          };
+          const completed = {
+              {
+                  enrollment.progress.completed_sessions.count
+              }
+          };
+          const remaining = Math.max(0, total - completed);
+          document.getElementById('remaining-count').textContent = remaining;
+      });
   </script>
 {% endblock content %}
