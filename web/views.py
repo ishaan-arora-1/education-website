@@ -90,6 +90,7 @@ from .models import (
     SessionEnrollment,
     Storefront,
     StudyGroup,
+    Subject,
     TimeSlot,
     WebRequest,
 )
@@ -3107,11 +3108,11 @@ def gsoc_landing_page(request):
 
 def meme_list(request):
     memes = Meme.objects.all()
-    subjects = sorted({meme.subject for meme in memes})
+    subjects = Subject.objects.filter(memes__isnull=False).distinct()
     # Filter by subject if provided
     subject_filter = request.GET.get("subject")
     if subject_filter:
-        memes = memes.filter(subject=subject_filter)
+        memes = memes.filter(subject__slug=subject_filter)
     paginator = Paginator(memes, 12)  # Show 12 memes per page
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
@@ -3125,10 +3126,28 @@ def add_meme(request):
         form = MemeForm(request.POST, request.FILES)
         if form.is_valid():
             meme = form.save(commit=False)
+            # Handle subject selection
+            subject = form.cleaned_data.get("subject")
+            new_subject_name = form.cleaned_data.get("new_subject")
+            if new_subject_name:
+                from django.utils.text import slugify
+
+                subject, created = Subject.objects.get_or_create(
+                    name=new_subject_name,
+                    defaults={
+                        "slug": slugify(new_subject_name),
+                        "description": f"Subject for {new_subject_name} memes",
+                        "icon": "fa-book",  # Default icon
+                    },
+                )
+                meme.subject = subject
+            else:
+                meme.subject = subject
             meme.uploader = request.user
             meme.save()
             messages.success(request, "Your meme has been uploaded successfully!")
             return redirect("meme_list")
     else:
         form = MemeForm()
-    return render(request, "add_meme.html", {"form": form})
+    subjects = Subject.objects.all().order_by("name")
+    return render(request, "add_meme.html", {"form": form, "subjects": subjects})

@@ -1003,17 +1003,36 @@ class StorefrontForm(forms.ModelForm):
 
 
 class MemeForm(forms.ModelForm):
+    new_subject = forms.CharField(
+        max_length=100, required=False, help_text="If your subject isn't listed, enter a new one here"
+    )
+
     class Meta:
         model = Meme
-        fields = ["title", "subject", "caption", "image"]
+        fields = ["title", "subject", "new_subject", "caption", "image"]
         widgets = {
             "title": forms.TextInput(attrs={"class": "w-full px-3 py-2 border rounded-lg"}),
-            "subject": forms.TextInput(attrs={"class": "w-full px-3 py-2 border rounded-lg"}),
+            "subject": forms.Select(attrs={"class": "w-full px-3 py-2 border rounded-lg"}),
+            "new_subject": forms.TextInput(attrs={"class": "w-full px-3 py-2 border rounded-lg"}),
             "caption": forms.Textarea(attrs={"class": "w-full px-3 py-2 border rounded-lg", "rows": 3}),
             "image": forms.FileInput(
                 attrs={"class": "w-full px-3 py-2 border rounded-lg", "accept": "image/png,image/jpeg"}
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["subject"].required = False
+        self.fields["subject"].help_text = "Select an existing subject"
+
+    def clean(self):
+        """Validate that either subject or new_subject is provided"""
+        cleaned_data = super().clean()
+        subject = cleaned_data.get("subject")
+        new_subject = cleaned_data.get("new_subject")
+        if not subject and not new_subject:
+            raise forms.ValidationError("Please either select an existing subject or enter a new one.")
+        return cleaned_data
 
     def clean_image(self):
         image = self.cleaned_data.get("image")
