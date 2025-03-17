@@ -3211,10 +3211,24 @@ def delete_success_story(request, slug):
     context = {
         "success_story": success_story,
     }
+def delete_success_story(request, slug):
+    """View for deleting a success story."""
+    success_story = get_object_or_404(SuccessStory, slug=slug, author=request.user)
+
+    if request.method == "POST":
+        success_story.delete()
+        messages.success(request, "Success story deleted successfully!")
+        return redirect("success_story_list")
+
+    context = {
+        "success_story": success_story,
+    }
     return render(request, "success_stories/delete_confirm.html", context)
 
 
 def gsoc_landing_page(request):
+    # Function implementation goes here
+    pass
     return render(request, "gsoc_landing_page.html")
 
 
