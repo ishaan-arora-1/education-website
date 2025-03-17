@@ -21,6 +21,7 @@ from .models import (
     Storefront,
     Subject,
     ProgressTracker,
+    SuccessStory,
 )
 from .referrals import handle_referral
 from .widgets import (
@@ -58,6 +59,7 @@ __all__ = [
     "GoodsForm",
     "StorefrontForm",
     "ProgressTrackerForm",
+    "SuccessStoryForm",
 ]
 
 
@@ -565,6 +567,26 @@ class CustomLoginForm(LoginForm):
                 )
 
         return cleaned_data
+
+
+class SuccessStoryForm(forms.ModelForm):
+    content = MarkdownxFormField(
+        label="Content", help_text="Use markdown for formatting. You can use **bold**, *italic*, lists, etc."
+    )
+
+    class Meta:
+        model = SuccessStory
+        fields = ["title", "content", "excerpt", "featured_image", "status"]
+        widgets = {
+            "title": TailwindInput(attrs={"placeholder": "Your success story title"}),
+            "excerpt": TailwindTextarea(
+                attrs={"rows": 3, "placeholder": "A brief summary of your success story (optional)"}
+            ),
+            "featured_image": TailwindFileInput(
+                attrs={"accept": "image/*", "help_text": "Featured image for your success story (optional)"}
+            ),
+            "status": TailwindSelect(),
+        }
 
 
 class LearnForm(forms.Form):
