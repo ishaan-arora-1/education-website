@@ -1065,6 +1065,21 @@ class MemeForm(forms.ModelForm):
                 raise forms.ValidationError("Unsupported file type. Please use PNG or JPEG.")
         return image
 
+    def save(self, commit=True):
+        meme = super().save(commit=False)
+        # Create new subject if provided
+        new_subject_name = self.cleaned_data.get("new_subject")
+        if new_subject_name and not self.cleaned_data.get("subject"):
+            from django.utils.text import slugify
+
+            subject, created = Subject.objects.get_or_create(
+                name=new_subject_name, defaults={"slug": slugify(new_subject_name)}
+            )
+            meme.subject = subject
+        if commit:
+            meme.save()
+        return meme
+
 
 class StudentEnrollmentForm(forms.Form):
     first_name = forms.CharField(

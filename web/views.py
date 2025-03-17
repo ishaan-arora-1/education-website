@@ -3223,7 +3223,7 @@ def gsoc_landing_page(request):
 
 
 def meme_list(request):
-    memes = Meme.objects.all()
+    memes = Meme.objects.all().order_by("-created_at")
     subjects = Subject.objects.filter(memes__isnull=False).distinct()
     # Filter by subject if provided
     subject_filter = request.GET.get("subject")
@@ -3256,9 +3256,11 @@ def add_meme(request):
                         "icon": "fa-book",  # Default icon
                     },
                 )
-                meme.subject = subject
-            else:
-                meme.subject = subject
+            elif not subject:
+                messages.error(request, "Please select a subject or create a new one.")
+                subjects = Subject.objects.all().order_by("name")
+                return render(request, "add_meme.html", {"form": form, "subjects": subjects})
+            meme.subject = subject
             meme.uploader = request.user
             meme.save()
             messages.success(request, "Your meme has been uploaded successfully!")
