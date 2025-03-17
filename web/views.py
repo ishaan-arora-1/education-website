@@ -42,9 +42,6 @@ from django.views.generic import (
     UpdateView,
 )
 
-from .forms import SuccessStoryForm
-from .models import SuccessStory
-
 from .calendar_sync import generate_google_calendar_link, generate_ical_feed, generate_outlook_calendar_link
 from .decorators import teacher_required
 from .forms import (
@@ -64,6 +61,7 @@ from .forms import (
     SessionForm,
     StorefrontForm,
     StudentEnrollmentForm,
+    SuccessStoryForm,
     TeacherSignupForm,
     TeachForm,
     UserRegistrationForm,
@@ -104,6 +102,7 @@ from .models import (
     SessionEnrollment,
     Storefront,
     StudyGroup,
+    SuccessStory,
     TimeSlot,
     WebRequest,
 )
