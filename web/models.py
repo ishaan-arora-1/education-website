@@ -1199,16 +1199,17 @@ class ProgressTracker(models.Model):
     current_value = models.IntegerField(default=0)
     target_value = models.IntegerField()
     color = models.CharField(
-        max_length=20,
-        default="blue-600",
-        choices=[
-            ("blue-600", "Primary"),
-            ("green-600", "Success"),
-            ("yellow-600", "Warning"),
-            ("red-600", "Danger"),
-            ("gray-600", "Secondary"),
-        ],
-    )
+ color = models.CharField(
+     max_length=20,
+     default="green-600",
+     choices=[
+         ("blue-600", "Primary"),
+         ("green-600", "Success"),
+         ("yellow-600", "Warning"),
+         ("red-600", "Danger"),
+         ("gray-600", "Secondary"),
+     ],
+ )
     public = models.BooleanField(default=True)
     embed_code = models.CharField(max_length=36, unique=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
