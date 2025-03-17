@@ -777,11 +777,13 @@ class BlogComment(models.Model):
     is_approved = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
         ordering = ["created_at"]
 
     def __str__(self):
         return f"Comment by {self.author.username} on {self.post.title}"
+
 
 class SuccessStory(models.Model):
     STATUS_CHOICES = [
@@ -829,6 +831,7 @@ class SuccessStory(models.Model):
         minutes = word_count / words_per_minute
         return max(1, round(minutes))
 
+
 @receiver(user_signed_up)
 def set_user_type(sender, request, user, **kwargs):
     """Set the user type (teacher/student) when they sign up."""
@@ -836,6 +839,7 @@ def set_user_type(sender, request, user, **kwargs):
     profile = user.profile
     profile.is_teacher = is_teacher
     profile.save()
+
 
 class Cart(models.Model):
     user = models.OneToOneField(

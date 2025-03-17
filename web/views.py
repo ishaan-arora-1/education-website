@@ -3217,6 +3217,7 @@ def delete_success_story(request, slug):
 def gsoc_landing_page(request):
     return render(request, "gsoc_landing_page.html")
 
+
 @login_required
 @teacher_required
 def add_student_to_course(request, slug):
