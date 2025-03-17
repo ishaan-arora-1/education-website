@@ -3241,26 +3241,7 @@ def add_meme(request):
     if request.method == "POST":
         form = MemeForm(request.POST, request.FILES)
         if form.is_valid():
-            meme = form.save(commit=False)
-            # Handle subject selection
-            subject = form.cleaned_data.get("subject")
-            new_subject_name = form.cleaned_data.get("new_subject")
-            if new_subject_name:
-                from django.utils.text import slugify
-
-                subject, created = Subject.objects.get_or_create(
-                    name=new_subject_name,
-                    defaults={
-                        "slug": slugify(new_subject_name),
-                        "description": f"Subject for {new_subject_name} memes",
-                        "icon": "fa-book",  # Default icon
-                    },
-                )
-            elif not subject:
-                messages.error(request, "Please select a subject or create a new one.")
-                subjects = Subject.objects.all().order_by("name")
-                return render(request, "add_meme.html", {"form": form, "subjects": subjects})
-            meme.subject = subject
+            meme = form.save(commit=False)  # The form handles subject creation logic internally
             meme.uploader = request.user
             meme.save()
             messages.success(request, "Your meme has been uploaded successfully!")
