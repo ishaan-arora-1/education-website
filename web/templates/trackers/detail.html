@@ -25,7 +25,7 @@
           </div>
           <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
             <div id="progress-bar"
-                 class="bg-{{ tracker.color }} h-4 rounded-full transition-all duration-500 ease-in-out"
+                 class="bg-{% if tracker.color == 'blue' %}blue-500{% elif tracker.color == 'green' %}green-500{% elif tracker.color == 'red' %}red-500{% else %}blue-500{% endif %} h-4 rounded-full transition-all duration-500 ease-in-out"
                  style="width: {{ tracker.percentage }}%"></div>
           </div>
         </div>
@@ -98,7 +98,13 @@
               e.preventDefault();
 
               const formData = new FormData(updateForm);
+              const button = document.getElementById('update-button');
+              const loadingMessage = document.getElementById('update-loading');
 
+              // Show loading state
+              button.disabled = true;
+              updateMessage.classList.add('hidden');
+              loadingMessage.classList.remove('hidden');
               fetch('{% url "update_progress" tracker.id %}', {
                       method: 'POST',
                       body: formData,
@@ -107,7 +113,12 @@
                       },
                       credentials: 'same-origin'
                   })
-                  .then(response => response.json())
+                  .then(response => {
+                      if (!response.ok) {
+                          throw new Error('Network response was not ok');
+                      }
+                      return response.json();
+                  })
                   .then(data => {
                       if (data.success) {
                           progressBar.style.width = data.percentage + '%';
@@ -118,6 +129,18 @@
                               updateMessage.classList.add('hidden');
                           }, 3000);
                       }
+                  })
+                  .catch(error => {
+                      console.error('Error:', error);
+                      updateMessage.textContent = 'Error updating progress. Please try again.';
+                      updateMessage.classList.remove('hidden');
+                      updateMessage.classList.remove('text-green-600');
+                      updateMessage.classList.add('text-red-600');
+                  })
+                  .finally(() => {
+                      // Reset loading state
+                      button.disabled = false;
+                      loadingMessage.classList.add('hidden');
                   });
           });
 

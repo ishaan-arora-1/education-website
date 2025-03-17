@@ -394,7 +394,7 @@
                         <i class="fas fa-chart-line text-teal-500 dark:text-teal-400 mr-2"></i>
                         Your Progress
                       </h2>
-                      <div class="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-xl p-6 border border-gray-100 dark:border-gray-700 hover:shadow-2xl transition-all duration-300">
+                      <div class="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-lg shadow-md p-4 border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all duration-300">
                         <!-- Progress Header -->
                         <div class="relative mb-3">
                           <div class="flex justify-between items-center">
@@ -648,13 +648,24 @@
       document.addEventListener('DOMContentLoaded', function() {
           const total = {
               {
-                  course.sessions.count
+                  course.sessions.count |
+                      default: 0
               }
           };
           const completed = {
+              %
+              if enrollment and enrollment.progress %
+          } {
               {
                   enrollment.progress.completed_sessions.count
               }
+          } {
+              %
+              else %
+          }
+          0 {
+              %
+              endif %
           };
           const remaining = Math.max(0, total - completed);
           document.getElementById('remaining-count').textContent = remaining;
