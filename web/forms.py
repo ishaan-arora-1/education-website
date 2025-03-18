@@ -20,6 +20,7 @@ from .models import (
     Session,
     Storefront,
     Subject,
+    SuccessStory,
     TeamGoal,
     TeamInvite,
 )
@@ -58,6 +59,7 @@ __all__ = [
     "FeedbackForm",
     "GoodsForm",
     "StorefrontForm",
+    "SuccessStoryForm",
     "TeamGoalForm",
     "TeamInviteForm",
 ]
@@ -569,6 +571,26 @@ class CustomLoginForm(LoginForm):
         return cleaned_data
 
 
+class SuccessStoryForm(forms.ModelForm):
+    content = MarkdownxFormField(
+        label="Content", help_text="Use markdown for formatting. You can use **bold**, *italic*, lists, etc."
+    )
+
+    class Meta:
+        model = SuccessStory
+        fields = ["title", "content", "excerpt", "featured_image", "status"]
+        widgets = {
+            "title": TailwindInput(attrs={"placeholder": "Your success story title"}),
+            "excerpt": TailwindTextarea(
+                attrs={"rows": 3, "placeholder": "A brief summary of your success story (optional)"}
+            ),
+            "featured_image": TailwindFileInput(
+                attrs={"accept": "image/*", "help_text": "Featured image for your success story (optional)"}
+            ),
+            "status": TailwindSelect(),
+        }
+
+
 class LearnForm(forms.Form):
     subject = forms.CharField(
         max_length=100,
@@ -1025,3 +1047,15 @@ class TeamInviteForm(forms.ModelForm):
         widgets = {
             "recipient": forms.Select(attrs={"class": "form-select"}),
         }
+
+
+class StudentEnrollmentForm(forms.Form):
+    first_name = forms.CharField(
+        max_length=30, required=True, widget=TailwindInput(attrs={"placeholder": "First Name"}), label="First Name"
+    )
+    last_name = forms.CharField(
+        max_length=30, required=True, widget=TailwindInput(attrs={"placeholder": "Last Name"}), label="Last Name"
+    )
+    email = forms.EmailField(
+        required=True, widget=TailwindEmailInput(attrs={"placeholder": "Student Email"}), label="Student Email"
+    )
