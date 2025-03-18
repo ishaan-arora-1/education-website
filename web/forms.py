@@ -62,11 +62,8 @@ __all__ = [
     "FeedbackForm",
     "GoodsForm",
     "StorefrontForm",
-<<<<<<< HEAD
     "EducationalVideoForm",
-=======
     "ProgressTrackerForm",
->>>>>>> upstream/main
     "SuccessStoryForm",
     "MemeForm",
 ]

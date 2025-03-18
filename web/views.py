@@ -3725,7 +3725,6 @@ def donation_cancel(request):
     return redirect("donate")
 
 
-<<<<<<< HEAD
 def educational_videos_list(request):
     """View for listing educational videos with optional category filtering."""
     # Get category filter from query params
@@ -3785,7 +3784,8 @@ def upload_educational_video(request):
         form = EducationalVideoForm()
 
     return render(request, "videos/upload.html", {"form": form})
-=======
+
+
 @login_required
 def tracker_list(request):
     trackers = ProgressTracker.objects.filter(user=request.user).order_by("-updated_at")
@@ -3849,4 +3849,3 @@ def update_progress(request, tracker_id):
 def embed_tracker(request, embed_code):
     tracker = get_object_or_404(ProgressTracker, embed_code=embed_code, public=True)
     return render(request, "trackers/embed.html", {"tracker": tracker})
->>>>>>> upstream/main
