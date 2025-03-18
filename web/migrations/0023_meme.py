@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
                 ("caption", models.TextField()),
                 ("image", models.ImageField(upload_to="memes/")),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
-                ("updated_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
                 (
                     "uploader",
                     models.ForeignKey(
