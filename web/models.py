@@ -1207,7 +1207,7 @@ def validate_image_extension(image):
 
     ext = os.path.splitext(image.name)[1]
     valid_extensions = [".jpg", ".jpeg", ".png", ".gif"]
-    if not ext.lower() in valid_extensions:
+    if ext.lower() not in valid_extensions:
         raise ValidationError("Unsupported file type. Please use JPEG, PNG, or GIF images.")
 
 

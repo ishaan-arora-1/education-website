@@ -1,3 +1,5 @@
+import os
+
 from allauth.account.forms import LoginForm, SignupForm
 from captcha.fields import CaptchaField
 from django import forms
@@ -1071,13 +1073,28 @@ class MemeForm(forms.ModelForm):
                 raise forms.ValidationError("Image file is too large. Size should not exceed 2 MB.")
 
             # Check file extension
-            import os
-
-            ext = os.path.splitext(image.name)[1]
+            ext = os.path.splitext(image.name)[1].lower()
             valid_extensions = [".jpg", ".jpeg", ".png", ".gif"]
-            if not ext.lower() in valid_extensions:
+            if ext not in valid_extensions:
                 raise forms.ValidationError("Unsupported file type. Please use JPEG, PNG, or GIF images.")
         return image
+
+    def save(self, commit=True):
+        meme = super().save(commit=False)
+
+        # Create new subject if provided
+        new_subject_name = self.cleaned_data.get("new_subject")
+        if new_subject_name and not self.cleaned_data.get("subject"):
+            from django.utils.text import slugify
+
+            subject, created = Subject.objects.get_or_create(
+                name=new_subject_name, defaults={"slug": slugify(new_subject_name)}
+            )
+            meme.subject = subject
+
+        if commit:
+            meme.save()
+        return meme
 
 
 class StudentEnrollmentForm(forms.Form):
