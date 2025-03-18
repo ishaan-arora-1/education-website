@@ -16,11 +16,11 @@ from .models import (
     Goods,
     ProductImage,
     Profile,
+    ProgressTracker,
     Review,
     Session,
     Storefront,
     Subject,
-    ProgressTracker,
     SuccessStory,
 )
 from .referrals import handle_referral
@@ -1027,9 +1027,9 @@ class StorefrontForm(forms.ModelForm):
 class ProgressTrackerForm(forms.ModelForm):
     class Meta:
         model = ProgressTracker
-        fields = ['title', 'description', 'current_value', 'target_value', 'color', 'public']
+        fields = ["title", "description", "current_value", "target_value", "color", "public"]
         widgets = {
-            'description': forms.Textarea(attrs={'rows': 3}),
+            "description": forms.Textarea(attrs={"rows": 3}),
         }
 
 
