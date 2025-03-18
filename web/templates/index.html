@@ -247,282 +247,271 @@
                 </p>
               </div>
             </div>
-            <a href="https://github.com/alphaonelabs/education-website/wiki/GSOC-2025-Ideas"
-               class="hidden sm:inline-flex items-center px-6 py-2 bg-white text-blue-600 rounded-full font-semibold hover:bg-blue-50 transition-colors duration-200 whitespace-nowrap">
-              <span>View Ideas</span>
-              <i class="fas fa-arrow-right ml-2"></i>
-            </a>
-          </div>
-          <div class="flex space-x-2">
-            <a href="https://github.com/alphaonelabs/education-website/wiki/GSOC-2025-Ideas"
-               class="inline-flex items-center justify-center w-full px-6 py-2 bg-white text-blue-600 rounded-full font-semibold hover:bg-blue-50 transition-colors duration-200">
-              <span>View Ideas</span>
-            </a>
             <a href="{% url 'gsoc_landing_page' %}"
-               class="inline-flex items-center px-6 py-2 bg-white text-blue-600 rounded-full font-semibold hover:bg-blue-50 transition-colors duration-200 whitespace-nowrap">
+               class="inline-flex items-center px-6 py-2 bg-white text-blue-600 rounded-full font-semibold hover:bg-blue-50 transition-colors duration-200 whitespace-nowrap sm:inline-flex">
               <span>Get Started with GSoC</span>
               <i class="fas fa-arrow-right ml-2"></i>
             </a>
           </div>
+        </div>
+        <!-- Two cards next to each other: For Learners & For Teachers -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- For Learners -->
+          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <h3 class="text-lg font-semibold mb-2 flex items-center">
+              <i class="fa-solid fa-user-graduate text-teal-600 dark:text-teal-400 mr-2"></i>
+              For Learners
+            </h3>
+            <ul class="list-disc list-inside space-y-2 text-sm text-gray-800 dark:text-gray-200">
+              <li>
+                <i class="fa-solid fa-robot text-gray-600 dark:text-gray-300 mr-2"></i>
+                Advanced search with AI-powered recommendations
+              </li>
+              <li>
+                <i class="fa-solid fa-calendar-check text-gray-600 dark:text-gray-300 mr-2"></i>
+                Flexible scheduling with calendar integration
+              </li>
+              <li>
+                <i class="fa-solid fa-trophy text-gray-600 dark:text-gray-300 mr-2"></i>
+                Track your progress and earn achievements
+              </li>
+              <li>
+                <i class="fa-solid fa-users text-gray-600 dark:text-gray-300 mr-2"></i>
+                Join study groups and connect with peers
+              </li>
+              <li>
+                <i class="fa-solid fa-chalkboard-teacher text-gray-600 dark:text-gray-300 mr-2"></i>
+                Access both virtual and in-person classes
+              </li>
+            </ul>
           </div>
-          <!-- Two cards next to each other: For Learners & For Teachers -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- For Learners -->
-            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-              <h3 class="text-lg font-semibold mb-2 flex items-center">
-                <i class="fa-solid fa-user-graduate text-teal-600 dark:text-teal-400 mr-2"></i>
-                For Learners
-              </h3>
-              <ul class="list-disc list-inside space-y-2 text-sm text-gray-800 dark:text-gray-200">
-                <li>
-                  <i class="fa-solid fa-robot text-gray-600 dark:text-gray-300 mr-2"></i>
-                  Advanced search with AI-powered recommendations
-                </li>
-                <li>
-                  <i class="fa-solid fa-calendar-check text-gray-600 dark:text-gray-300 mr-2"></i>
-                  Flexible scheduling with calendar integration
-                </li>
-                <li>
-                  <i class="fa-solid fa-trophy text-gray-600 dark:text-gray-300 mr-2"></i>
-                  Track your progress and earn achievements
-                </li>
-                <li>
-                  <i class="fa-solid fa-users text-gray-600 dark:text-gray-300 mr-2"></i>
-                  Join study groups and connect with peers
-                </li>
-                <li>
-                  <i class="fa-solid fa-chalkboard-teacher text-gray-600 dark:text-gray-300 mr-2"></i>
-                  Access both virtual and in-person classes
-                </li>
-              </ul>
-            </div>
-            <!-- For Teachers -->
-            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-              <h3 class="text-lg font-semibold mb-2 flex items-center">
-                <i class="fa-solid fa-chalkboard-user text-teal-600 dark:text-teal-400 mr-2"></i>
-                For Teachers
-              </h3>
-              <ul class="list-disc list-inside space-y-2 text-sm text-gray-800 dark:text-gray-200">
-                <li>
-                  <i class="fa-solid fa-clipboard-list text-gray-600 dark:text-gray-300 mr-2"></i>
-                  Comprehensive course management tools
-                </li>
-                <li>
-                  <i class="fa-solid fa-chart-line text-gray-600 dark:text-gray-300 mr-2"></i>
-                  Analytics and student progress tracking
-                </li>
-                <li>
-                  <i class="fa-solid fa-credit-card text-gray-600 dark:text-gray-300 mr-2"></i>
-                  Secure payment processing and earnings management
-                </li>
-                <li>
-                  <i class="fa-solid fa-bullhorn text-gray-600 dark:text-gray-300 mr-2"></i>
-                  Marketing tools to promote your courses
-                </li>
-                <li>
-                  <i class="fa-solid fa-comments text-gray-600 dark:text-gray-300 mr-2"></i>
-                  Direct communication with students
-                </li>
-              </ul>
-            </div>
+          <!-- For Teachers -->
+          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <h3 class="text-lg font-semibold mb-2 flex items-center">
+              <i class="fa-solid fa-chalkboard-user text-teal-600 dark:text-teal-400 mr-2"></i>
+              For Teachers
+            </h3>
+            <ul class="list-disc list-inside space-y-2 text-sm text-gray-800 dark:text-gray-200">
+              <li>
+                <i class="fa-solid fa-clipboard-list text-gray-600 dark:text-gray-300 mr-2"></i>
+                Comprehensive course management tools
+              </li>
+              <li>
+                <i class="fa-solid fa-chart-line text-gray-600 dark:text-gray-300 mr-2"></i>
+                Analytics and student progress tracking
+              </li>
+              <li>
+                <i class="fa-solid fa-credit-card text-gray-600 dark:text-gray-300 mr-2"></i>
+                Secure payment processing and earnings management
+              </li>
+              <li>
+                <i class="fa-solid fa-bullhorn text-gray-600 dark:text-gray-300 mr-2"></i>
+                Marketing tools to promote your courses
+              </li>
+              <li>
+                <i class="fa-solid fa-comments text-gray-600 dark:text-gray-300 mr-2"></i>
+                Direct communication with students
+              </li>
+            </ul>
           </div>
         </div>
-        <div class="md:w-1/3 space-y-6">
-          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <h2 class="text-xl font-semibold mb-4">
-              <i class="fa-solid fa-chalkboard-user mr-2"></i>
-              Teach a Course
-            </h2>
-            <form method="post" class="space-y-4">
-              {% csrf_token %}
-              {% if not user.is_authenticated or not user.profile.is_teacher %}
-                {% if request.user.is_authenticated %}
-                  <input type="hidden" name="email" value="{{ user.email }}" />
-                {% else %}
-                  <div>
-                    <label for="email" class="block text-sm font-medium mb-1">Email</label>
-                    <input type="email"
-                           id="email"
-                           name="email"
-                           class="block w-full border {% if form.email.errors %}border-red-500 dark:border-red-500{% else %}border-gray-300 dark:border-gray-600{% endif %} rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800"
-                           placeholder="your.email@example.com"
-                           value="{{ form.email.value|default:'' }}"
-                           required />
-                    {% if form.email.errors %}
-                      <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.email.errors|join:", " }}</p>
-                    {% endif %}
-                  </div>
-                {% endif %}
-              {% endif %}
-              <div>
-                <label for="subject" class="block text-sm font-medium mb-1">Subject</label>
-                <input type="text"
-                       id="subject"
-                       name="subject"
-                       class="block w-full border {% if form.subject.errors %}border-red-500 dark:border-red-500{% else %}border-gray-300 dark:border-gray-600{% endif %} rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800"
-                       placeholder="Your subject to teach"
-                       value="{{ form.subject.value|default:'' }}"
-                       required />
-                {% if form.subject.errors %}
-                  <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.subject.errors|join:", " }}</p>
-                {% endif %}
-              </div>
-              <div>
-                <label for="captcha" class="block text-sm font-medium mb-1">Verification</label>
-                <div class="{% if form.captcha.errors %}border border-red-500 dark:border-red-500 rounded p-2{% endif %}">
-                  {{ form.captcha }}
-                </div>
-                {% if form.captcha.errors %}
-                  <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.captcha.errors|join:", " }}</p>
-                {% endif %}
-              </div>
-              <button type="submit"
-                      class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-full flex items-center">
-                <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> Continue
-              </button>
-            </form>
-          </div>
-          <!-- Progress Trackers Dashboard -->
-          {% if user.is_authenticated %}
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
-              <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center">
-                <i class="fa-solid fa-chart-line text-blue-600 dark:text-blue-400 mr-2"></i>
-                Progress Trackers
-              </h2>
-              {% if user.progress_trackers.exists %}
-                <div class="space-y-4">
-                  {% for tracker in user.progress_trackers.all|slice:":3" %}
-                    <div>
-                      <div class="flex justify-between mb-1">
-                        <span class="text-gray-700 dark:text-gray-300">{{ tracker.title }}</span>
-                        <span class="text-gray-600 dark:text-gray-400">{{ tracker.percentage }}%</span>
-                      </div>
-                      <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                        <div class="bg-{{ tracker.color }} h-3 rounded-full"
-                             style="width: {{ tracker.percentage }}%"></div>
-                      </div>
-                    </div>
-                  {% endfor %}
-                </div>
-                <div class="mt-4 text-center">
-                  <a href="{% url 'tracker_list' %}"
-                     class="text-blue-600 hover:text-blue-800 dark:text-blue-400 inline-flex items-center">
-                    <span>View All Trackers</span>
-                    <i class="fas fa-arrow-right ml-2 text-xs"></i>
-                  </a>
-                </div>
+      </div>
+      <div class="md:w-1/3 space-y-6">
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <h2 class="text-xl font-semibold mb-4">
+            <i class="fa-solid fa-chalkboard-user mr-2"></i>
+            Teach a Course
+          </h2>
+          <form method="post" class="space-y-4">
+            {% csrf_token %}
+            {% if not user.is_authenticated or not user.profile.is_teacher %}
+              {% if request.user.is_authenticated %}
+                <input type="hidden" name="email" value="{{ user.email }}" />
               {% else %}
-                <p class="text-gray-600 dark:text-gray-400 mb-4">You haven't created any progress trackers yet.</p>
-                <div class="text-center">
-                  <a href="{% url 'create_tracker' %}"
-                     class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg inline-flex items-center justify-center">
-                    <i class="fas fa-plus mr-2"></i>
-                    Create Your First Tracker
-                  </a>
+                <div>
+                  <label for="email" class="block text-sm font-medium mb-1">Email</label>
+                  <input type="email"
+                         id="email"
+                         name="email"
+                         class="block w-full border {% if form.email.errors %}border-red-500 dark:border-red-500{% else %}border-gray-300 dark:border-gray-600{% endif %} rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800"
+                         placeholder="your.email@example.com"
+                         value="{{ form.email.value|default:'' }}"
+                         required />
+                  {% if form.email.errors %}
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.email.errors|join:", " }}</p>
+                  {% endif %}
                 </div>
+              {% endif %}
+            {% endif %}
+            <div>
+              <label for="subject" class="block text-sm font-medium mb-1">Subject</label>
+              <input type="text"
+                     id="subject"
+                     name="subject"
+                     class="block w-full border {% if form.subject.errors %}border-red-500 dark:border-red-500{% else %}border-gray-300 dark:border-gray-600{% endif %} rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-300 dark:focus:ring-teal-800 bg-white dark:bg-gray-800"
+                     placeholder="Your subject to teach"
+                     value="{{ form.subject.value|default:'' }}"
+                     required />
+              {% if form.subject.errors %}
+                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.subject.errors|join:", " }}</p>
               {% endif %}
             </div>
-          {% endif %}
-          <!-- Weekly Challenge -->
-          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-lg bg-white dark:bg-gray-800">
-            <h2 class="text-xl font-semibold mb-4 flex items-center">
-              <span class="mr-2">🏆</span> Weekly Challenge
-            </h2>
-            {% if current_challenge %}
-              <div class="text-left">
-                <p class="text-lg font-semibold mb-2">Challenge Name:</p>
-                <p class="text-gray-700 dark:text-gray-300 mb-4">{{ current_challenge.title }}</p>
-                <p class="text-lg font-semibold mb-2">Details:</p>
-                <p class="text-gray-700 dark:text-gray-300 mb-4">{{ current_challenge.description }}</p>
-                <p class="text-lg font-semibold mb-2">Duration:</p>
-                <p class="text-gray-600 dark:text-gray-400 mb-6">
-                  {{ current_challenge.start_date }} to {{ current_challenge.end_date }}
-                </p>
-                {% if user.is_authenticated %}
-                  <a href="{% url 'challenge_submit' current_challenge.week_number %}"
-                     class="inline-block bg-teal-600 text-white px-5 py-2.5 rounded-lg hover:bg-teal-700 transition-shadow shadow-md">
-                    Complete My Challenge
-                  </a>
-                {% else %}
-                  <p class="text-red-600 dark:text-red-400 mt-4">Please log in to submit your result.</p>
-                {% endif %}
+            <div>
+              <label for="captcha" class="block text-sm font-medium mb-1">Verification</label>
+              <div class="{% if form.captcha.errors %}border border-red-500 dark:border-red-500 rounded p-2{% endif %}">
+                {{ form.captcha }}
               </div>
-            {% else %}
-              <p class="text-left text-gray-500 dark:text-gray-400">No challenge available for this week.</p>
-            {% endif %}
-          </div>
-          <!-- Recent Forum Post -->
-          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <h2 class="text-lg font-semibold mb-2 flex items-center">
-              <i class="fa-solid fa-comments text-purple-600 dark:text-purple-400 mr-2"></i>
-              Recent Forum Post
+              {% if form.captcha.errors %}
+                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.captcha.errors|join:", " }}</p>
+              {% endif %}
+            </div>
+            <button type="submit"
+                    class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-full flex items-center">
+              <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> Continue
+            </button>
+          </form>
+        </div>
+        <!-- Progress Trackers Dashboard -->
+        {% if user.is_authenticated %}
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center">
+              <i class="fa-solid fa-chart-line text-blue-600 dark:text-blue-400 mr-2"></i>
+              Progress Trackers
             </h2>
-            <p class="text-sm">
-              <strong class="block text-gray-900 dark:text-gray-200 mb-1">{{ latest_topic.title|default:"How to get started with advanced mathematics?" }}</strong>
-              "{{ latest_topic.content|default:"I'm looking for resources on group theory and number theory. Any recommendations?" }}" — <em>posted by {{ latest_topic.author.username|default:"user123" }}</em>
-            </p>
-            <a href="{% if latest_topic %}{% url 'forum_topic' latest_topic.category.slug latest_topic.id %}{% else %}{% url 'forum_categories' %}{% endif %}"
-               class="text-orange-500 dark:text-orange-400 text-sm hover:underline inline-block mt-2">View Discussion →</a>
-          </div>
-          <!-- Recent Blog Post -->
-          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <h2 class="text-lg font-semibold mb-2 flex items-center">
-              <i class="fa-solid fa-blog text-red-600 dark:text-red-400 mr-2"></i>
-              Recent Blog Post
-            </h2>
-            <p class="text-sm">
-              <strong class="block text-gray-900 dark:text-gray-200 mb-1">{{ latest_post.title|default:"The Future of Online Education" }}</strong>
-              {{ latest_post.excerpt|default:"Learn how new technologies are shaping the way we teach and learn, including AI-driven insights and personalized curriculum..." }}
-            </p>
-            <a href="{% if latest_post %}{% url 'blog_detail' latest_post.slug %}{% else %}{% url 'blog_list' %}{% endif %}"
-               class="text-orange-500 dark:text-orange-400 text-sm hover:underline inline-block mt-2">Read More →</a>
-          </div>
-          <!-- Success Stories -->
-          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <h2 class="text-lg font-semibold mb-2 flex items-center">
-              <i class="fa-solid fa-trophy text-yellow-600 dark:text-yellow-400 mr-2"></i>
-              Success Story
-            </h2>
-            <p class="text-sm">
-              <strong class="block text-gray-900 dark:text-gray-200 mb-1">{{ latest_success_story.title|default:"From Beginner to Expert in 3 Months" }}</strong>
-              {{ latest_success_story.excerpt|default:"Discover how our platform helped a complete beginner transform into a confident expert through personalized learning paths and dedicated mentorship..." }}
-            </p>
-            <a href="{% if latest_success_story %}{% url 'success_story_detail' latest_success_story.slug %}{% else %}{% url 'success_story_list' %}{% endif %}"
-               class="text-orange-500 dark:text-orange-400 text-sm hover:underline inline-block mt-2">Read More →</a>
-          </div>
-          <!-- Recent Contributors -->
-          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <h2 class="text-lg font-semibold mb-4 flex items-center">
-              <i class="fa-solid fa-code-pull-request text-purple-600 dark:text-purple-400 mr-2"></i>
-              Recent Code Contributions
-            </h2>
-            <div class="space-y-4" id="recent-contributors">
-              <!-- Contributors will be loaded via JavaScript -->
-              <div class="animate-pulse space-y-3">
-                {% for i in "123456789"|make_list %}
-                  <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-                    <div class="flex-1">
-                      <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                      <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mt-2"></div>
+            {% if user.progress_trackers.exists %}
+              <div class="space-y-4">
+                {% for tracker in user.progress_trackers.all|slice:":3" %}
+                  <div>
+                    <div class="flex justify-between mb-1">
+                      <span class="text-gray-700 dark:text-gray-300">{{ tracker.title }}</span>
+                      <span class="text-gray-600 dark:text-gray-400">{{ tracker.percentage }}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                      <div class="bg-{{ tracker.color }} h-3 rounded-full"
+                           style="width: {{ tracker.percentage }}%"></div>
                     </div>
                   </div>
                 {% endfor %}
               </div>
+              <div class="mt-4 text-center">
+                <a href="{% url 'tracker_list' %}"
+                   class="text-blue-600 hover:text-blue-800 dark:text-blue-400 inline-flex items-center">
+                  <span>View All Trackers</span>
+                  <i class="fas fa-arrow-right ml-2 text-xs"></i>
+                </a>
+              </div>
+            {% else %}
+              <p class="text-gray-600 dark:text-gray-400 mb-4">You haven't created any progress trackers yet.</p>
+              <div class="text-center">
+                <a href="{% url 'create_tracker' %}"
+                   class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg inline-flex items-center justify-center">
+                  <i class="fas fa-plus mr-2"></i>
+                  Create Your First Tracker
+                </a>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+        <!-- Weekly Challenge -->
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-lg bg-white dark:bg-gray-800">
+          <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <span class="mr-2">🏆</span> Weekly Challenge
+          </h2>
+          {% if current_challenge %}
+            <div class="text-left">
+              <p class="text-lg font-semibold mb-2">Challenge Name:</p>
+              <p class="text-gray-700 dark:text-gray-300 mb-4">{{ current_challenge.title }}</p>
+              <p class="text-lg font-semibold mb-2">Details:</p>
+              <p class="text-gray-700 dark:text-gray-300 mb-4">{{ current_challenge.description }}</p>
+              <p class="text-lg font-semibold mb-2">Duration:</p>
+              <p class="text-gray-600 dark:text-gray-400 mb-6">
+                {{ current_challenge.start_date }} to {{ current_challenge.end_date }}
+              </p>
+              {% if user.is_authenticated %}
+                <a href="{% url 'challenge_submit' current_challenge.week_number %}"
+                   class="inline-block bg-teal-600 text-white px-5 py-2.5 rounded-lg hover:bg-teal-700 transition-shadow shadow-md">
+                  Complete My Challenge
+                </a>
+              {% else %}
+                <p class="text-red-600 dark:text-red-400 mt-4">Please log in to submit your result.</p>
+              {% endif %}
             </div>
-            <script>
-                // Fetch recent contributors from GitHub API
-                fetch('https://api.github.com/repos/AlphaOneLabs/education-website/pulls?state=all&per_page=10')
-                    .then(response => response.json())
-                    .then(pulls => {
-                        const container = document.getElementById('recent-contributors');
-                        container.innerHTML = ''; // Clear loading state
+          {% else %}
+            <p class="text-left text-gray-500 dark:text-gray-400">No challenge available for this week.</p>
+          {% endif %}
+        </div>
+        <!-- Recent Forum Post -->
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <h2 class="text-lg font-semibold mb-2 flex items-center">
+            <i class="fa-solid fa-comments text-purple-600 dark:text-purple-400 mr-2"></i>
+            Recent Forum Post
+          </h2>
+          <p class="text-sm">
+            <strong class="block text-gray-900 dark:text-gray-200 mb-1">{{ latest_topic.title|default:"How to get started with advanced mathematics?" }}</strong>
+            "{{ latest_topic.content|default:"I'm looking for resources on group theory and number theory. Any recommendations?" }}" — <em>posted by {{ latest_topic.author.username|default:"user123" }}</em>
+          </p>
+          <a href="{% if latest_topic %}{% url 'forum_topic' latest_topic.category.slug latest_topic.id %}{% else %}{% url 'forum_categories' %}{% endif %}"
+             class="text-orange-500 dark:text-orange-400 text-sm hover:underline inline-block mt-2">View Discussion →</a>
+        </div>
+        <!-- Recent Blog Post -->
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <h2 class="text-lg font-semibold mb-2 flex items-center">
+            <i class="fa-solid fa-blog text-red-600 dark:text-red-400 mr-2"></i>
+            Recent Blog Post
+          </h2>
+          <p class="text-sm">
+            <strong class="block text-gray-900 dark:text-gray-200 mb-1">{{ latest_post.title|default:"The Future of Online Education" }}</strong>
+            {{ latest_post.excerpt|default:"Learn how new technologies are shaping the way we teach and learn, including AI-driven insights and personalized curriculum..." }}
+          </p>
+          <a href="{% if latest_post %}{% url 'blog_detail' latest_post.slug %}{% else %}{% url 'blog_list' %}{% endif %}"
+             class="text-orange-500 dark:text-orange-400 text-sm hover:underline inline-block mt-2">Read More →</a>
+        </div>
+        <!-- Success Stories -->
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <h2 class="text-lg font-semibold mb-2 flex items-center">
+            <i class="fa-solid fa-trophy text-yellow-600 dark:text-yellow-400 mr-2"></i>
+            Success Story
+          </h2>
+          <p class="text-sm">
+            <strong class="block text-gray-900 dark:text-gray-200 mb-1">{{ latest_success_story.title|default:"From Beginner to Expert in 3 Months" }}</strong>
+            {{ latest_success_story.excerpt|default:"Discover how our platform helped a complete beginner transform into a confident expert through personalized learning paths and dedicated mentorship..." }}
+          </p>
+          <a href="{% if latest_success_story %}{% url 'success_story_detail' latest_success_story.slug %}{% else %}{% url 'success_story_list' %}{% endif %}"
+             class="text-orange-500 dark:text-orange-400 text-sm hover:underline inline-block mt-2">Read More →</a>
+        </div>
+        <!-- Recent Contributors -->
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <h2 class="text-lg font-semibold mb-4 flex items-center">
+            <i class="fa-solid fa-code-pull-request text-purple-600 dark:text-purple-400 mr-2"></i>
+            Recent Code Contributions
+          </h2>
+          <div class="space-y-4" id="recent-contributors">
+            <!-- Contributors will be loaded via JavaScript -->
+            <div class="animate-pulse space-y-3">
+              {% for i in "123456789"|make_list %}
+                <div class="flex items-center space-x-3">
+                  <div class="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                  <div class="flex-1">
+                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                    <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mt-2"></div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+          <script>
+              // Fetch recent contributors from GitHub API
+              fetch('https://api.github.com/repos/AlphaOneLabs/education-website/pulls?state=all&per_page=10')
+                  .then(response => response.json())
+                  .then(pulls => {
+                      const container = document.getElementById('recent-contributors');
+                      container.innerHTML = ''; // Clear loading state
 
-                        pulls.forEach(pull => {
-                            const date = new Date(pull.created_at).toLocaleDateString();
-                            const div = document.createElement('div');
-                            div.className = 'flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200';
-                            div.innerHTML = `
+                      pulls.forEach(pull => {
+                          const date = new Date(pull.created_at).toLocaleDateString();
+                          const div = document.createElement('div');
+                          div.className = 'flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200';
+                          div.innerHTML = `
                     <img src="${pull.user.avatar_url}" alt="${pull.user.login}" class="w-10 h-10 rounded-full" loading="lazy" />
                     <div class="flex-1 min-w-0">
                       <a href="${pull.html_url}" target="_blank" class="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-orange-500 dark:hover:text-orange-400 truncate block">
@@ -533,135 +522,135 @@
                       </p>
                     </div>
                   `;
-                            container.appendChild(div);
-                        });
-                    })
-                    .catch(error => {
-                        const container = document.getElementById('recent-contributors');
-                        container.innerHTML = `
+                          container.appendChild(div);
+                      });
+                  })
+                  .catch(error => {
+                      const container = document.getElementById('recent-contributors');
+                      container.innerHTML = `
                   <div class="text-sm text-gray-600 dark:text-gray-400 text-center py-4">
                     <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
                     Failed to load recent contributors. Please try again later.
                   </div>
                 `;
-                        console.error('Error fetching contributors:', error);
-                    });
-            </script>
-            <!-- Contributor Callout -->
-            <div class="mt-4 p-4 border border-blue-200 dark:border-blue-800 rounded-lg bg-blue-50 dark:bg-blue-900/50">
-              <p class="text-sm text-blue-800 dark:text-blue-200">
-                <i class="fas fa-code mr-2"></i>
-                Are you a coder? Get involved and help shape the future of education!
-                <a href="https://github.com/AlphaOneLabs/education-website/blob/main/CONTRIBUTING.md"
-                   class="inline-flex items-center text-blue-600 dark:text-blue-400 hover:underline ml-1">
-                  View contributor guidelines
-                  <i class="fas fa-arrow-right ml-1 text-xs"></i>
-                </a>
-              </p>
-            </div>
+                      console.error('Error fetching contributors:', error);
+                  });
+          </script>
+          <!-- Contributor Callout -->
+          <div class="mt-4 p-4 border border-blue-200 dark:border-blue-800 rounded-lg bg-blue-50 dark:bg-blue-900/50">
+            <p class="text-sm text-blue-800 dark:text-blue-200">
+              <i class="fas fa-code mr-2"></i>
+              Are you a coder? Get involved and help shape the future of education!
+              <a href="https://github.com/AlphaOneLabs/education-website/blob/main/CONTRIBUTING.md"
+                 class="inline-flex items-center text-blue-600 dark:text-blue-400 hover:underline ml-1">
+                View contributor guidelines
+                <i class="fas fa-arrow-right ml-1 text-xs"></i>
+              </a>
+            </p>
           </div>
-          <!-- Referral Program -->
-          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mt-6">
-            <h2 class="text-lg font-semibold mb-4 flex items-center">
-              <i class="fa-solid fa-gift text-purple-600 dark:text-purple-400 mr-2"></i>
-              Referral Program
-            </h2>
-            <div class="space-y-4">
-              <div class="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/30 dark:to-blue-900/30 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
-                <h3 class="font-medium mb-2 text-purple-800 dark:text-purple-200">Share and Earn!</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                  {% if user.is_authenticated %}
-                    {% if user.profile.is_teacher %}
-                      Get your first student and receive a $5 bonus! Share your unique referral link:
-                    {% else %}
-                      Get $5 when someone you refer enrolls in their first course! Share your unique referral link:
-                    {% endif %}
-                  {% else %}
-                    Join our community and start earning rewards through our referral program!
-                  {% endif %}
-                </p>
+        </div>
+        <!-- Referral Program -->
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mt-6">
+          <h2 class="text-lg font-semibold mb-4 flex items-center">
+            <i class="fa-solid fa-gift text-purple-600 dark:text-purple-400 mr-2"></i>
+            Referral Program
+          </h2>
+          <div class="space-y-4">
+            <div class="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/30 dark:to-blue-900/30 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
+              <h3 class="font-medium mb-2 text-purple-800 dark:text-purple-200">Share and Earn!</h3>
+              <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
                 {% if user.is_authenticated %}
-                  <div class="flex items-center space-x-2">
-                    <input type="text"
-                           value="{{ request.scheme }}://{{ request.get_host }}{% url 'index' %}?ref={{ user.profile.referral_code }}"
-                           class="text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-3 py-1.5 flex-1"
-                           readonly
-                           id="referralLink" />
-                    <button onclick="copyReferralLink()"
-                            class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded text-sm">
-                      <i class="fas fa-copy mr-1"></i>
-                      Copy
-                    </button>
-                  </div>
-                  <div class="mt-4 flex items-center justify-between">
-                    <p class="text-xs text-gray-500 dark:text-gray-400">
-                      <i class="fas fa-info-circle mr-1"></i>
-                      Your total referral earnings: ${{ user.profile.referral_earnings|default:"0" }}
-                    </p>
-                  </div>
+                  {% if user.profile.is_teacher %}
+                    Get your first student and receive a $5 bonus! Share your unique referral link:
+                  {% else %}
+                    Get $5 when someone you refer enrolls in their first course! Share your unique referral link:
+                  {% endif %}
                 {% else %}
-                  <a href="{% url 'account_signup' %}"
-                     class="inline-flex items-center bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm">
-                    <i class="fas fa-user-plus mr-2"></i>
-                    Sign Up to Start Earning
-                  </a>
+                  Join our community and start earning rewards through our referral program!
                 {% endif %}
-                <!-- Mini Leaderboard -->
-                <div class="mt-4 border-t border-purple-100 dark:border-purple-800 pt-4">
-                  <h4 class="text-sm font-semibold text-purple-800 dark:text-purple-200 mb-3">
-                    <i class="fas fa-crown text-yellow-500 mr-2"></i>
-                    Top Referrers
-                  </h4>
-                  <div class="space-y-2">
-                    {% for referrer in top_referrers %}
-                      <div class="flex items-center justify-between text-sm {% if forloop.counter == 1 %}text-yellow-600 dark:text-yellow-400 font-medium{% endif %}">
-                        <div class="flex items-center space-x-2">
-                          <span class="w-5 text-center">
-                            {% if forloop.counter == 1 %}
-                              👑
-                            {% elif forloop.counter == 2 %}
-                              🥈
-                            {% elif forloop.counter == 3 %}
-                              🥉
-                            {% else %}
-                              {{ forloop.counter }}
-                            {% endif %}
-                          </span>
-                          <span>{{ referrer.user.username }}</span>
-                        </div>
-                        <div class="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                          <span title="Signups"><i class="fas fa-user-plus mr-1"></i>{{ referrer.total_signups }}</span>
-                          <span title="Enrollments"><i class="fas fa-graduation-cap mr-1"></i>{{ referrer.total_enrollments }}</span>
-                          <span title="Clicks"><i class="fas fa-mouse-pointer mr-1"></i>{{ referrer.total_clicks }}</span>
-                        </div>
+              </p>
+              {% if user.is_authenticated %}
+                <div class="flex items-center space-x-2">
+                  <input type="text"
+                         value="{{ request.scheme }}://{{ request.get_host }}{% url 'index' %}?ref={{ user.profile.referral_code }}"
+                         class="text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-3 py-1.5 flex-1"
+                         readonly
+                         id="referralLink" />
+                  <button onclick="copyReferralLink()"
+                          class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded text-sm">
+                    <i class="fas fa-copy mr-1"></i>
+                    Copy
+                  </button>
+                </div>
+                <div class="mt-4 flex items-center justify-between">
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Your total referral earnings: ${{ user.profile.referral_earnings|default:"0" }}
+                  </p>
+                </div>
+              {% else %}
+                <a href="{% url 'account_signup' %}"
+                   class="inline-flex items-center bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm">
+                  <i class="fas fa-user-plus mr-2"></i>
+                  Sign Up to Start Earning
+                </a>
+              {% endif %}
+              <!-- Mini Leaderboard -->
+              <div class="mt-4 border-t border-purple-100 dark:border-purple-800 pt-4">
+                <h4 class="text-sm font-semibold text-purple-800 dark:text-purple-200 mb-3">
+                  <i class="fas fa-crown text-yellow-500 mr-2"></i>
+                  Top Referrers
+                </h4>
+                <div class="space-y-2">
+                  {% for referrer in top_referrers %}
+                    <div class="flex items-center justify-between text-sm {% if forloop.counter == 1 %}text-yellow-600 dark:text-yellow-400 font-medium{% endif %}">
+                      <div class="flex items-center space-x-2">
+                        <span class="w-5 text-center">
+                          {% if forloop.counter == 1 %}
+                            👑
+                          {% elif forloop.counter == 2 %}
+                            🥈
+                          {% elif forloop.counter == 3 %}
+                            🥉
+                          {% else %}
+                            {{ forloop.counter }}
+                          {% endif %}
+                        </span>
+                        <span>{{ referrer.user.username }}</span>
                       </div>
-                    {% empty %}
-                      <p class="text-sm text-gray-500 dark:text-gray-400 text-center">No referrals yet. Be the first!</p>
-                    {% endfor %}
-                  </div>
+                      <div class="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+                        <span title="Signups"><i class="fas fa-user-plus mr-1"></i>{{ referrer.total_signups }}</span>
+                        <span title="Enrollments"><i class="fas fa-graduation-cap mr-1"></i>{{ referrer.total_enrollments }}</span>
+                        <span title="Clicks"><i class="fas fa-mouse-pointer mr-1"></i>{{ referrer.total_clicks }}</span>
+                      </div>
+                    </div>
+                  {% empty %}
+                    <p class="text-sm text-gray-500 dark:text-gray-400 text-center">No referrals yet. Be the first!</p>
+                  {% endfor %}
                 </div>
               </div>
             </div>
-            <script>
-                function copyReferralLink() {
-                    const linkInput = document.getElementById('referralLink');
-                    linkInput.select();
-                    document.execCommand('copy');
-
-                    // Show a temporary success message
-                    const button = event.target.closest('button');
-                    const originalText = button.innerHTML;
-                    button.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
-                    button.classList.add('bg-green-600');
-
-                    setTimeout(() => {
-                        button.innerHTML = originalText;
-                        button.classList.remove('bg-green-600');
-                    }, 2000);
-                }
-            </script>
           </div>
+          <script>
+              function copyReferralLink() {
+                  const linkInput = document.getElementById('referralLink');
+                  linkInput.select();
+                  document.execCommand('copy');
+
+                  // Show a temporary success message
+                  const button = event.target.closest('button');
+                  const originalText = button.innerHTML;
+                  button.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
+                  button.classList.add('bg-green-600');
+
+                  setTimeout(() => {
+                      button.innerHTML = originalText;
+                      button.classList.remove('bg-green-600');
+                  }, 2000);
+              }
+          </script>
         </div>
       </div>
-    </main>
-  {% endblock content %}
+    </div>
+  </main>
+{% endblock content %}

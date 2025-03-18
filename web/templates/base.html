@@ -18,12 +18,20 @@
         Alpha One Labs - Open Source Education Platform
       {% endblock title %}
     </title>
-    <!-- Tailwind CSS (compiled version) -->
-    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}" />
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://js-de.sentry-cdn.com/ca8bad7e1a5a3012bccae7d9bd4f6d3d.min.js"
             crossorigin="anonymous"></script>
     <script>
-        // Dark mode configuration
+        // Configure Tailwind first
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {}
+            }
+        }
+
+        // Debug flag
         const DEBUG = true;
 
         // Logging helper
