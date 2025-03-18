@@ -17,6 +17,7 @@ from .models import (
     Meme,
     ProductImage,
     Profile,
+    ProgressTracker,
     Review,
     Session,
     Storefront,
@@ -58,6 +59,7 @@ __all__ = [
     "FeedbackForm",
     "GoodsForm",
     "StorefrontForm",
+    "ProgressTrackerForm",
     "SuccessStoryForm",
     "MemeForm",
 ]
@@ -1024,6 +1026,15 @@ class StorefrontForm(forms.ModelForm):
         ]
 
 
+class ProgressTrackerForm(forms.ModelForm):
+    class Meta:
+        model = ProgressTracker
+        fields = ["title", "description", "current_value", "target_value", "color", "public"]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 3}),
+        }
+
+
 class MemeForm(forms.ModelForm):
     new_subject = forms.CharField(
         max_length=100, required=False, help_text="If your subject isn't listed, enter a new one here"
@@ -1033,12 +1044,16 @@ class MemeForm(forms.ModelForm):
         model = Meme
         fields = ["title", "subject", "new_subject", "caption", "image"]
         widgets = {
-            "title": forms.TextInput(attrs={"class": "w-full px-3 py-2 border rounded-lg"}),
+            "title": forms.TextInput(attrs={"class": "w-full px-3 py-2 border rounded-lg", "required": True}),
             "subject": forms.Select(attrs={"class": "w-full px-3 py-2 border rounded-lg"}),
             "new_subject": forms.TextInput(attrs={"class": "w-full px-3 py-2 border rounded-lg"}),
             "caption": forms.Textarea(attrs={"class": "w-full px-3 py-2 border rounded-lg", "rows": 3}),
             "image": forms.FileInput(
-                attrs={"class": "w-full px-3 py-2 border rounded-lg", "accept": "image/png,image/jpeg"}
+                attrs={
+                    "class": "w-full px-3 py-2 border rounded-lg",
+                    "accept": "image/png,image/jpeg,image/gif",
+                    "required": True,
+                }
             ),
         }
 
@@ -1047,38 +1062,22 @@ class MemeForm(forms.ModelForm):
         self.fields["subject"].required = False
         self.fields["subject"].help_text = "Select an existing subject"
 
-    def clean(self):
-        """Validate that either subject or new_subject is provided"""
-        cleaned_data = super().clean()
-        subject = cleaned_data.get("subject")
-        new_subject = cleaned_data.get("new_subject")
-        if not subject and not new_subject:
-            raise forms.ValidationError("Please either select an existing subject or enter a new one.")
-        return cleaned_data
-
     def clean_image(self):
+        """Validate image file size and type."""
         image = self.cleaned_data.get("image")
         if image:
+            # Check file size
             if image.size > 2 * 1024 * 1024:  # 2MB limit
-                raise forms.ValidationError("Image file too large ( > 2MB )")
-            if not image.name.lower().endswith((".png", ".jpg", ".jpeg")):
-                raise forms.ValidationError("Unsupported file type. Please use PNG or JPEG.")
+                raise forms.ValidationError("Image file is too large. Size should not exceed 2 MB.")
+
+            # Check file extension
+            import os
+
+            ext = os.path.splitext(image.name)[1]
+            valid_extensions = [".jpg", ".jpeg", ".png", ".gif"]
+            if not ext.lower() in valid_extensions:
+                raise forms.ValidationError("Unsupported file type. Please use JPEG, PNG, or GIF images.")
         return image
-
-    def save(self, commit=True):
-        meme = super().save(commit=False)
-        # Create new subject if provided
-        new_subject_name = self.cleaned_data.get("new_subject")
-        if new_subject_name and not self.cleaned_data.get("subject"):
-            from django.utils.text import slugify
-
-            subject, created = Subject.objects.get_or_create(
-                name=new_subject_name, defaults={"slug": slugify(new_subject_name)}
-            )
-            meme.subject = subject
-        if commit:
-            meme.save()
-        return meme
 
 
 class StudentEnrollmentForm(forms.Form):

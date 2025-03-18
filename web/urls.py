@@ -225,6 +225,12 @@ urlpatterns += i18n_patterns(
     path("memes/", views.meme_list, name="meme_list"),
     path("memes/add/", views.add_meme, name="add_meme"),
     path("gsoc/", views.gsoc_landing_page, name="gsoc_landing_page"),
+    path("trackers/", views.tracker_list, name="tracker_list"),
+    path("trackers/create/", views.create_tracker, name="create_tracker"),
+    path("trackers/<int:tracker_id>/", views.tracker_detail, name="tracker_detail"),
+    path("trackers/<int:tracker_id>/update/", views.update_tracker, name="update_tracker"),
+    path("trackers/<int:tracker_id>/progress/", views.update_progress, name="update_progress"),
+    path("trackers/embed/<str:embed_code>/", views.embed_tracker, name="embed_tracker"),
     prefix_default_language=True,
 )
 
