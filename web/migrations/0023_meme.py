@@ -18,7 +18,12 @@ class Migration(migrations.Migration):
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("title", models.CharField(max_length=200)),
-                ("subject", models.CharField(max_length=100)),
+                (
+                    "subject",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, related_name="memes", to="web.subject"
+                    ),
+                ),
                 ("caption", models.TextField()),
                 ("image", models.ImageField(upload_to="memes/")),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
