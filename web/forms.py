@@ -572,6 +572,11 @@ class CustomLoginForm(LoginForm):
 
 
 class EducationalVideoForm(forms.ModelForm):
+    """
+    Form for creating and editing educational videos.
+    Validates that video URLs are from YouTube or Vimeo with proper video ID formats.
+    """
+
     class Meta:
         model = EducationalVideo
         fields = ["title", "description", "video_url", "category"]
