@@ -7,27 +7,19 @@ from django.utils.text import slugify
 
 
 def create_subjects_from_categories(apps, schema_editor):
-    Subject = apps.get_model("web", "Subject")
-
-    # Create subjects for all possible categories
-    categories = ["science", "technology", "mathematics", "programming", "arts", "language", "other"]
-
-    for category in categories:
-        Subject.objects.get_or_create(
-            name=category.title(),
-            defaults={
-                "slug": slugify(category),
-                "description": f"Videos about {category.title()}",
-            },
-        )
+    """
+    This function is no longer needed as we'll use existing subjects instead of 
+    creating hardcoded ones. We'll keep it empty to maintain migration history.
+    """
+    pass
 
 
 def reverse_subject_creation(apps, schema_editor):
-    Subject = apps.get_model("web", "Subject")
-    # Only delete subjects that were created by this migration
-    categories = ["Science", "Technology", "Mathematics", "Programming", "Arts", "Language", "Other"]
-    Subject.objects.filter(name__in=categories).delete()
-
+    """
+    Since we're not creating any subjects in the forward migration,
+    we don't need to delete anything in the reverse migration.
+    """
+    pass
 
 class Migration(migrations.Migration):
 
