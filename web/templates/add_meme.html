@@ -36,9 +36,17 @@
           {{ form.image }}
           {% if form.image.errors %}<p class="text-red-500 text-sm mt-1">{{ form.image.errors.0 }}</p>{% endif %}
           <p class="text-sm text-gray-500 mt-1">Recommended: PNG or JPEG, max 2MB</p>
-          <div id="imagePreview" class="hidden mt-4 border rounded p-2">
+          <div id="imagePreview" class="hidden mt-4 border rounded p-4">
             <p class="text-sm font-medium mb-2">Image Preview:</p>
-            <img id="preview" src="" alt="Preview" class="max-h-48 mx-auto" />
+            <div class="flex justify-center">
+              <img id="preview"
+                   src=""
+                   alt="Preview"
+                   class="max-h-64 max-w-full object-contain" />
+            </div>
+            <p class="text-xs text-gray-500 mt-2 text-center">
+              Preview is for reference only and may appear differently on the site.
+            </p>
           </div>
         </div>
         {% if form.non_field_errors %}

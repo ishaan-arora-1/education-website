@@ -1,5 +1,3 @@
-import os
-
 from allauth.account.forms import LoginForm, SignupForm
 from captcha.fields import CaptchaField
 from django import forms
@@ -1039,22 +1037,43 @@ class ProgressTrackerForm(forms.ModelForm):
 
 class MemeForm(forms.ModelForm):
     new_subject = forms.CharField(
-        max_length=100, required=False, help_text="If your subject isn't listed, enter a new one here"
+        max_length=100,
+        required=False,
+        widget=TailwindInput(
+            attrs={
+                "placeholder": "Enter a new subject name",
+                "class": "w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500",
+            }
+        ),
+        help_text="If your subject isn't listed, enter a new one here",
     )
 
     class Meta:
         model = Meme
         fields = ["title", "subject", "new_subject", "caption", "image"]
         widgets = {
-            "title": forms.TextInput(attrs={"class": "w-full px-3 py-2 border rounded-lg", "required": True}),
-            "subject": forms.Select(attrs={"class": "w-full px-3 py-2 border rounded-lg"}),
-            "new_subject": forms.TextInput(attrs={"class": "w-full px-3 py-2 border rounded-lg"}),
-            "caption": forms.Textarea(attrs={"class": "w-full px-3 py-2 border rounded-lg", "rows": 3}),
-            "image": forms.FileInput(
+            "title": TailwindInput(
                 attrs={
-                    "class": "w-full px-3 py-2 border rounded-lg",
+                    "placeholder": "Enter a descriptive title",
+                    "required": True,
+                }
+            ),
+            "subject": TailwindSelect(
+                attrs={
+                    "class": "w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                }
+            ),
+            "caption": TailwindTextarea(
+                attrs={
+                    "placeholder": "Add a caption for your meme",
+                    "rows": 3,
+                }
+            ),
+            "image": TailwindFileInput(
+                attrs={
                     "accept": "image/png,image/jpeg,image/gif",
                     "required": True,
+                    "help_text": "Upload a meme image (JPG, PNG, or GIF, max 2MB)",
                 }
             ),
         }
@@ -1064,20 +1083,21 @@ class MemeForm(forms.ModelForm):
         self.fields["subject"].required = False
         self.fields["subject"].help_text = "Select an existing subject"
 
-    def clean_image(self):
-        """Validate image file size and type."""
-        image = self.cleaned_data.get("image")
-        if image:
-            # Check file size
-            if image.size > 2 * 1024 * 1024:  # 2MB limit
-                raise forms.ValidationError("Image file is too large. Size should not exceed 2 MB.")
+        # Improve error messages
+        self.fields["image"].error_messages = {
+            "required": "Please select an image file.",
+            "invalid": "Please upload a valid image file.",
+        }
 
-            # Check file extension
-            ext = os.path.splitext(image.name)[1].lower()
-            valid_extensions = [".jpg", ".jpeg", ".png", ".gif"]
-            if ext not in valid_extensions:
-                raise forms.ValidationError("Unsupported file type. Please use JPEG, PNG, or GIF images.")
-        return image
+    def clean(self):
+        cleaned_data = super().clean()
+        subject = cleaned_data.get("subject")
+        new_subject = cleaned_data.get("new_subject")
+
+        if not subject and not new_subject:
+            raise forms.ValidationError("You must either select an existing subject or create a new one.")
+
+        return cleaned_data
 
     def save(self, commit=True):
         meme = super().save(commit=False)
