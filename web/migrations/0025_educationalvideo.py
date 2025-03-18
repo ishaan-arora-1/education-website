@@ -3,12 +3,11 @@
 import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
-from django.utils.text import slugify
 
 
 def create_subjects_from_categories(apps, schema_editor):
     """
-    This function is no longer needed as we'll use existing subjects instead of 
+    This function is no longer needed as we'll use existing subjects instead of
     creating hardcoded ones. We'll keep it empty to maintain migration history.
     """
     pass
@@ -20,6 +19,7 @@ def reverse_subject_creation(apps, schema_editor):
     we don't need to delete anything in the reverse migration.
     """
     pass
+
 
 class Migration(migrations.Migration):
 
