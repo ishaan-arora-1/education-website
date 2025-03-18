@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.conf.urls.i18n import i18n_patterns
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import include, path
@@ -15,6 +16,8 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns.append(path("__reload__/", include("django_browser_reload.urls")))  # Browser reload URLs
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)  # Add this line
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Language-prefixed URLs
 urlpatterns += i18n_patterns(
@@ -222,7 +225,15 @@ urlpatterns += i18n_patterns(
     ),
     path("analytics/", sales_analytics, name="sales_analytics"),
     path("analytics/data/", sales_data, name="sales_data"),
+    path("memes/", views.meme_list, name="meme_list"),
+    path("memes/add/", views.add_meme, name="add_meme"),
     path("gsoc/", views.gsoc_landing_page, name="gsoc_landing_page"),
+    path("trackers/", views.tracker_list, name="tracker_list"),
+    path("trackers/create/", views.create_tracker, name="create_tracker"),
+    path("trackers/<int:tracker_id>/", views.tracker_detail, name="tracker_detail"),
+    path("trackers/<int:tracker_id>/update/", views.update_tracker, name="update_tracker"),
+    path("trackers/<int:tracker_id>/progress/", views.update_progress, name="update_progress"),
+    path("trackers/embed/<str:embed_code>/", views.embed_tracker, name="embed_tracker"),
     prefix_default_language=True,
 )
 

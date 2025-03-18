@@ -24,7 +24,7 @@ def reverse_subject_creation(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("web", "0025_progresstracker"),
+        ("web", "0026_enhance_meme_model"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
