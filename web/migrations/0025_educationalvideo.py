@@ -24,7 +24,7 @@ def reverse_subject_creation(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("web", "0023_donation"),
+        ("web", "0024_create_success_story"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
