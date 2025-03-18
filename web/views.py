@@ -180,13 +180,6 @@ def index(request):
         "latest_success_story": latest_success_story,
         "form": form,
     }
-
-    # Add progress trackers for authenticated users
-    if request.user.is_authenticated:
-        # Get the user's progress trackers ordered by most recently updated
-        progress_trackers = request.user.progress_trackers.all().order_by("-updated_at")[:3]
-        context["progress_trackers"] = progress_trackers
-
     return render(request, "index.html", context)
 
 
@@ -3132,74 +3125,6 @@ class StorefrontDetailView(LoginRequiredMixin, generic.DetailView):
         return get_object_or_404(Storefront, store_slug=self.kwargs["store_slug"])
 
 
-@login_required
-def tracker_list(request):
-    trackers = ProgressTracker.objects.filter(user=request.user).order_by("-updated_at")
-    return render(request, "trackers/list.html", {"trackers": trackers})
-
-
-@login_required
-def create_tracker(request):
-    if request.method == "POST":
-        form = ProgressTrackerForm(request.POST)
-        if form.is_valid():
-            tracker = form.save(commit=False)
-            tracker.user = request.user
-            tracker.save()
-            return redirect("tracker_detail", tracker_id=tracker.id)
-    else:
-        form = ProgressTrackerForm()
-
-    return render(request, "trackers/form.html", {"form": form, "title": "Create Progress Tracker"})
-
-
-@login_required
-def update_tracker(request, tracker_id):
-    tracker = get_object_or_404(ProgressTracker, id=tracker_id, user=request.user)
-
-    if request.method == "POST":
-        form = ProgressTrackerForm(request.POST, instance=tracker)
-        if form.is_valid():
-            form.save()
-            return redirect("tracker_detail", tracker_id=tracker.id)
-    else:
-        form = ProgressTrackerForm(instance=tracker)
-
-    return render(request, "trackers/form.html", {"form": form, "tracker": tracker, "title": "Update Progress Tracker"})
-
-
-@login_required
-def tracker_detail(request, tracker_id):
-    tracker = get_object_or_404(ProgressTracker, id=tracker_id, user=request.user)
-    embed_url = request.build_absolute_uri(f"/trackers/embed/{tracker.embed_code}/")
-    return render(request, "trackers/detail.html", {"tracker": tracker, "embed_url": embed_url})
-
-
-@login_required
-def update_progress(request, tracker_id):
-    if request.method == "POST" and request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        tracker = get_object_or_404(ProgressTracker, id=tracker_id, user=request.user)
-
-        try:
-            new_value = int(request.POST.get("current_value", tracker.current_value))
-            tracker.current_value = new_value
-            tracker.save()
-
-            return JsonResponse(
-                {"success": True, "percentage": tracker.percentage, "current_value": tracker.current_value}
-            )
-        except ValueError:
-            return JsonResponse({"success": False, "error": "Invalid value"}, status=400)
-
-    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
-
-
-@xframe_options_exempt
-def embed_tracker(request, embed_code):
-    tracker = get_object_or_404(ProgressTracker, embed_code=embed_code, public=True)
-    return render(request, "trackers/embed.html", {"tracker": tracker})
-
-  
 def success_story_list(request):
     """View for listing published success stories."""
     success_stories = SuccessStory.objects.filter(status="published").order_by("-published_at")
@@ -3763,3 +3688,68 @@ def donation_success(request):
 def donation_cancel(request):
     """Handle donation cancellation."""
     return redirect("donate")
+
+
+@login_required
+def tracker_list(request):
+    trackers = ProgressTracker.objects.filter(user=request.user).order_by("-updated_at")
+    return render(request, "trackers/list.html", {"trackers": trackers})
+
+
+@login_required
+def create_tracker(request):
+    if request.method == "POST":
+        form = ProgressTrackerForm(request.POST)
+        if form.is_valid():
+            tracker = form.save(commit=False)
+            tracker.user = request.user
+            tracker.save()
+            return redirect("tracker_detail", tracker_id=tracker.id)
+    else:
+        form = ProgressTrackerForm()
+    return render(request, "trackers/form.html", {"form": form, "title": "Create Progress Tracker"})
+
+
+@login_required
+def update_tracker(request, tracker_id):
+    tracker = get_object_or_404(ProgressTracker, id=tracker_id, user=request.user)
+
+    if request.method == "POST":
+        form = ProgressTrackerForm(request.POST, instance=tracker)
+        if form.is_valid():
+            form.save()
+            return redirect("tracker_detail", tracker_id=tracker.id)
+    else:
+        form = ProgressTrackerForm(instance=tracker)
+    return render(request, "trackers/form.html", {"form": form, "tracker": tracker, "title": "Update Progress Tracker"})
+
+
+@login_required
+def tracker_detail(request, tracker_id):
+    tracker = get_object_or_404(ProgressTracker, id=tracker_id, user=request.user)
+    embed_url = request.build_absolute_uri(f"/trackers/embed/{tracker.embed_code}/")
+    return render(request, "trackers/detail.html", {"tracker": tracker, "embed_url": embed_url})
+
+
+@login_required
+def update_progress(request, tracker_id):
+    if request.method == "POST" and request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        tracker = get_object_or_404(ProgressTracker, id=tracker_id, user=request.user)
+
+        try:
+            new_value = int(request.POST.get("current_value", tracker.current_value))
+            tracker.current_value = new_value
+            tracker.save()
+
+            return JsonResponse(
+                {"success": True, "percentage": tracker.percentage, "current_value": tracker.current_value}
+            )
+        except ValueError:
+            return JsonResponse({"success": False, "error": "Invalid value"}, status=400)
+    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+
+@xframe_options_exempt
+def embed_tracker(request, embed_code):
+    tracker = get_object_or_404(ProgressTracker, embed_code=embed_code, public=True)
+    return render(request, "trackers/embed.html", {"tracker": tracker})
