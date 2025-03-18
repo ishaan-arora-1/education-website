@@ -1006,20 +1006,22 @@ class StorefrontForm(forms.ModelForm):
 
 class TeamGoalForm(forms.ModelForm):
     """Form for creating and editing team goals."""
+
     class Meta:
         model = TeamGoal
-        fields = ['title', 'description', 'deadline']
+        fields = ["title", "description", "deadline"]
         widgets = {
-            'deadline': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
-            'description': forms.Textarea(attrs={'rows': 4}),
+            "deadline": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "description": forms.Textarea(attrs={"rows": 4}),
         }
 
 
 class TeamInviteForm(forms.ModelForm):
     """Form for inviting users to a team goal."""
+
     class Meta:
         model = TeamInvite
-        fields = ['recipient']
+        fields = ["recipient"]
         widgets = {
-            'recipient': forms.Select(attrs={'class': 'form-select'}),
+            "recipient": forms.Select(attrs={"class": "form-select"}),
         }

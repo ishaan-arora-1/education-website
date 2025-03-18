@@ -1148,19 +1148,16 @@ class OrderItem(models.Model):
 
 class TeamGoal(models.Model):
     """A goal that team members work together to achieve."""
+
     title = models.CharField(max_length=200)
     description = models.TextField()
-    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_goals')
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_goals")
     deadline = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    STATUS_CHOICES = [
-        ('active', 'Active'),
-        ('completed', 'Completed'),
-        ('cancelled', 'Cancelled')
-    ]
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    STATUS_CHOICES = [("active", "Active"), ("completed", "Completed"), ("cancelled", "Cancelled")]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
 
     def __str__(self):
         return self.title
@@ -1174,22 +1171,21 @@ class TeamGoal(models.Model):
         completed_members = self.members.filter(completed=True).count()
         return int((completed_members / total_members) * 100)
 
+
 class TeamGoalMember(models.Model):
     """Represents a member of a team goal."""
-    team_goal = models.ForeignKey(TeamGoal, on_delete=models.CASCADE, related_name='members')
+
+    team_goal = models.ForeignKey(TeamGoal, on_delete=models.CASCADE, related_name="members")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     joined_at = models.DateTimeField(auto_now_add=True)
     completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
 
-    ROLE_CHOICES = [
-        ('leader', 'Team Leader'),
-        ('member', 'Team Member')
-    ]
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='member')
+    ROLE_CHOICES = [("leader", "Team Leader"), ("member", "Team Member")]
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="member")
 
     class Meta:
-        unique_together = ['team_goal', 'user']
+        unique_together = ["team_goal", "user"]
 
     def __str__(self):
         return f"{self.user.username} - {self.team_goal.title}"
@@ -1200,23 +1196,21 @@ class TeamGoalMember(models.Model):
         self.completed_at = timezone.now()
         self.save()
 
+
 class TeamInvite(models.Model):
     """Invitation to join a team goal."""
-    goal = models.ForeignKey(TeamGoal, on_delete=models.CASCADE, related_name='invites')
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_invites')
-    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_invites')
+
+    goal = models.ForeignKey(TeamGoal, on_delete=models.CASCADE, related_name="invites")
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_invites")
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_invites")
     created_at = models.DateTimeField(auto_now_add=True)
     responded_at = models.DateTimeField(null=True, blank=True)
 
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('accepted', 'Accepted'),
-        ('declined', 'Declined')
-    ]
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    STATUS_CHOICES = [("pending", "Pending"), ("accepted", "Accepted"), ("declined", "Declined")]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
 
     class Meta:
-        unique_together = ['goal', 'recipient']
+        unique_together = ["goal", "recipient"]
 
     def __str__(self):
         return f"Invite to {self.goal.title} for {self.recipient.username}"

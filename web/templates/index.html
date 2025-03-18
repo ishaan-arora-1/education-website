@@ -309,12 +309,12 @@
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mt-8">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Team Collaboration</h2>
-            <a href="{% url 'team_goals' %}" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center">
+            <a href="{% url 'team_goals' %}"
+               class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center">
               <span>View All</span>
               <i class="fas fa-arrow-right ml-2"></i>
             </a>
           </div>
-
           {% if user.is_authenticated %}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <!-- My Team Goals -->
@@ -348,7 +348,6 @@
                   Create New Team Goal
                 </a>
               </div>
-
               <!-- Team Invitations -->
               <div class="space-y-4">
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Team Invitations</h3>
@@ -361,14 +360,18 @@
                           Invited by {{ invite.sender.get_full_name|default:invite.sender.username }}
                         </p>
                         <div class="flex items-center space-x-2 mt-3">
-                          <form method="post" action="{% url 'accept_team_invite' invite.id %}" class="inline">
+                          <form method="post"
+                                action="{% url 'accept_team_invite' invite.id %}"
+                                class="inline">
                             {% csrf_token %}
                             <button type="submit"
                                     class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition duration-200">
                               Accept
                             </button>
                           </form>
-                          <form method="post" action="{% url 'decline_team_invite' invite.id %}" class="inline">
+                          <form method="post"
+                                action="{% url 'decline_team_invite' invite.id %}"
+                                class="inline">
                             {% csrf_token %}
                             <button type="submit"
                                     class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition duration-200">
