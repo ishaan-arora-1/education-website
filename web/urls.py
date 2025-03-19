@@ -237,6 +237,7 @@ urlpatterns += i18n_patterns(
     path("teams/<int:goal_id>/mark-contribution/", views.mark_team_contribution, name="mark_team_contribution"),
     path("teams/<int:goal_id>/delete/", views.delete_team_goal, name="delete_team_goal"),
     path("teams/<int:goal_id>/remove-member/<int:member_id>/", views.remove_team_member, name="remove_team_member"),
+    path("teams/<int:goal_id>/edit/", views.edit_team_goal, name="edit_team_goal"),
     path("trackers/", views.tracker_list, name="tracker_list"),
     path("trackers/create/", views.create_tracker, name="create_tracker"),
     path("trackers/<int:tracker_id>/", views.tracker_detail, name="tracker_detail"),

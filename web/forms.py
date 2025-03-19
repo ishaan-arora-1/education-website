@@ -1092,13 +1092,30 @@ class TeamGoalForm(forms.ModelForm):
 
 class TeamInviteForm(forms.ModelForm):
     """Form for inviting users to a team goal."""
-
+    
+    recipient_search = forms.CharField(
+        label="Invite User",
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "placeholder": "Search by username or email",
+            "list": "user-list",
+            "autocomplete": "off",
+        }),
+        required=False,
+    )
+    
     class Meta:
         model = TeamInvite
         fields = ["recipient"]
         widgets = {
-            "recipient": forms.Select(attrs={"class": "form-select"}),
+            "recipient": forms.HiddenInput(),
         }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Get all users except the current user (will be filtered in the view)
+        self.fields["recipient"].queryset = User.objects.all()
+
 
 class ProgressTrackerForm(forms.ModelForm):
     class Meta:

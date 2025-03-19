@@ -82,6 +82,11 @@
               <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">{% trans "Invite Members" %}</h2>
               <form method="post" class="space-y-4">
                 {% csrf_token %}
+                <datalist id="user-list">
+                  {% for user in available_users %}
+                    <option value="{{ user.username }} ({{ user.email }})" data-id="{{ user.id }}">
+                  {% endfor %}
+                </datalist>
                 {{ invite_form.as_p }}
                 <button type="submit"
                         class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200">
@@ -90,11 +95,17 @@
               </form>
             </div>
           {% endif %}
-          {% if goal.creator == request.user %}
-            <div class="mt-6">
-              <a href="{% url 'delete_team_goal' goal.id %}"
-                 class="bg-red-500 hover:bg-red-600 text-white text-lh px-4 py-2 rounded transition duration-200">
-                {% trans "Delete Goal" %}
+          {% if goal.creator == request.user or user_is_leader %}
+            <div class="mt-6 flex space-x-4">
+              {% if goal.creator == request.user %}
+                <a href="{% url 'delete_team_goal' goal.id %}"
+                   class="bg-red-500 hover:bg-red-600 text-white text-lh px-4 py-2 rounded transition duration-200">
+                  {% trans "Delete Goal" %}
+                </a>
+              {% endif %}
+              <a href="{% url 'edit_team_goal' goal.id %}"
+                 class="bg-blue-500 hover:bg-blue-600 text-white text-lh px-4 py-2 rounded transition duration-200">
+                {% trans "Edit Goal" %}
               </a>
             </div>
           {% endif %}
@@ -111,4 +122,29 @@
       </div>
     </div>
   </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const recipientSearch = document.getElementById('id_recipient_search');
+    const recipientField = document.getElementById('id_recipient');
+    
+    if (recipientSearch) {
+      recipientSearch.addEventListener('change', function() {
+        const selectedOption = this.value;
+        const userList = document.getElementById('user-list');
+        
+        // Find the matching option
+        for (const option of userList.options) {
+          if (option.value === selectedOption) {
+            // Set the hidden recipient field to the user ID
+            recipientField.value = option.dataset.id;
+            break;
+          }
+        }
+      });
+    }
+  });
+</script>
 {% endblock %}
