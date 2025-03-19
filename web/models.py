@@ -1378,3 +1378,29 @@ class ProgressTracker(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.percentage}%)"
+
+
+class LearningStreak(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="learning_streak")
+    current_streak = models.IntegerField(default=0)
+    longest_streak = models.IntegerField(default=0)
+    last_engagement = models.DateField(null=True, blank=True)
+
+    def update_streak(self):
+        """Update the streak when the user engages with the platform."""
+        today = timezone.now().date()
+        # If first engagement or gap is more than one day, reset the streak.
+        if not self.last_engagement or (today - self.last_engagement).days > 1:
+            self.current_streak = 1
+        # If the last engagement was exactly yesterday, increment the streak.
+        elif (today - self.last_engagement).days == 1:
+            self.current_streak += 1
+        # Update last engagement date regardless.
+        self.last_engagement = today
+        # Update longest streak if needed.
+        if self.current_streak > self.longest_streak:
+            self.longest_streak = self.current_streak
+        self.save()
+
+    def __str__(self):
+        return f"{self.user.username} - Current: {self.current_streak}, Longest: {self.longest_streak}"
