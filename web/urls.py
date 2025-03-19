@@ -14,7 +14,7 @@ urlpatterns = [
     path("captcha/", include("captcha.urls")),  # CAPTCHA URLs should not be language-prefixed
     path("certificate/<uuid:certificate_id>/", views.certificate_detail, name="certificate_detail"),
     path("certificate/generate/<int:enrollment_id>/", views.generate_certificate, name="generate_certificate"),
-    path("dashboard/", student_dashboard, name="student_dashboard"),
+    path("dashboard/", student_dashboard, name="student_dashboard_root"),
     path("streak/", streak_detail, name="streak_detail"),
 ]
 
