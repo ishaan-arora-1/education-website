@@ -1389,13 +1389,13 @@ class LearningStreak(models.Model):
     def update_streak(self):
         """Update the streak when the user engages with the platform."""
         today = timezone.now().date()
-        
+
         # Prevent future dates
         if self.last_engagement and self.last_engagement > today:
             self.last_engagement = today
             self.save()
             return
-        
+
         # If first engagement or gap is more than one day, reset the streak.
         if not self.last_engagement or (today - self.last_engagement).days > 1:
             self.current_streak = 1
@@ -1408,5 +1408,6 @@ class LearningStreak(models.Model):
         if self.current_streak > self.longest_streak:
             self.longest_streak = self.current_streak
         self.save()
+
     def __str__(self):
         return f"{self.user.username} - Current: {self.current_streak}, Longest: {self.longest_streak}"
