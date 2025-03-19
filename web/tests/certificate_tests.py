@@ -2,9 +2,7 @@ import uuid
 from django.test import TestCase
 from django.contrib.auth.models import User
 from django.urls import reverse
-from web.models import Certificate, Course, Enrollment, Subject, CourseProgress
-from django.utils import timezone
-
+from web.models import Certificate, Course, Enrollment, Subject
 class CertificateDashboardTest(TestCase):
     def setUp(self):
         # Create a test user.
