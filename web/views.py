@@ -3329,7 +3329,7 @@ def team_goal_detail(request, goal_id):
     if not (goal.creator == request.user or goal.members.filter(user=request.user).exists()):
         messages.error(request, "You do not have access to this team goal.")
         return redirect("team_goals")
-    
+
     # Get existing team members to exclude from invitation
     existing_members = goal.members.values_list("user_id", flat=True)
 
@@ -3347,9 +3347,9 @@ def team_goal_detail(request, goal_id):
         form = TeamInviteForm()
 
     # Get users that can be invited (exclude existing members and the creator)
-    available_users = User.objects.exclude(
-        id__in=list(existing_members) + [goal.creator.id]
-    ).values("id", "username", "email")
+    available_users = User.objects.exclude(id__in=list(existing_members) + [goal.creator.id]).values(
+        "id", "username", "email"
+    )
 
     context = {
         "goal": goal,
@@ -3400,12 +3400,12 @@ def decline_team_invite(request, invite_id):
 def edit_team_goal(request, goal_id):
     """Edit an existing team goal."""
     goal = get_object_or_404(TeamGoal, id=goal_id)
-    
+
     # Check if user is the creator or a leader
     if not (goal.creator == request.user or goal.members.filter(user=request.user, role="leader").exists()):
         messages.error(request, "You don't have permission to edit this team goal.")
         return redirect("team_goal_detail", goal_id=goal_id)
-    
+
     if request.method == "POST":
         form = TeamGoalForm(request.POST, instance=goal)
         if form.is_valid():
@@ -3414,7 +3414,7 @@ def edit_team_goal(request, goal_id):
             return redirect("team_goal_detail", goal_id=goal.id)
     else:
         form = TeamGoalForm(instance=goal)
-    
+
     context = {
         "form": form,
         "goal": goal,
@@ -3484,7 +3484,7 @@ def delete_team_goal(request, goal_id):
 
     return render(request, "teams/delete_confirm.html", {"goal": goal})
 
-  
+
 @teacher_required
 def add_student_to_course(request, slug):
     course = get_object_or_404(Course, slug=slug)
