@@ -1114,9 +1114,29 @@ class TeamInviteForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        current_user = kwargs.pop('current_user', None)
+        self.team_goal = kwargs.pop('team_goal', None)
         super().__init__(*args, **kwargs)
         # Get all users except the current user (will be filtered in the view)
-        self.fields["recipient"].queryset = User.objects.all()
+        if current_user:
+            self.fields["recipient"].queryset = User.objects.exclude(id=current_user.id)
+        else:
+            self.fields["recipient"].queryset = User.objects.all()
+
+    def clean_recipient(self):
+        recipient = self.cleaned_data.get('recipient')
+        if self.team_goal and recipient:
+            # Check if the user is already a member of the team
+            if self.team_goal.members.filter(user=recipient).exists():
+                raise forms.ValidationError("This user is already a member of the team.")
+            # Check if there's already a pending invitation
+            if TeamInvite.objects.filter(
+                goal=self.team_goal, 
+                recipient=recipient, 
+                status='pending'
+            ).exists():
+                raise forms.ValidationError("This user already has a pending invitation.")
+        return recipient
 
 
 class ProgressTrackerForm(forms.ModelForm):
