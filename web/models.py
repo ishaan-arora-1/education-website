@@ -47,11 +47,60 @@ class Notification(models.Model):
 
 
 class Profile(models.Model):
+    HAIR_CHOICES = [
+        ('short', 'Short'),
+        ('long', 'Long'),
+        ('curly', 'Curly'),
+        ('bald', 'Bald'),
+    ]
+    EYES_CHOICES = [
+        ('round', 'Round'),
+        ('almond', 'Almond'),
+        ('narrow', 'Narrow'),
+    ]
+    SKIN_TONE_CHOICES = [
+        ('light', 'Light'),
+        ('medium', 'Medium'),
+        ('dark', 'Dark'),
+    ]
+    HAIR_COLOR_CHOICES = [
+        ('black', 'Black'),
+        ('brown', 'Brown'),
+        ('blonde', 'Blonde'),
+        ('red', 'Red'),
+    ]
+    
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bio = models.TextField(max_length=500, blank=True)
     expertise = models.CharField(max_length=200, blank=True)
     avatar = models.ImageField(upload_to="avatars/", blank=True, default="")
     is_teacher = models.BooleanField(default=False)
+    
+    # Avatar customization fields
+    avatar_style = models.CharField(max_length=30, choices=[
+        ("adventurer", "Adventurer"), 
+        ("adventurer-neutral", "Adventurer Neutral"),
+        ("avataaars", "Avataaars"),
+        ("big-ears", "Big Ears"),
+        ("big-smile", "Big Smile"),
+        ("bottts", "Bottts"),
+        ("croodles", "Croodles"),
+        ("fun-emoji", "Fun Emoji"),
+        ("micah", "Micah"),
+        ("miniavs", "Mini Avatars"),
+        ("open-peeps", "Open Peeps"),
+        ("pixel-art", "Pixel Art"),
+    ], default="avataaars")
+    avatar_seed = models.CharField(max_length=100, blank=True)  # Used to generate consistent avatars
+    avatar_background = models.CharField(max_length=20, choices=[
+        ("b6e3f4", "Light Blue"),
+        ("c0aede", "Lavender"),
+        ("d1d4f9", "Periwinkle"),
+        ("ffd5dc", "Pink"),
+        ("ffdfbf", "Peach"),
+        ("d1f4d9", "Mint"),
+        ("f9f9f9", "Light Gray")
+    ], default="f9f9f9")
     referral_code = models.CharField(max_length=20, unique=True, blank=True)
     referred_by = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True, related_name="referrals")
     referral_earnings = models.DecimalField(max_digits=10, decimal_places=2, default=0)

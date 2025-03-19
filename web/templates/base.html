@@ -22,6 +22,17 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://js-de.sentry-cdn.com/ca8bad7e1a5a3012bccae7d9bd4f6d3d.min.js"
             crossorigin="anonymous"></script>
+    <style>
+        /* Avatar customization classes */
+        .avatar-skin-light { background-color: #f8d5c2; }
+        .avatar-skin-medium { background-color: #e0b69f; }
+        .avatar-skin-dark { background-color: #a67358; }
+        
+        .avatar-hair-black { color: #000000; }
+        .avatar-hair-brown { color: #6b4423; }
+        .avatar-hair-blonde { color: #e6be7e; }
+        .avatar-hair-red { color: #a52a2a; }
+    </style>
     <script>
         // Configure Tailwind first
         tailwind.config = {
@@ -262,6 +273,15 @@
                        class="h-8 w-8 rounded-full object-cover"
                        height="32"
                        width="32" />
+                {% elif user.profile.avatar_style %}
+                  <!-- DiceBear Avatar Display -->
+                  <div class="h-8 w-8 rounded-full overflow-hidden">
+                    <img src="https://api.dicebear.com/7.x/{{ user.profile.avatar_style|default:'avataaars' }}/svg?seed={{ user.profile.avatar_seed|default:user.username|urlencode }}&backgroundColor={{ user.profile.avatar_background|default:'f9f9f9' }}"
+                         alt="{{ user.username }}'s avatar"
+                         class="h-full w-full object-cover"
+                         height="32"
+                         width="32" />
+                  </div>
                 {% else %}
                   <div class="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center text-white">
                     {{ user.first_name|first|default:user.username|first|upper }}

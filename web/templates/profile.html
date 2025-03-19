@@ -2,6 +2,50 @@
 
 {% load static %}
 
+{% block extra_head %}
+<!-- Avatar customization styles are now in base.html -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing DiceBear avatar preview');
+    
+    // Add event listeners to form controls
+    const styleSelect = document.getElementById('avatar-style');
+    const seedInput = document.getElementById('avatar-seed');
+    const backgroundSelect = document.getElementById('avatar-background');
+    
+    if (styleSelect) styleSelect.addEventListener('change', updateAvatarPreview);
+    if (seedInput) seedInput.addEventListener('input', updateAvatarPreview);
+    if (backgroundSelect) backgroundSelect.addEventListener('change', updateAvatarPreview);
+    
+    function updateAvatarPreview() {
+      console.log('Updating DiceBear avatar preview');
+      
+      const avatarStyle = styleSelect ? styleSelect.value : 'avataaars';
+      const seed = seedInput ? seedInput.value : '{{ user.username }}';
+      const backgroundColor = backgroundSelect ? backgroundSelect.value : 'f9f9f9';
+      
+      console.log('Avatar style:', avatarStyle);
+      console.log('Seed:', seed);
+      console.log('Background color:', backgroundColor);
+      
+      // Update the avatar image source
+      const avatarImg = document.getElementById('dicebear-avatar');
+      if (avatarImg) {
+        const newSrc = `https://api.dicebear.com/7.x/${avatarStyle}/svg?seed=${encodeURIComponent(seed)}&backgroundColor=${backgroundColor}`;
+        console.log('New avatar URL:', newSrc);
+        avatarImg.src = newSrc;
+      }
+    }
+    
+    // Initialize the preview
+    updateAvatarPreview();
+  });
+</script>
+{% endblock %}
+
 {% block title %}
   Profile - {{ user.get_full_name|default:user.username }}
 {% endblock title %}
@@ -17,44 +61,75 @@
               <span class="bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200 text-sm font-medium px-3 py-1 rounded-full">Teacher</span>
             {% endif %}
           </div>
-          <!-- Profile Picture -->
+          <!-- Avatar Customization -->
           <div class="mb-6 flex flex-col items-center">
-            {% if user.profile.avatar %}
-              <img src="{{ user.profile.avatar.url }}"
-                   alt="{{ user.username }}'s avatar"
-                   class="w-32 h-32 rounded-full object-cover mb-4"
-                   height="128"
-                   width="128" />
-            {% else %}
-              {% if user.profile.is_teacher %}
-                <img src="{% static 'images/default_teacher.png' %}"
+            <div class="w-32 h-32 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-4 relative overflow-hidden">
+              {% if user.profile.avatar %}
+                <img src="{{ user.profile.avatar.url }}"
                      alt="{{ user.username }}'s avatar"
-                     class="w-32 h-32 rounded-full object-cover mb-4"
+                     class="w-full h-full object-cover"
                      height="128"
                      width="128" />
               {% else %}
-                <div class="w-32 h-32 rounded-full bg-orange-500 flex items-center justify-center text-white text-4xl mb-4">
-                  {{ user.first_name|first|default:user.username|first|upper }}
+                <!-- DiceBear Avatar Preview -->
+                <div id="avatar-preview" class="w-full h-full flex items-center justify-center">
+                  <img id="dicebear-avatar" src="https://api.dicebear.com/7.x/{{ user.profile.avatar_style|default:'avataaars' }}/svg?seed={{ user.profile.avatar_seed|default:user.username|urlencode }}&backgroundColor={{ user.profile.avatar_background|default:'f9f9f9' }}" 
+                    alt="{{ user.username }}'s avatar" class="w-full h-full object-cover" />
                 </div>
               {% endif %}
-            {% endif %}
-            <form method="post"
-                  enctype="multipart/form-data"
-                  class="w-full flex flex-col items-center">
+            </div>
+
+            <!-- Avatar Customization Form -->
+            <form method="post" class="w-full max-w-sm space-y-4" enctype="multipart/form-data">
               {% csrf_token %}
-              <label for="avatar-upload"
-                     class="cursor-pointer mb-4 text-sm text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300">
-                <span class="flex items-center">
-                  <i class="fas fa-camera mr-2"></i>
-                  Change Avatar
-                </span>
-                <input type="file"
-                       id="avatar-upload"
-                       name="avatar"
-                       accept="image/*"
-                       class="hidden"
-                       onchange="this.form.submit()" />
-              </label>
+              <input type="hidden" name="form_type" value="avatar_form">
+              
+              <!-- Avatar Style -->
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Avatar Style</label>
+                <select name="avatar_style" id="avatar-style" class="w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500">
+                  <option value="adventurer" {% if user.profile.avatar_style == 'adventurer' %}selected{% endif %}>Adventurer</option>
+                  <option value="adventurer-neutral" {% if user.profile.avatar_style == 'adventurer-neutral' %}selected{% endif %}>Adventurer Neutral</option>
+                  <option value="avataaars" {% if user.profile.avatar_style == 'avataaars' %}selected{% endif %}>Avataaars</option>
+                  <option value="big-ears" {% if user.profile.avatar_style == 'big-ears' %}selected{% endif %}>Big Ears</option>
+                  <option value="big-smile" {% if user.profile.avatar_style == 'big-smile' %}selected{% endif %}>Big Smile</option>
+                  <option value="bottts" {% if user.profile.avatar_style == 'bottts' %}selected{% endif %}>Bottts</option>
+                  <option value="croodles" {% if user.profile.avatar_style == 'croodles' %}selected{% endif %}>Croodles</option>
+                  <option value="fun-emoji" {% if user.profile.avatar_style == 'fun-emoji' %}selected{% endif %}>Fun Emoji</option>
+                  <option value="micah" {% if user.profile.avatar_style == 'micah' %}selected{% endif %}>Micah</option>
+                  <option value="miniavs" {% if user.profile.avatar_style == 'miniavs' %}selected{% endif %}>Mini Avatars</option>
+                  <option value="open-peeps" {% if user.profile.avatar_style == 'open-peeps' %}selected{% endif %}>Open Peeps</option>
+                  <option value="pixel-art" {% if user.profile.avatar_style == 'pixel-art' %}selected{% endif %}>Pixel Art</option>
+                </select>
+              </div>
+
+              <!-- Avatar Seed -->
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Avatar Seed</label>
+                <input type="text" name="avatar_seed" id="avatar-seed" value="{{ user.profile.avatar_seed|default:user.username }}" 
+                  class="w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500"
+                  placeholder="Enter a unique seed for your avatar">
+                <p class="text-xs text-gray-500">This determines the unique features of your avatar</p>
+              </div>
+
+              <!-- Background Color -->
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Background Color</label>
+                <select name="avatar_background" id="avatar-background" class="w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500">
+                  <option value="b6e3f4" {% if user.profile.avatar_background == 'b6e3f4' %}selected{% endif %}>Light Blue</option>
+                  <option value="c0aede" {% if user.profile.avatar_background == 'c0aede' %}selected{% endif %}>Lavender</option>
+                  <option value="d1d4f9" {% if user.profile.avatar_background == 'd1d4f9' %}selected{% endif %}>Periwinkle</option>
+                  <option value="ffd5dc" {% if user.profile.avatar_background == 'ffd5dc' %}selected{% endif %}>Pink</option>
+                  <option value="ffdfbf" {% if user.profile.avatar_background == 'ffdfbf' %}selected{% endif %}>Peach</option>
+                  <option value="d1f4d9" {% if user.profile.avatar_background == 'd1f4d9' %}selected{% endif %}>Mint</option>
+                  <option value="f9f9f9" {% if user.profile.avatar_background == 'f9f9f9' %}selected{% endif %}>Light Gray</option>
+                </select>
+              </div>
+
+              <button type="submit"
+                      class="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+                Update Avatar
+              </button>
             </form>
             <h3 class="text-lg font-medium">{{ user.username }}</h3>
             {% if user.get_full_name %}<p class="text-sm text-gray-500 dark:text-gray-400">{{ user.get_full_name }}</p>{% endif %}
