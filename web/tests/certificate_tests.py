@@ -74,7 +74,6 @@ class CertificateDashboardTest(TestCase):
         """
         # Delete the existing certificate to simulate that the certificate hasn't been generated
         self.certificate.delete()
-        
         url = reverse("student_dashboard")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
