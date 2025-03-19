@@ -221,17 +221,17 @@ def signup_view(request):
 def profile(request):
     if request.method == "POST":
         # Check if this is the avatar form
-        if request.POST.get('form_type') == 'avatar_form':
+        if request.POST.get("form_type") == "avatar_form":
             # Handle DiceBear avatar customization
             avatar_fields = ["avatar_style", "avatar_seed", "avatar_background"]
             for field in avatar_fields:
                 if field in request.POST:
                     setattr(request.user.profile, field, request.POST[field])
-            
+
             request.user.profile.save()
             messages.success(request, "Avatar updated successfully!")
             return redirect("profile")
-            
+
         # Handle regular profile update
         elif "avatar" in request.FILES:
             # Handle avatar upload
