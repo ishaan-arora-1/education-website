@@ -1308,6 +1308,24 @@ class Donation(models.Model):
         return self.email.split("@")[0]  # Use part before @ in email
 
 
+class Certificate(models.Model):
+    # Certificate Model
+    certificate_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    completion_date = models.DateField(auto_now_add=True)
+    course = models.ForeignKey(
+        "web.Course", on_delete=models.CASCADE, related_name="certificates", null=True, blank=True
+    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="certificates")
+
+    # New fields added as per feedback
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        course_title = self.course.title if self.course else "No Course"
+        return f"Certificate for {self.user.username} - {course_title}"
+
+
 class ProgressTracker(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="progress_trackers")
     title = models.CharField(max_length=100)
