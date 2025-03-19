@@ -1387,24 +1387,22 @@ class LearningStreak(models.Model):
     last_engagement = models.DateField(null=True, blank=True)
 
     def update_streak(self):
-        """Update the streak when the user engages with the platform."""
         today = timezone.now().date()
-
-        # Prevent future dates
+        # Check if last engagement is in the future
         if self.last_engagement and self.last_engagement > today:
-            self.last_engagement = today
-            self.save()
-            return
-
-        # If first engagement or gap is more than one day, reset the streak.
-        if not self.last_engagement or (today - self.last_engagement).days > 1:
+            # Treat future date as invalid and reset the streak
             self.current_streak = 1
-        # If the last engagement was exactly yesterday, increment the streak.
+        # If first engagement or gap > 1 day, reset streak to 1
+        elif not self.last_engagement or (today - self.last_engagement).days > 1:
+            self.current_streak = 1
+        # If last engagement was yesterday, increment streak
         elif (today - self.last_engagement).days == 1:
             self.current_streak += 1
-        # Update last engagement date regardless.
+        # Else (if already engaged today), do nothing to the streak count
+
+        # Update the last engagement to today
         self.last_engagement = today
-        # Update longest streak if needed.
+        # Update longest streak if current is higher
         if self.current_streak > self.longest_streak:
             self.longest_streak = self.current_streak
         self.save()
