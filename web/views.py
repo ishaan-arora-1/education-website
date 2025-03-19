@@ -439,9 +439,16 @@ def enroll_course(request, course_slug):
         messages.info(request, "Please complete the payment process to enroll in this course.")
         return redirect("course_detail", slug=course_slug)
 
-    # For free courses, send notifications
+    # For free courses, send notifications and create purchase notification for real-time display
     send_enrollment_confirmation(enrollment)
     notify_teacher_new_enrollment(enrollment)
+    
+    # Create purchase notification for real-time display
+    PurchaseNotification.objects.create(
+        student=request.user,
+        course=course
+    )
+    
     messages.success(request, "You have successfully enrolled in this course.")
     return redirect("course_detail", slug=course_slug)
 
@@ -1893,6 +1900,12 @@ def checkout_success(request):
                 # Send confirmation emails
                 send_enrollment_confirmation(enrollment)
                 notify_teacher_new_enrollment(enrollment)
+                
+                # Create purchase notification for real-time display
+                PurchaseNotification.objects.create(
+                    student=user,
+                    course=item.course
+                )
 
             elif item.session:
                 # Create enrollment for individual session

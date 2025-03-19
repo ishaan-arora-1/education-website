@@ -46,6 +46,20 @@ class Notification(models.Model):
         return f"{self.title} - {self.user.username}"
 
 
+class PurchaseNotification(models.Model):
+    """Model to track course purchases for real-time notifications"""
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name="purchase_notifications")
+    course = models.ForeignKey("Course", on_delete=models.CASCADE, related_name="purchase_notifications")
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_displayed = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.student.username} purchased {self.course.title}"
+
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bio = models.TextField(max_length=500, blank=True)
