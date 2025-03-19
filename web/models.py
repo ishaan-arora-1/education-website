@@ -1328,7 +1328,19 @@ class Certificate(models.Model):
     def clean(self):
         """Validate that the user has completed the course."""
         from django.core.exceptions import ValidationError
-        
+    def clean(self):
+        """Validate that the user has completed the course."""
+        from django.core.exceptions import ValidationError
+        if self.course and self.user:
+            # Check if the user is enrolled in the course
+            enrollment = Enrollment.objects.filter(
+                student=self.user,
+                course=self.course,
+                status='completed'
+            ).exists()
+            
+            if not enrollment:
+                raise ValidationError("User has not completed this course.")
         if self.course and self.user:
             # Check if the user is enrolled in the course with a completed status
             enrollment = Enrollment.objects.filter(
