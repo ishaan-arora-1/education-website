@@ -64,6 +64,14 @@
                       {% trans "In Progress" %}
                     {% endif %}
                   </span>
+                  {% if goal.creator == request.user or user_is_leader %}
+                    {% if member.user != goal.creator %}
+                      <a href="{% url 'remove_team_member' goal.id member.id %}"
+                         class="ml-2 text-red-500 hover:text-red-700">
+                        <i class="fa-solid fa-times"></i>
+                      </a>
+                    {% endif %}
+                  {% endif %}
                 </div>
               {% endfor %}
             </div>
@@ -80,6 +88,14 @@
                   {% trans "Send Invite" %}
                 </button>
               </form>
+            </div>
+          {% endif %}
+          {% if goal.creator == request.user %}
+            <div class="mt-6">
+              <a href="{% url 'delete_team_goal' goal.id %}"
+                 class="bg-red-500 hover:bg-red-600 text-white text-lh px-4 py-2 rounded transition duration-200">
+                {% trans "Delete Goal" %}
+              </a>
             </div>
           {% endif %}
           <form action="{% url 'mark_team_contribution' goal.id %}"

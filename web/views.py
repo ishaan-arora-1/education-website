@@ -3346,6 +3346,7 @@ def team_goal_detail(request, goal_id):
     context = {
         "goal": goal,
         "invite_form": form,
+        "user_is_leader": goal.members.filter(user=request.user, role="leader").exists(),
     }
     return render(request, "teams/detail.html", context)
 
