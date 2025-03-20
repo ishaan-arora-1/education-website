@@ -10,6 +10,7 @@ from decimal import Decimal
 
 import requests
 import stripe
+from django.db import transaction
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
@@ -3319,15 +3320,16 @@ def create_team_goal(request):
     if request.method == "POST":
         form = TeamGoalForm(request.POST)
         if form.is_valid():
-            goal = form.save(commit=False)
-            goal.creator = request.user
-            goal.save()
+            with transaction.atomic():
+                goal = form.save(commit=False)
+                goal.creator = request.user
+                goal.save()
 
-            # Add creator as a member
-            TeamGoalMember.objects.create(team_goal=goal, user=request.user, role="leader")
+                # Add creator as a member
+                TeamGoalMember.objects.create(team_goal=goal, user=request.user, role="leader")
 
-            messages.success(request, "Team goal created successfully!")
-            return redirect("team_goal_detail", goal_id=goal.id)
+                messages.success(request, "Team goal created successfully!")
+                return redirect("team_goal_detail", goal_id=goal.id)
     else:
         form = TeamGoalForm()
 
