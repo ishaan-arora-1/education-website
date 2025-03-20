@@ -3383,19 +3383,21 @@ def accept_team_invite(request, invite_id):
         TeamInvite.objects.select_related("goal"), id=invite_id, recipient=request.user, status="pending"
     )
 
-    # Create team member
-    # Check if already a member first
-    if TeamGoalMember.objects.filter(team_goal=invite.goal, user=request.user).exists():
+    # Create team member using get_or_create to avoid race conditions
+    member, created = TeamGoalMember.objects.get_or_create(
+        team_goal=invite.goal, user=request.user, defaults={"role": "member"}
+    )
+
+    if not created:
         messages.info(request, f"You are already a member of {invite.goal.title}.")
     else:
-        TeamGoalMember.objects.create(team_goal=invite.goal, user=request.user, role="member")
+        messages.success(request, f"You have joined {invite.goal.title}!")
 
     # Update invite status
     invite.status = "accepted"
     invite.responded_at = timezone.now()
     invite.save()
 
-    messages.success(request, f"You have joined {invite.goal.title}!")
     notify_team_invite_response(invite)
     return redirect("team_goal_detail", goal_id=invite.goal.id)
 
