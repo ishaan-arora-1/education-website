@@ -29,6 +29,7 @@ from .models import (
     Storefront,
     Subject,
     SuccessStory,
+    WaitingRoom,
 )
 from .referrals import handle_referral
 from .widgets import (
@@ -1281,3 +1282,38 @@ class TakeQuizForm(forms.Form):
                         widget=TailwindTextarea(attrs={"rows": 2, "placeholder": "Your answer..."}),
                         required=False,
                     )
+
+
+class WaitingRoomForm(forms.ModelForm):
+    """Form for creating and editing waiting rooms."""
+    
+    class Meta:
+        model = WaitingRoom
+        fields = ["title", "description", "subject", "topics"]
+        widgets = {
+            "title": TailwindInput(attrs={"placeholder": "What would you like to learn?"}),
+            "description": TailwindTextarea(attrs={"rows": 4, "placeholder": "Describe what you want to learn in more detail..."}),
+            "subject": TailwindInput(attrs={"placeholder": "Main subject (e.g., Mathematics, Programming)"}),
+            "topics": TailwindInput(attrs={
+                "placeholder": "e.g., Python, Machine Learning, Data Science",
+                "class": "tag-input"
+            }),
+        }
+        help_texts = {
+            "title": "Give your waiting room a descriptive title",
+            "subject": "The main subject area for this waiting room",
+            "topics": "Enter topics separated by commas",
+        }
+        
+    def clean_topics(self):
+        """Validate and clean the topics field."""
+        topics = self.cleaned_data.get("topics")
+        if not topics:
+            raise forms.ValidationError("Please enter at least one topic.")
+            
+        # Ensure we have at least one non-empty topic after splitting
+        topic_list = [t.strip() for t in topics.split(",") if t.strip()]
+        if not topic_list:
+            raise forms.ValidationError("Please enter at least one valid topic.")
+            
+        return topics

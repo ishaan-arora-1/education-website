@@ -1637,3 +1637,42 @@ class UserQuiz(models.Model):
     def created_at(self):
         """Alias for start_time for template compatibility."""
         return self.start_time
+
+
+class WaitingRoom(models.Model):
+    """Model for storing waiting room requests for courses on specific subjects."""
+
+    STATUS_CHOICES = [("open", "Open"), ("closed", "Closed"), ("fulfilled", "Fulfilled")]
+
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    subject = models.CharField(max_length=100)
+    topics = models.TextField(help_text="Comma-separated list of topics")
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_waiting_rooms")
+    participants = models.ManyToManyField(User, related_name="joined_waiting_rooms", blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="open")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.title
+
+    def participant_count(self):
+        """Return the number of participants in the waiting room."""
+        return self.participants.count()
+
+    def topic_list(self):
+        """Return the list of topics as a list."""
+        return [topic.strip() for topic in self.topics.split(",") if topic.strip()]
+
+    def mark_as_fulfilled(self, course=None):
+        """Mark the waiting room as fulfilled and notify participants."""
+        self.status = "fulfilled"
+        self.save()
+        
+        if course:
+            from .notifications import notify_waiting_room_fulfilled
+            notify_waiting_room_fulfilled(self, course)

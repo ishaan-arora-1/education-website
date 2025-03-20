@@ -69,6 +69,7 @@ from .forms import (
     TeacherSignupForm,
     TeachForm,
     UserRegistrationForm,
+    WaitingRoomForm,
 )
 from .marketing import (
     generate_social_share_content,
@@ -115,6 +116,7 @@ from .models import (
     SuccessStory,
     TimeSlot,
     WebRequest,
+    WaitingRoom,
 )
 from .notifications import notify_session_reminder, notify_teacher_new_enrollment, send_enrollment_confirmation
 from .referrals import send_referral_reward_email
@@ -318,6 +320,68 @@ def create_course(request):
         form = CourseForm()
 
     return render(request, "courses/create.html", {"form": form})
+
+@login_required
+@teacher_required
+def create_course_from_waiting_room(request, waiting_room_id):
+    waiting_room = get_object_or_404(WaitingRoom, id=waiting_room_id)
+    topics_list = [topic.strip() for topic in waiting_room.topics.split(",")] if waiting_room.topics else []
+    # Only allow the teacher to create a course
+    if not request.user.is_teacher:
+        messages.error(request, "Only teachers can create courses.")
+        return redirect("waiting_room_detail", waiting_room_id=waiting_room_id)
+    
+    if request.method == "POST":
+        form = CourseForm(request.POST, request.FILES)
+        if form.is_valid():
+            course = form.save(commit=False)
+            course.teacher = request.user
+            course.save()
+            form.save_m2m()
+            
+            # Auto-enroll waiting room participants
+            for participant in waiting_room.participants.all():
+                enrollment = Enrollment.objects.create(
+                    student=participant,
+                    course=course
+                )
+                
+                # Send notification email to the participant
+                subject = f"New Course Created: {course.title}"
+                message = f"A new course has been created based on the waiting room '{waiting_room.title}' you joined. \n\n"
+                message += f"Course: {course.title}\n"
+                message += f"Teacher: {course.teacher.get_full_name() or course.teacher.username}\n\n"
+                message += f"You have been automatically enrolled in this course. Visit the course page to get started:\n"
+                message += request.build_absolute_uri(reverse('course_detail', args=[course.slug]))
+                
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [participant.email],
+                    fail_silently=True
+                )
+            
+            # Mark the waiting room as fulfilled
+            waiting_room.status = "fulfilled"
+            waiting_room.save()
+            
+            messages.success(request, "Course created successfully! All waiting room participants have been enrolled.")
+            return redirect("course_detail", slug=course.slug)
+    else:
+        # Pre-fill the form with waiting room data
+        form = CourseForm(initial={
+            'title': waiting_room.title,
+            'description': waiting_room.description,
+            'subject': waiting_room.subject,
+            'topics': waiting_room.topics,
+        })
+    
+    return render(request, "waiting_room/create_course.html", {
+        "form": form,
+        "waiting_room": waiting_room,
+        "topics_list": topics_list
+    })
 
 
 def course_detail(request, slug):
@@ -3896,3 +3960,165 @@ def streak_detail(request):
     """
     streak, created = LearningStreak.objects.get_or_create(user=request.user)
     return render(request, "streak_detail.html", {"streak": streak})
+
+
+@login_required
+def waiting_room_list(request):
+    """View for displaying all open waiting rooms."""
+    waiting_rooms = WaitingRoom.objects.filter(status='open')
+    
+    # Get waiting rooms created by the user
+    user_created_rooms = WaitingRoom.objects.filter(creator=request.user)
+    
+    # Get waiting rooms joined by the user
+    user_joined_rooms = request.user.joined_waiting_rooms.all()
+    
+    # Process topics for all waiting rooms
+    all_rooms = list(waiting_rooms) + list(user_created_rooms) + list(user_joined_rooms)
+    room_topics = {}
+    for room in all_rooms:
+        room_topics[room.id] = [topic.strip() for topic in room.topics.split(',') if topic.strip()]
+    
+    context = {
+        'waiting_rooms': waiting_rooms,
+        'user_created_rooms': user_created_rooms,
+        'user_joined_rooms': user_joined_rooms,
+        'room_topics': room_topics,
+    }
+    return render(request, 'waiting_room/list.html', context)
+
+
+@login_required
+def create_waiting_room(request):
+    """View for creating a new waiting room."""
+    if request.method == 'POST':
+        form = WaitingRoomForm(request.POST)
+        if form.is_valid():
+            waiting_room = form.save(commit=False)
+            waiting_room.creator = request.user
+            waiting_room.save()
+            
+            # Add the creator as a participant
+            waiting_room.participants.add(request.user)
+            
+            messages.success(request, 'Waiting room created successfully!')
+            return redirect('waiting_room_detail', waiting_room_id=waiting_room.id)
+    else:
+        form = WaitingRoomForm()
+    
+    context = {
+        'form': form,
+    }
+    return render(request, 'waiting_room/create.html', context)
+
+
+@login_required
+def waiting_room_detail(request, waiting_room_id):
+    """View for displaying details of a waiting room."""
+    waiting_room = get_object_or_404(WaitingRoom, id=waiting_room_id)
+    
+    # Check if the user is a participant
+    is_participant = request.user in waiting_room.participants.all()
+    
+    # Check if the user is the creator
+    is_creator = request.user == waiting_room.creator
+    
+    # Check if the user is a teacher
+    is_teacher = hasattr(request.user, 'profile') and request.user.profile.is_teacher
+    
+    context = {
+        'waiting_room': waiting_room,
+        'is_participant': is_participant,
+        'is_creator': is_creator,
+        'is_teacher': is_teacher,
+        'participant_count': waiting_room.participants.count(),
+        'topic_list': [topic.strip() for topic in waiting_room.topics.split(',') if topic.strip()],
+    }
+    return render(request, 'waiting_room/detail.html', context)
+
+
+@login_required
+def join_waiting_room(request, waiting_room_id):
+    """View for joining a waiting room."""
+    waiting_room = get_object_or_404(WaitingRoom, id=waiting_room_id)
+    
+    # Check if the waiting room is open
+    if waiting_room.status != 'open':
+        messages.error(request, 'This waiting room is no longer open for joining.')
+        return redirect('waiting_room_list')
+    
+    # Add the user as a participant if not already
+    if request.user not in waiting_room.participants.all():
+        waiting_room.participants.add(request.user)
+        messages.success(request, f'You have joined the waiting room: {waiting_room.title}')
+    else:
+        messages.info(request, 'You are already a participant in this waiting room.')
+    
+    return redirect('waiting_room_detail', waiting_room_id=waiting_room.id)
+
+
+@login_required
+def leave_waiting_room(request, waiting_room_id):
+    """View for leaving a waiting room."""
+    waiting_room = get_object_or_404(WaitingRoom, id=waiting_room_id)
+    
+    # Remove the user from participants
+    if request.user in waiting_room.participants.all():
+        waiting_room.participants.remove(request.user)
+        messages.success(request, f'You have left the waiting room: {waiting_room.title}')
+    else:
+        messages.info(request, 'You are not a participant in this waiting room.')
+    
+    return redirect('waiting_room_list')
+
+
+@login_required
+def create_course_from_waiting_room(request, waiting_room_id):
+    """View for creating a course from a waiting room."""
+    waiting_room = get_object_or_404(WaitingRoom, id=waiting_room_id)
+    
+    # Check if the user is a teacher
+    if not hasattr(request.user, 'profile') or not request.user.profile.is_teacher:
+        messages.error(request, 'Only teachers can create courses from waiting rooms.')
+        return redirect('waiting_room_detail', waiting_room_id=waiting_room.id)
+    
+    if request.method == 'POST':
+        form = CourseForm(request.POST, request.FILES)
+        if form.is_valid():
+            course = form.save(commit=False)
+            course.teacher = request.user
+            
+            # Pre-fill course details from waiting room if not provided
+            if not course.title:
+                course.title = waiting_room.title
+            if not course.description:
+                course.description = waiting_room.description
+            if not course.subject:
+                course.subject = waiting_room.subject
+            
+            course.save()
+            
+            # Mark the waiting room as fulfilled
+            waiting_room.status = 'fulfilled'
+            waiting_room.save()
+            
+            # Send notifications to all participants
+            from .notifications import notify_waiting_room_fulfilled
+            notify_waiting_room_fulfilled(waiting_room, course)
+            
+            messages.success(request, f'Course created successfully from waiting room: {waiting_room.title}')
+            return redirect('course_detail', slug=course.slug)
+    else:
+        # Pre-fill the form with waiting room data
+        initial_data = {
+            'title': waiting_room.title,
+            'description': waiting_room.description,
+            'subject': waiting_room.subject,
+        }
+        form = CourseForm(initial=initial_data)
+    
+    context = {
+        'form': form,
+        'waiting_room': waiting_room,
+    }
+    return render(request, 'waiting_room/create_course.html', context)

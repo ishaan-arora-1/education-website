@@ -132,6 +132,13 @@ urlpatterns += i18n_patterns(
         name="calendar_links",
     ),
     path("streak/", streak_detail, name="streak_detail"),
+    # Waiting Room URLs
+    path("waiting-rooms/", views.waiting_room_list, name="waiting_room_list"),
+    path("waiting-rooms/create/", views.create_waiting_room, name="create_waiting_room"),
+    path("waiting-rooms/<int:waiting_room_id>/", views.waiting_room_detail, name="waiting_room_detail"),
+    path("waiting-rooms/<int:waiting_room_id>/join/", views.join_waiting_room, name="join_waiting_room"),
+    path("waiting-rooms/<int:waiting_room_id>/leave/", views.leave_waiting_room, name="leave_waiting_room"),
+    path("waiting-rooms/<int:waiting_room_id>/create-course/", views.create_course_from_waiting_room, name="create_course_from_waiting_room"),
     # Forum URLs
     path("forum/", views.forum_categories, name="forum_categories"),
     path("forum/category/create/", views.create_forum_category, name="create_forum_category"),
