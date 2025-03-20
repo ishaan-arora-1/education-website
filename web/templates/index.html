@@ -380,6 +380,19 @@
                         <div class="bg-white/10 backdrop-blur-sm rounded-lg p-4 hover:bg-white/20 transition duration-200">
                           <h4 class="font-medium text-white">{{ goal.title }}</h4>
                           <p class="text-sm text-gray-200 mt-1">{{ goal.description|truncatechars:100 }}</p>
+                          {% if goal.deadline %}
+                            <div class="text-sm text-gray-200 mt-2">
+                              <i class="fas fa-calendar-alt mr-1"></i>
+                              {% load i18n %}
+
+                              <span>{% trans "Due" %}: {{ goal.deadline|date:"M j, Y" }}</span>
+                              {% if goal.deadline < now %}
+                                <span class="text-red-300 ml-1">({% trans "Overdue" %})</span>
+                              {% else %}
+                                <span class="text-gray-300 ml-1">({{ goal.deadline|timeuntil }} {% trans "left" %})</span>
+                              {% endif %}
+                            </div>
+                          {% endif %}
                           <div class="flex items-center justify-between mt-3">
                             <span class="text-sm text-gray-200">
                               <i class="fas fa-users mr-1"></i>

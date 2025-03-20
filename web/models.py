@@ -1276,7 +1276,7 @@ class TeamInvite(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
 
     class Meta:
-        unique_together = ["recipient"]
+        unique_together = ["goal", "recipient"]
 
     def __str__(self):
         return f"Invite to {self.goal.title} for {self.recipient.username}"

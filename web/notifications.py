@@ -222,13 +222,19 @@ def notify_team_invite(invite):
         "notification_type": "info",
     }
 
-    send_notification(invite.recipient, notification_data)
+    try:
+        send_notification(invite.recipient, notification_data)
+    except Exception as e:
+        logger.error(f"Failed to send team invite notification: {str(e)}")
 
     # Send a Slack notification if applicable
-    slack_message = (
-        f"🤝 {invite.sender.username} invited {invite.recipient.username} to team goal '{invite.goal.title}'"
-    )
-    send_slack_notification(slack_message)
+    try:
+        slack_message = (
+            f"🤝 {invite.sender.username} invited {invite.recipient.username} to team goal '{invite.goal.title}'"
+        )
+        send_slack_notification(slack_message)
+    except Exception as e:
+        logger.error(f"Failed to send Slack notification for team invite: {str(e)}")
 
 
 def notify_team_invite_response(invite):

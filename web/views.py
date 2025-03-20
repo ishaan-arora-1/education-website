@@ -3426,6 +3426,15 @@ def edit_team_goal(request, goal_id):
     if request.method == "POST":
         form = TeamGoalForm(request.POST, instance=goal)
         if form.is_valid():
+            # Validate that deadline is not in the past
+            if form.cleaned_data["deadline"] < timezone.now().date():
+                form.add_error("deadline", "Deadline cannot be in the past.")
+                context = {
+                    "form": form,
+                    "goal": goal,
+                    "is_edit": True,
+                }
+                return render(request, "teams/create.html", context)
             form.save()
             messages.success(request, "Team goal updated successfully!")
             return redirect("team_goal_detail", goal_id=goal.id)
