@@ -8,6 +8,7 @@ from django.db import IntegrityError
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 from markdownx.fields import MarkdownxFormField
+from django.utils import timezone
 
 from .models import (
     BlogPost,
@@ -1095,6 +1096,13 @@ class TeamGoalForm(forms.ModelForm):
             "deadline": forms.DateTimeInput(attrs={"type": "datetime-local"}),
             "description": forms.Textarea(attrs={"rows": 4}),
         }
+
+    def clean_deadline(self):
+        """Validate that the deadline is in the future."""
+        deadline = self.cleaned_data.get('deadline')
+        if deadline and deadline < timezone.now():
+            raise forms.ValidationError("Deadline cannot be in the past.")
+        return deadline
 
 
 class TeamInviteForm(forms.ModelForm):

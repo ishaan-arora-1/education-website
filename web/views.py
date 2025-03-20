@@ -121,7 +121,7 @@ from .models import (
     TimeSlot,
     WebRequest,
 )
-from .notifications import notify_session_reminder, notify_teacher_new_enrollment, send_enrollment_confirmation
+from .notifications import notify_session_reminder, notify_teacher_new_enrollment, send_enrollment_confirmation, notify_team_goal_completion, notify_team_invite, notify_team_invite_response
 from .referrals import send_referral_reward_email
 from .social import get_social_stats
 from .utils import get_or_create_cart
@@ -3349,7 +3349,9 @@ def team_goal_detail(request, goal_id):
             invite.goal = goal
             invite.save()
             messages.success(request, f"Invitation sent to {invite.recipient.email}!")
+            notify_team_invite(invite)
             return redirect("team_goal_detail", goal_id=goal.id)
+        
     else:
         form = TeamInviteForm()
 
@@ -3387,6 +3389,7 @@ def accept_team_invite(request, invite_id):
     invite.save()
 
     messages.success(request, f"You have joined {invite.goal.title}!")
+    notify_team_invite_response(invite)
     return redirect("team_goal_detail", goal_id=invite.goal.id)
 
 
@@ -3449,6 +3452,7 @@ def mark_team_contribution(request, goal_id):
     # Mark the user's contribution as complete
     member.mark_completed()
     messages.success(request, "Your contribution has been marked as complete.")
+    notify_team_goal_completion(goal, request.user)
     return redirect("team_goal_detail", goal_id=goal_id)
 
 
