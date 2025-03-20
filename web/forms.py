@@ -5,10 +5,10 @@ from captcha.fields import CaptchaField
 from django import forms
 from django.contrib.auth.models import User
 from django.db import IntegrityError
+from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 from markdownx.fields import MarkdownxFormField
-from django.utils import timezone
 
 from .models import (
     BlogPost,
@@ -1099,7 +1099,7 @@ class TeamGoalForm(forms.ModelForm):
 
     def clean_deadline(self):
         """Validate that the deadline is in the future."""
-        deadline = self.cleaned_data.get('deadline')
+        deadline = self.cleaned_data.get("deadline")
         if deadline and deadline < timezone.now():
             raise forms.ValidationError("Deadline cannot be in the past.")
         return deadline

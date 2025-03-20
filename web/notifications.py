@@ -219,26 +219,28 @@ def notify_team_invite(invite):
     notification_data = {
         "title": f"Team Invitation: {invite.goal.title}",
         "message": f"{invite.sender.username} has invited you to join the team goal '{invite.goal.title}'.",
-        "notification_type": "info"
+        "notification_type": "info",
     }
-    
+
     send_notification(invite.recipient, notification_data)
-    
+
     # Send a Slack notification if applicable
-    slack_message = f"🤝 {invite.sender.username} invited {invite.recipient.username} to team goal '{invite.goal.title}'"
+    slack_message = (
+        f"🤝 {invite.sender.username} invited {invite.recipient.username} to team goal '{invite.goal.title}'"
+    )
     send_slack_notification(slack_message)
 
 
 def notify_team_invite_response(invite):
     """Notify the sender about the response to their team invitation."""
     status_text = "accepted" if invite.status == "accepted" else "declined"
-    
+
     notification_data = {
         "title": f"Team Invitation {status_text.capitalize()}: {invite.goal.title}",
-        "message": f"{invite.recipient.username} has {status_text} your invitation to join the team goal '{invite.goal.title}'.",
-        "notification_type": "success" if invite.status == "accepted" else "info"
+        "message": f"{invite.recipient.username} has {status_text} your invite to join goal : '{invite.goal.title}'.",
+        "notification_type": "success" if invite.status == "accepted" else "info",
     }
-    
+
     send_notification(invite.sender, notification_data)
 
 
@@ -249,10 +251,10 @@ def notify_team_goal_completion(goal, user):
         notification_data = {
             "title": f"Team Goal Progress: {goal.title}",
             "message": f"{user.username} has completed their contribution to the team goal '{goal.title}'.",
-            "notification_type": "success"
+            "notification_type": "success",
         }
         send_notification(goal.creator, notification_data)
-    
+
     # If goal is now 100% complete, notify all members
     if goal.completion_percentage == 100:
         for member in goal.members.all():
@@ -260,6 +262,6 @@ def notify_team_goal_completion(goal, user):
                 notification_data = {
                     "title": f"Team Goal Completed: {goal.title}",
                     "message": f"The team goal '{goal.title}' has been completed by all members!",
-                    "notification_type": "success"
+                    "notification_type": "success",
                 }
                 send_notification(member.user, notification_data)
