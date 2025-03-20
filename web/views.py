@@ -10,7 +10,6 @@ from decimal import Decimal
 
 import requests
 import stripe
-from django.db import transaction
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
