@@ -3481,6 +3481,11 @@ def team_goal_detail(request, goal_id):
     if request.method == "POST":
         form = TeamInviteForm(request.POST)
         if form.is_valid():
+            if TeamInvite.objects.filter(
+                goal__id=goal.id, recipient__email=str(form.cleaned_data["recipient_search"])
+            ).exists():
+                messages.warning(request, "An invite for this user is already pending.")
+                return redirect("team_goal_detail", goal_id=goal.id)
             invite = form.save(commit=False)
             invite.sender = request.user
             invite.goal = goal

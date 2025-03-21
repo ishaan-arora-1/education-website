@@ -114,86 +114,85 @@
                 {% csrf_token %}
                 <datalist id="user-list">
                   {% for user in available_users %}
-                    <option value="{{ user.username }} ({{ user.email }})"
-                            data-id="{{ user.id }}">
-                    {% endfor %}
-                  </datalist>
-                  {{ invite_form.as_p }}
-                  <button type="submit"
-                          class="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-4 py-2 rounded-lg transition duration-200">
-                    {% trans "Send Invite" %}
-                  </button>
-                </form>
-              </div>
-            {% endif %}
-            <!-- Action Buttons -->
-            {% if goal.creator == request.user or user_is_leader %}
-              <div class="flex flex-col space-y-4">
-                {% if goal.creator == request.user %}
-                  <a href="{% url 'delete_team_goal' goal.id %}"
-                     class="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-4 py-2 rounded-lg text-center transition duration-200">
-                    {% trans "Delete Goal" %}
-                  </a>
-                {% endif %}
-                <a href="{% url 'edit_team_goal' goal.id %}"
-                   class="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-4 py-2 rounded-lg text-center transition duration-200">
-                  {% trans "Edit Goal" %}
-                </a>
-              </div>
-            {% endif %}
-            <!-- Mark Complete Button -->
-            {% if not user_member.completed %}
-              <form action="{% url 'mark_team_contribution' goal.id %}"
-                    method="post"
-                    class="mt-6">
-                {% csrf_token %}
+                    <option value="{{ user.email }}" data-id="{{ user.id }}">{{ user.username }}</option>
+                  {% endfor %}
+                </datalist>
+                {{ invite_form.as_p }}
                 <button type="submit"
-                        class="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white px-4 py-2 rounded-lg transition duration-200">
-                  {% trans "Mark Complete" %}
+                        class="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-4 py-2 rounded-lg transition duration-200">
+                  {% trans "Send Invite" %}
                 </button>
               </form>
-            {% elif user_member.completed %}
-              <div class="mt-6 w-full bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-center">
-                {% trans "You've completed this goal" %}
-              </div>
-            {% endif %}
-          </div>
+            </div>
+          {% endif %}
+          <!-- Action Buttons -->
+          {% if goal.creator == request.user or user_is_leader %}
+            <div class="flex flex-col space-y-4">
+              {% if goal.creator == request.user %}
+                <a href="{% url 'delete_team_goal' goal.id %}"
+                   class="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-4 py-2 rounded-lg text-center transition duration-200">
+                  {% trans "Delete Goal" %}
+                </a>
+              {% endif %}
+              <a href="{% url 'edit_team_goal' goal.id %}"
+                 class="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-4 py-2 rounded-lg text-center transition duration-200">
+                {% trans "Edit Goal" %}
+              </a>
+            </div>
+          {% endif %}
+          <!-- Mark Complete Button -->
+          {% if not user_member.completed %}
+            <form action="{% url 'mark_team_contribution' goal.id %}"
+                  method="post"
+                  class="mt-6">
+              {% csrf_token %}
+              <button type="submit"
+                      class="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white px-4 py-2 rounded-lg transition duration-200">
+                {% trans "Mark Complete" %}
+              </button>
+            </form>
+          {% elif user_member.completed %}
+            <div class="mt-6 w-full bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-center">
+              {% trans "You've completed this goal" %}
+            </div>
+          {% endif %}
         </div>
       </div>
     </div>
-  {% endblock %}
-  {% block extra_js %}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const recipientSearch = document.getElementById('id_recipient_search');
-            const recipientField = document.getElementById('id_recipient');
+  </div>
+{% endblock %}
+{% block extra_js %}
+  <script>
+      document.addEventListener('DOMContentLoaded', function() {
+          const recipientSearch = document.getElementById('id_recipient_search');
+          const recipientField = document.getElementById('id_recipient');
 
-            if (recipientSearch) {
-                recipientSearch.addEventListener('change', function() {
-                    const selectedOption = this.value;
-                    const userList = document.getElementById('user-list');
-                    let found = false;
+          if (recipientSearch) {
+              recipientSearch.addEventListener('change', function() {
+                  const selectedOption = this.value;
+                  const userList = document.getElementById('user-list');
+                  let found = false;
 
-                    // Find the matching option
-                    for (const option of userList.options) {
-                        if (option.value === selectedOption) {
-                            // Set the hidden recipient field to the user ID
-                            recipientField.value = option.dataset.id;
-                            found = true;
-                            break;
-                        }
-                    }
+                  // Find the matching option
+                  for (const option of userList.options) {
+                      if (option.value === selectedOption) {
+                          // Set the hidden recipient field to the user ID
+                          recipientField.value = option.dataset.id;
+                          found = true;
+                          break;
+                      }
+                  }
 
-                    // Show validation error if no match found
-                    if (!found) {
-                        recipientField.value = ''; // Clear any previous value
-                        this.setCustomValidity('Please select a user from the list');
-                    } else {
-                        this.setCustomValidity('');
-                    }
-                    this.reportValidity();
-                });
-            }
-        });
-    </script>
-  {% endblock %}
+                  // Show validation error if no match found
+                  if (!found) {
+                      recipientField.value = ''; // Clear any previous value
+                      this.setCustomValidity('Please select a user from the list');
+                  } else {
+                      this.setCustomValidity('');
+                  }
+                  this.reportValidity();
+              });
+          }
+      });
+  </script>
+{% endblock %}
