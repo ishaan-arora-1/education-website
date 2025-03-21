@@ -20,10 +20,10 @@ class SlackNotificationEmailBackend:
             self.backend = ConsoleBackend(**kwargs)
         else:
             self.backend = ConsoleBackend(**kwargs)
-            # # Use SendGrid backend in production
-            # from sendgrid_backend.mail import SendgridBackend
+            # Use SendGrid backend in production
+            from sendgrid_backend.mail import SendgridBackend
 
-            # self.backend = SendgridBackend(**kwargs)
+            self.backend = SendgridBackend(**kwargs)
 
         self.webhook_url = getattr(settings, "EMAIL_SLACK_WEBHOOK", None)
 
