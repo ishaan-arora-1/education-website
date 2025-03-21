@@ -3399,13 +3399,18 @@ def team_goals(request):
         .order_by("-created_at")
     )
 
+    paginator = Paginator(user_goals, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
     pending_invites = TeamInvite.objects.filter(recipient=request.user, status="pending").select_related(
         "goal", "sender"
     )
 
     context = {
-        "goals": user_goals,
+        "goals": page_obj,
         "pending_invites": pending_invites,
+        "is_paginated": paginator.num_pages > 1,
     }
     return render(request, "teams/list.html", context)
 
