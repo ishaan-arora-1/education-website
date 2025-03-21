@@ -1616,7 +1616,7 @@ class QuizOption(models.Model):
 
 
 class UserQuiz(models.Model):
-    """Model for tracking user quiz attempts and responses."""
+    """Model for tracking user quiz attempts and responses"""
 
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="user_quizzes")
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="quiz_attempts", null=True, blank=True)
