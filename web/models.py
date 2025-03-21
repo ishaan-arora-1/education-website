@@ -1312,7 +1312,7 @@ class TeamInvite(models.Model):
             )
 
         # Create notification when invite is accepted
-        if not created and self.status == "accepted" and self._loaded_values.get("status") == "pending":
+        if not created and self.status == "accepted":
             Notification.objects.create(
                 user=self.sender,
                 title="Team Invitation Accepted",
