@@ -3632,7 +3632,7 @@ def edit_team_goal(request, goal_id):
         form = TeamGoalForm(request.POST, instance=goal)
         if form.is_valid():
             # Validate that deadline is not in the past
-            if form.cleaned_data["deadline"] < timezone.now().date():
+            if form.cleaned_data["deadline"] < timezone.now():
                 form.add_error("deadline", "Deadline cannot be in the past.")
                 context = {
                     "form": form,
@@ -3652,7 +3652,6 @@ def edit_team_goal(request, goal_id):
         "is_edit": True,
     }
     return render(request, "teams/create.html", context)
-
 
 @login_required
 def mark_team_contribution(request, goal_id):
