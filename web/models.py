@@ -1276,8 +1276,8 @@ class TeamGoalMember(models.Model):
         Notification.objects.create(
             user=self.team_goal.creator,
             title="Goal Progress Update",
-            message=f"{self.user.get_full_name() or self.user.username} has completed their part of '{self.team_goal.title}'",
-            notification_type="success"
+            message=f"{self.user.get_full_name() or self.user.username} completed'{self.team_goal.title}'",
+            notification_type="success",
         )
 
 
@@ -1298,26 +1298,26 @@ class TeamInvite(models.Model):
 
     def __str__(self):
         return f"Invite to {self.goal.title} for {self.recipient.username}"
-    
+
     def save(self, *args, **kwargs):
         created = not self.pk
         super().save(*args, **kwargs)
 
-        if created and self.status == 'pending':
+        if created and self.status == "pending":
             Notification.objects.create(
                 user=self.recipient,
                 title="New Team Invitation",
-                message=f"You've been invited to join '{self.goal.title}' by {self.sender.get_full_name() or self.sender.username}",
-                notification_type="info"
+                message=f"Invited to '{self.goal.title}' by {self.sender.get_full_name() or self.sender.username}",
+                notification_type="info",
             )
-        
+
         # Create notification when invite is accepted
-        if not created and self.status == 'accepted' and self._loaded_values.get('status') == 'pending':
+        if not created and self.status == "accepted" and self._loaded_values.get("status") == "pending":
             Notification.objects.create(
                 user=self.sender,
                 title="Team Invitation Accepted",
-                message=f"{self.recipient.get_full_name() or self.recipient.username} has accepted your invitation to join '{self.goal.title}'",
-                notification_type="success"
+                message=f"{self.recipient.get_full_name() or self.recipient.username} has accepted your invitation",
+                notification_type="success",
             )
 
 
