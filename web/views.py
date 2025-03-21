@@ -3618,6 +3618,7 @@ def decline_team_invite(request, invite_id):
     messages.info(request, f"You have declined to join {invite.goal.title}.")
     return redirect("team_goals")
 
+
 @login_required
 def edit_team_goal(request, goal_id):
     """Edit an existing team goal."""
@@ -3652,6 +3653,7 @@ def edit_team_goal(request, goal_id):
         "is_edit": True,
     }
     return render(request, "teams/create.html", context)
+
 
 @login_required
 def mark_team_contribution(request, goal_id):
