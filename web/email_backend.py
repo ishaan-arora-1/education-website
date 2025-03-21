@@ -19,7 +19,6 @@ class SlackNotificationEmailBackend:
         if settings.DEBUG:
             self.backend = ConsoleBackend(**kwargs)
         else:
-            self.backend = ConsoleBackend(**kwargs)
             # Use SendGrid backend in production
             from sendgrid_backend.mail import SendgridBackend
 
