@@ -23,7 +23,7 @@
             class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
         {% csrf_token %}
         {% for field in form %}
-          <div class="mb-6">
+          <div class="mb-6 [&_textarea]:border [&_textarea]:border-neutral-300 [&_input]:border [&_input]:border-neutral-300">
             <label for="{{ field.id_for_label }}"
                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ field.label }}</label>
             {{ field }}
