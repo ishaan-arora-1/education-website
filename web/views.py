@@ -462,21 +462,19 @@ def enroll_course(request, course_slug):
                 referrer.add_referral_earnings(5)
                 send_referral_reward_email(referrer.user, request.user, 5, "enrollment")
 
-    # Create enrollment
-    enrollment = Enrollment.objects.create(
-        student=request.user, course=course, status="pending" if course.price > 0 else "approved"
-    )
-
-    # For paid courses, create pending enrollment and redirect to payment
-    if course.price > 0:
+    # For free courses, create approved enrollment immediately
+    if course.price == 0:
+        enrollment = Enrollment.objects.create(student=request.user, course=course, status="approved")
+        # Send notifications for free courses
+        send_enrollment_confirmation(enrollment)
+        notify_teacher_new_enrollment(enrollment)
+        messages.success(request, "You have successfully enrolled in this free course.")
+        return redirect("course_detail", slug=course_slug)
+    else:
+        # For paid courses, create pending enrollment
+        enrollment = Enrollment.objects.create(student=request.user, course=course, status="pending")
         messages.info(request, "Please complete the payment process to enroll in this course.")
         return redirect("course_detail", slug=course_slug)
-
-    # For free courses, send notifications
-    send_enrollment_confirmation(enrollment)
-    notify_teacher_new_enrollment(enrollment)
-    messages.success(request, "You have successfully enrolled in this course.")
-    return redirect("course_detail", slug=course_slug)
 
 
 @login_required
@@ -499,7 +497,7 @@ def add_session(request, slug):
     else:
         form = SessionForm()
 
-    return render(request, "courses/add_session.html", {"form": form, "course": course})
+    return render(request, "courses/session_form.html", {"form": form, "course": course, "is_edit": False})
 
 
 @login_required
@@ -785,8 +783,33 @@ def create_payment_intent(request, slug):
     """Create a payment intent for Stripe."""
     course = get_object_or_404(Course, slug=slug)
 
+    # Prevent creating payment intents for free courses
+    if course.price == 0:
+        # Find the enrollment and update its status to approved if it's pending
+        enrollment = get_object_or_404(Enrollment, student=request.user, course=course)
+        if enrollment.status == "pending":
+            enrollment.status = "approved"
+            enrollment.save()
+
+            # Send notifications
+            send_enrollment_confirmation(enrollment)
+            notify_teacher_new_enrollment(enrollment)
+
+        return JsonResponse({"free_course": True, "message": "Enrollment approved for free course"})
+
     # Ensure user has a pending enrollment
-    get_object_or_404(Enrollment, student=request.user, course=course, status="pending")
+    enrollment = get_object_or_404(Enrollment, student=request.user, course=course, status="pending")
+
+    # Validate price is greater than zero for Stripe
+    if course.price <= 0:
+        enrollment.status = "approved"
+        enrollment.save()
+
+        # Send notifications
+        send_enrollment_confirmation(enrollment)
+        notify_teacher_new_enrollment(enrollment)
+
+        return JsonResponse({"free_course": True, "message": "Enrollment approved for free course"})
 
     try:
         # Create a PaymentIntent with the order amount and currency
@@ -2030,12 +2053,14 @@ def send_welcome_email(user):
 @login_required
 def edit_session(request, session_id):
     """Edit an existing session."""
+    # Get the session and verify that the current user is the course teacher
     session = get_object_or_404(Session, id=session_id)
+    course = session.course
 
     # Check if user is the course teacher
-    if request.user != session.course.teacher:
+    if request.user != course.teacher:
         messages.error(request, "Only the course teacher can edit sessions!")
-        return redirect("course_detail", slug=session.course.slug)
+        return redirect("course_detail", slug=course.slug)
 
     if request.method == "POST":
         form = SessionForm(request.POST, instance=session)
@@ -2046,7 +2071,9 @@ def edit_session(request, session_id):
     else:
         form = SessionForm(instance=session)
 
-    return render(request, "courses/edit_session.html", {"form": form, "session": session, "course": session.course})
+    return render(
+        request, "courses/session_form.html", {"form": form, "session": session, "course": course, "is_edit": True}
+    )
 
 
 @login_required
