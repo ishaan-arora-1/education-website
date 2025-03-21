@@ -122,10 +122,10 @@ class Migration(migrations.Migration):
             old_name="goal",
             new_name="team_goal",
         ),
-        migrations.AlterUniqueTogether(
-            name="teamgoalmember",
-            unique_together=set(),
-        ),
+        # migrations.AlterUniqueTogether(
+        #     name="teamgoalmember",
+        #     unique_together=set(),
+        # ),
         migrations.RemoveField(
             model_name="teamgoal",
             name="target_date",
