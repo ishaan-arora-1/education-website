@@ -3614,9 +3614,9 @@ def decline_team_invite(request, invite_id):
     invite.responded_at = timezone.now()
     invite.save()
 
+    notify_team_invite_response(invite)
     messages.info(request, f"You have declined to join {invite.goal.title}.")
     return redirect("team_goals")
-
 
 @login_required
 def edit_team_goal(request, goal_id):
