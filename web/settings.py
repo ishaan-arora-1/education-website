@@ -106,6 +106,7 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
     "web.middleware.WebRequestMiddleware",
     "web.middleware.GlobalExceptionMiddleware",
+    "web.middleware.WaitingRoomValidationMiddleware",
 ]
 
 if DEBUG and not TESTING:
@@ -172,9 +173,10 @@ SITE_DOMAIN = "alphaonelabs.com"
 # Allauth settings
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False  # Since we're using email authentication
-ACCOUNT_EMAIL_VERIFICATION = "optional"  # Disable email verification for now
+ACCOUNT_EMAIL_VERIFICATION = "optional"  # Require email verification
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_PREVENT_ENUMERATION = True  # Prevent user enumeration
 ACCOUNT_USERNAME_MIN_LENGTH = 3
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_SESSION_REMEMBER = None  # Let user decide via checkbox
@@ -240,7 +242,7 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Email settings
 if DEBUG:
-    EMAIL_BACKEND = "web.email_backend.SlackNotificationEmailBackend"
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
     print("Using console email backend with Slack notifications for development")
     DEFAULT_FROM_EMAIL = "noreply@example.com"  # Default for development
     SENDGRID_API_KEY = None  # Not needed in development
@@ -352,3 +354,7 @@ MARKDOWNX_UPLOAD_URLS_PATH = "/markdownx/upload/"
 MARKDOWNX_MEDIA_PATH = "markdownx/"  # Path within MEDIA_ROOT
 
 USE_X_FORWARDED_HOST = True
+
+# GitHub API Token for fetching contributor data
+# Use empty string as default to avoid errors when the token is not set
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")

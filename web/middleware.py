@@ -120,3 +120,48 @@ class WebRequestMiddleware:
             # For any other errors, let Django handle them
             logger.error(f"Unexpected error in middleware: {str(e)}")
             return self.get_response(request)
+
+
+class WaitingRoomValidationMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        return response
+
+    def process_view(self, request, view_func, view_args, view_kwargs):
+        # Only validate if coming from waiting room
+        if 'waiting_room_data' not in request.session:
+            return None
+        
+        # Only validate on course creation POST
+        if request.method != 'POST' or view_func.__name__ != 'CourseCreateView':
+            return None
+        
+        # Get waiting room data
+        waiting_room_data = request.session['waiting_room_data']
+        
+        # Validate subject and topics
+        subject_match = (
+            request.POST.get('subject', '').strip().lower() == 
+            waiting_room_data['subject']
+        )
+        
+        submitted_topics = {
+            t.strip().lower() 
+            for t in request.POST.get('topics', '').split(',')
+            if t.strip()
+        }
+        topics_match = submitted_topics.issuperset(waiting_room_data['topics'])
+        
+        if not (subject_match and topics_match):
+            messages.error(
+                request, 
+                "Course must match waiting room's subject and include all requested topics."
+            )
+            return redirect('course_create')
+        
+        # Clear waiting room data after validation
+        del request.session['waiting_room_data']
+        return None
