@@ -68,7 +68,7 @@ def customize_avatar(request):
         avatar = Avatar(
             style=getattr(AvatarStyle, profile.avatar_style.upper(), AvatarStyle.CIRCLE),
             background_color=profile.avatar_background_color,
-            top=getattr(HairType, profile.avatar_top.upper(), HairType.SHORT_HAIR),
+            top=getattr(HairType, profile.avatar_top.upper(), HairType.SHORT_FLAT),
             eyebrows=getattr(EyebrowType, profile.avatar_eyebrows.upper(), EyebrowType.DEFAULT),
             eyes=getattr(EyeType, profile.avatar_eyes.upper(), EyeType.DEFAULT),
             nose=getattr(NoseType, profile.avatar_nose.upper(), NoseType.DEFAULT),
@@ -77,7 +77,7 @@ def customize_avatar(request):
             skin_color=getattr(SkinColor, profile.avatar_skin_color.upper(), SkinColor.LIGHT),
             hair_color=profile.avatar_hair_color,
             accessory=getattr(AccessoryType, profile.avatar_accessory.upper(), AccessoryType.NONE),
-            clothing=getattr(ClothingType, profile.avatar_clothing.upper(), ClothingType.SHIRT),
+            clothing=getattr(ClothingType, profile.avatar_clothing.upper(), ClothingType.HOODIE),
             clothing_color=profile.avatar_clothing_color
         )
         profile.avatar_svg = avatar.render()
@@ -98,7 +98,7 @@ def preview_avatar(request):
             avatar = Avatar(
                 style=getattr(AvatarStyle, data.get('avatar_style', 'CIRCLE').upper(), AvatarStyle.CIRCLE),
                 background_color=data.get('avatar_background_color', '#FFFFFF'),
-                top=getattr(HairType, data.get('avatar_top', 'SHORT_HAIR').upper(), HairType.SHORT_HAIR),
+                top=getattr(HairType, data.get('avatar_top', 'SHORT_FLAT').upper(), HairType.SHORT_FLAT),
                 eyebrows=getattr(EyebrowType, data.get('avatar_eyebrows', 'DEFAULT').upper(), EyebrowType.DEFAULT),
                 eyes=getattr(EyeType, data.get('avatar_eyes', 'DEFAULT').upper(), EyeType.DEFAULT),
                 nose=getattr(NoseType, data.get('avatar_nose', 'DEFAULT').upper(), NoseType.DEFAULT),
@@ -107,7 +107,7 @@ def preview_avatar(request):
                 skin_color=getattr(SkinColor, data.get('avatar_skin_color', 'LIGHT').upper(), SkinColor.LIGHT),
                 hair_color=data.get('avatar_hair_color', '#000000'),
                 accessory=getattr(AccessoryType, data.get('avatar_accessory', 'NONE').upper(), AccessoryType.NONE),
-                clothing=getattr(ClothingType, data.get('avatar_clothing', 'SHIRT').upper(), ClothingType.SHIRT),
+                clothing=getattr(ClothingType, data.get('avatar_clothing', 'HOODIE').upper(), ClothingType.HOODIE),
                 clothing_color=data.get('avatar_clothing_color', '#0000FF')
             )
             return JsonResponse({
