@@ -1784,6 +1784,9 @@ class WaitingRoom(models.Model):
         "Course", on_delete=models.SET_NULL, null=True, blank=True, related_name="fulfilled_waiting_rooms"
     )
 
+    def __str__(self):
+        return self.title
+
 
 class GradeableLink(models.Model):
     """Model for storing links that users want to get grades on."""
@@ -1803,7 +1806,6 @@ class GradeableLink(models.Model):
     link_type = models.CharField(max_length=20, choices=LINK_TYPES, default="other")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
 
     class Meta:
         ordering = ["-created_at"]

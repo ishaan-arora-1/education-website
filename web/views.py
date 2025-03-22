@@ -4469,7 +4469,7 @@ def create_waiting_room(request):
 def find_matching_courses(waiting_room):
     """Find courses that match the waiting room's subject and topics."""
     # Get courses with matching subject name (case-insensitive)
-    matching_courses = Course.objects.filter(subject__name__iexact=waiting_room.subject, status="published")
+    matching_courses = Course.objects.filter(subject__iexact=waiting_room.subject, status="published")
 
     # Filter courses that have all required topics
     required_topics = {t.strip().lower() for t in waiting_room.topics.split(",") if t.strip()}
