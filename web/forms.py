@@ -1394,12 +1394,6 @@ class WaitingRoomForm(forms.ModelForm):
         model = WaitingRoom
         fields = ["title", "description", "subject", "topics"]
 
-        def clean_subject(self):
-            subject_name = self.cleaned_data.get("subject")
-            if not Subject.objects.filter(name=subject_name).exists():
-                raise forms.ValidationError(f"Subject '{subject_name}' does not exist.")
-            return subject_name
-
         widgets = {
             "title": TailwindInput(attrs={"placeholder": "What would you like to learn?"}),
             "description": TailwindTextarea(attrs={"rows": 4, "placeholder": "Describe what you want to learn"}),

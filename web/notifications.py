@@ -206,6 +206,7 @@ def notify_waiting_room_fulfilled(waiting_room, course):
                 "user": participant,
                 "waiting_room": waiting_room,
                 "course": course,
+                "site_url": settings.SITE_URL,
             },
         )
 

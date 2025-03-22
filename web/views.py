@@ -4492,9 +4492,6 @@ def waiting_room_detail(request, waiting_room_id):
     # Check if the user is a teacher
     is_teacher = hasattr(request.user, "profile") and request.user.profile.is_teacher
 
-    # Find matching courses
-    # matching_courses = find_matching_courses(waiting_room)
-
     context = {
         "waiting_room": waiting_room,
         "is_participant": is_participant,
@@ -4502,7 +4499,6 @@ def waiting_room_detail(request, waiting_room_id):
         "is_teacher": is_teacher,
         "participant_count": waiting_room.participants.count(),
         "topic_list": [topic.strip() for topic in waiting_room.topics.split(",") if topic.strip()],
-        #  'matching_courses': matching_courses,
     }
     return render(request, "waiting_room/detail.html", context)
 
