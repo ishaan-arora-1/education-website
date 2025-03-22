@@ -977,6 +977,11 @@ class Goods(models.Model):
         # Return a default placeholder image
         return '/static/images/placeholder.png'
 
+    @property
+    def image(self):
+        """Return the first product image object, or None if no images exist."""
+        return self.goods_images.first()
+
     def clean(self):
         # Validate discount logic
         if self.discount_price and self.discount_price >= self.price:
