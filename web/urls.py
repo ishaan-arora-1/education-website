@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import include, path
 
-from . import admin_views, quiz_views, views
+from . import admin_views, quiz_views, views, views_avatar
 from .views import GoodsListingView, add_goods_to_cart, sales_analytics, sales_data, streak_detail
 
 # Non-prefixed URLs
@@ -75,6 +75,10 @@ urlpatterns += i18n_patterns(
         name="create_payment_intent",
     ),
     path("stripe-webhook/", views.stripe_webhook, name="stripe_webhook"),
+    # Avatar customization
+    path("avatar/customize/", views_avatar.customize_avatar, name="customize_avatar"),
+    path("avatar/preview/", views_avatar.preview_avatar, name="preview_avatar"),
+
     # Admin and Utilities
     path("github_update/", views.github_update, name="github_update"),
     path(f"{settings.ADMIN_URL}/dashboard/", admin_views.admin_dashboard, name="admin_dashboard"),
