@@ -1781,13 +1781,9 @@ class WaitingRoom(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     fulfilled_course = models.ForeignKey(
-        'Course',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='fulfilled_waiting_rooms'
+        "Course", on_delete=models.SET_NULL, null=True, blank=True, related_name="fulfilled_waiting_rooms"
     )
-    
+
     class Meta:
         ordering = ["-created_at"]
 
@@ -1806,7 +1802,8 @@ class WaitingRoom(models.Model):
         """Mark the waiting room as fulfilled and notify participants."""
         self.status = "fulfilled"
         self.save()
-        
+
         if course:
             from .notifications import notify_waiting_room_fulfilled
+
             notify_waiting_room_fulfilled(self, course)

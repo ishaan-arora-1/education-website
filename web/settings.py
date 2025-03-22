@@ -242,7 +242,7 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Email settings
 if DEBUG:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
     print("Using console email backend with Slack notifications for development")
     DEFAULT_FROM_EMAIL = "noreply@example.com"  # Default for development
     SENDGRID_API_KEY = None  # Not needed in development
