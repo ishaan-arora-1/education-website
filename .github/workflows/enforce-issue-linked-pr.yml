@@ -40,6 +40,34 @@ jobs:
               return;
             }
 
+            // Check for linked issues in the Development section (via GitHub UI)
+            // First get all linked issues/PRs
+            try {
+              const { data: linkedItems } = await github.rest.pulls.listLinkedItems({
+                owner: repo.owner,
+                repo: repo.repo,
+                pull_number: prNumber,
+              });
+
+              // Filter for issues that would be closed by this PR
+              const linkedIssues = linkedItems.items.filter(item =>
+                item.type === 'ISSUE' &&
+                item.link_type === 'CLOSING' ||
+                item.link_type === 'LINKED'
+              );
+
+              if (linkedIssues.length > 0) {
+                console.log(`Found ${linkedIssues.length} linked issues in the Development section`);
+                for (const issue of linkedIssues) {
+                  console.log(`- Issue #${issue.number}: ${issue.title}`);
+                }
+                return;
+              }
+            } catch (error) {
+              console.log(`Error checking linked items via API: ${error.message}`);
+              // Continue with other checks
+            }
+
             // Check PR body for direct issue references like #123 or user/repo#123
             const bodyIssueReferences = pr.body ? pr.body.match(/#[0-9]+/g) : [];
             if (bodyIssueReferences && bodyIssueReferences.length > 0) {
@@ -79,7 +107,7 @@ jobs:
               }
             }
 
-            // Check if PR is linked to any issues using GitHub's API
+            // Check if PR is linked to any issues using GitHub's timeline API
             try {
               const { data: linkedIssues } = await github.rest.issues.listEventsForTimeline({
                 owner: repo.owner,
@@ -98,7 +126,7 @@ jobs:
                 return;
               }
             } catch (error) {
-              console.log(`Error checking linked issues via API: ${error.message}`);
+              console.log(`Error checking linked issues via timeline API: ${error.message}`);
               // Continue with the check, don't fail the workflow if this specific check fails
             }
 
@@ -144,9 +172,26 @@ jobs:
             Please link this PR to an existing issue using one of these methods:
 
             1. Reference the issue in your PR description: "Fixes #123" or "Addresses #123"
-            2. Use GitHub's interface to link the PR to an issue
+            2. Use GitHub's interface to link the PR to an issue in the Development section
+               - Look for the section that says "Development" on the right side of your PR
+               - Click "Link an issue" or "Link issues"
+               - Select the relevant issue(s)
             3. If no issue exists yet, please create one first
 
+            ### Exceptions
+
+            PRs with these labels don't require linked issues:
+            - documentation
+            - dependencies
+            - typo
+            - ci
+            - chore
+
+            Or with titles starting with:
+            - docs:
+            - chore:
+            - deps:
+            - ci:
 
             This PR will be automatically closed. Feel free to reopen it once you've linked it to an issue or added appropriate labels.
 
