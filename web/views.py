@@ -132,8 +132,8 @@ from .models import (
     TeamGoalMember,
     TeamInvite,
     TimeSlot,
-    WaitingRoom,
     UserBadge,
+    WaitingRoom,
     WebRequest,
 )
 from .notifications import (
