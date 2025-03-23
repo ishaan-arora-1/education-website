@@ -50,7 +50,7 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bio = models.TextField(max_length=500, blank=True)
     expertise = models.CharField(max_length=200, blank=True)
-    avatar = models.ImageField(upload_to="avatars/", blank=True, default="")
+    avatar = models.ImageField(upload_to="avatars", blank=True, default="")
     # Custom avatar fields
     avatar_style = models.CharField(max_length=50, default="circle")
     avatar_background_color = models.CharField(max_length=7, default="#FFFFFF")

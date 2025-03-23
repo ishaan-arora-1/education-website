@@ -1,7 +1,9 @@
 import json
+import cairosvg
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
+from django.contrib import messages
 from python_avatars import (
     Avatar, AvatarStyle, HairType, EyebrowType, EyeType, NoseType,
     MouthType, FacialHairType, SkinColor, HairColor, AccessoryType,
@@ -9,6 +11,37 @@ from python_avatars import (
 )
 from .forms import AvatarForm
 from .models import Profile
+
+from django.core.files.base import ContentFile
+
+@login_required
+def set_avatar_as_profile_pic(request):
+    """Set the current avatar as the user's profile picture."""
+    if request.method == "POST":
+        profile = request.user.profile
+        if profile.avatar_svg:
+            try:
+                # Convert SVG to PNG using cairosvg with explicit dimensions
+                png_data = cairosvg.svg2png(
+                    bytestring=profile.avatar_svg.encode('utf-8'),
+                    output_width=200,
+                    output_height=200
+                )
+                # Create a ContentFile from the PNG data
+                png_file = ContentFile(png_data)
+                # Delete old avatar if it exists
+                if profile.avatar:
+                    profile.avatar.delete(save=False)
+                # Save the PNG as the profile avatar with a unique filename
+                import uuid
+                filename = f'avatar_{uuid.uuid4().hex[:8]}.png'
+                profile.avatar.save(filename, png_file, save=True)
+                messages.success(request, "Avatar set as profile picture successfully!")
+            except Exception as e:
+                messages.error(request, f"Error setting profile picture: {str(e)}")
+        else:
+            messages.error(request, "No avatar available to set as profile picture.")
+    return redirect('profile')
 
 @login_required
 def customize_avatar(request):
@@ -22,7 +55,7 @@ def customize_avatar(request):
             avatar = Avatar(
                 style=getattr(AvatarStyle, profile.avatar_style.upper(), AvatarStyle.CIRCLE),
                 background_color=profile.avatar_background_color,
-                top=getattr(HairType, profile.avatar_top.upper(), HairType.SHORT_HAIR),
+                top=getattr(HairType, profile.avatar_top.upper(), HairType.SHORT_FLAT),
                 eyebrows=getattr(EyebrowType, profile.avatar_eyebrows.upper(), EyebrowType.DEFAULT),
                 eyes=getattr(EyeType, profile.avatar_eyes.upper(), EyeType.DEFAULT),
                 nose=getattr(NoseType, profile.avatar_nose.upper(), NoseType.DEFAULT),
@@ -31,7 +64,7 @@ def customize_avatar(request):
                 skin_color=getattr(SkinColor, profile.avatar_skin_color.upper(), SkinColor.LIGHT),
                 hair_color=profile.avatar_hair_color,
                 accessory=getattr(AccessoryType, profile.avatar_accessory.upper(), AccessoryType.NONE),
-                clothing=getattr(ClothingType, profile.avatar_clothing.upper(), ClothingType.SHIRT),
+                clothing=getattr(ClothingType, profile.avatar_clothing.upper(), ClothingType.HOODIE),
                 clothing_color=profile.avatar_clothing_color
             )
             
@@ -46,7 +79,24 @@ def customize_avatar(request):
                 })
             return redirect('profile')
     else:
-        form = AvatarForm(instance=request.user.profile)
+        # Initialize form with current profile values
+        profile = request.user.profile
+        initial_data = {
+            'avatar_style': profile.avatar_style,
+            'avatar_background_color': profile.avatar_background_color,
+            'avatar_top': profile.avatar_top,
+            'avatar_eyebrows': profile.avatar_eyebrows,
+            'avatar_eyes': profile.avatar_eyes,
+            'avatar_nose': profile.avatar_nose,
+            'avatar_mouth': profile.avatar_mouth,
+            'avatar_facial_hair': profile.avatar_facial_hair,
+            'avatar_skin_color': profile.avatar_skin_color,
+            'avatar_hair_color': profile.avatar_hair_color,
+            'avatar_accessory': profile.avatar_accessory,
+            'avatar_clothing': profile.avatar_clothing,
+            'avatar_clothing_color': profile.avatar_clothing_color,
+        }
+        form = AvatarForm(instance=profile, initial=initial_data)
     
     # Get available options from python_avatars
     avatar_options = {

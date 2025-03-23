@@ -77,6 +77,7 @@ urlpatterns += i18n_patterns(
     path("stripe-webhook/", views.stripe_webhook, name="stripe_webhook"),
     # Avatar customization
     path("avatar/customize/", views_avatar.customize_avatar, name="customize_avatar"),
+    path("avatar/set-as-profile/", views_avatar.set_avatar_as_profile_pic, name="set_avatar_as_profile_pic"),
     path("avatar/preview/", views_avatar.preview_avatar, name="preview_avatar"),
 
     # Admin and Utilities
