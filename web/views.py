@@ -4518,13 +4518,13 @@ def waiting_room_detail(request, waiting_room_id):
     waiting_room = get_object_or_404(WaitingRoom, id=waiting_room_id)
 
     # Check if the user is a participant
-    is_participant = request.user in waiting_room.participants.all()
+    is_participant = request.user.is_authenticated and request.user in waiting_room.participants.all()
 
     # Check if the user is the creator
-    is_creator = request.user == waiting_room.creator
+    is_creator = request.user.is_authenticated and request.user == waiting_room.creator
 
     # Check if the user is a teacher
-    is_teacher = hasattr(request.user, "profile") and request.user.profile.is_teacher
+    is_teacher = request.user.is_authenticated and hasattr(request.user, "profile") and request.user.profile.is_teacher
 
     context = {
         "waiting_room": waiting_room,
