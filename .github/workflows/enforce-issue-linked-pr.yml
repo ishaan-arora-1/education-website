@@ -214,21 +214,6 @@ jobs:
                - Select the relevant issue(s)
             3. If no issue exists yet, please create one first
 
-            ### Exceptions
-
-            PRs with these labels don't require linked issues:
-            - documentation
-            - dependencies
-            - typo
-            - ci
-            - chore
-
-            Or with titles starting with:
-            - docs:
-            - chore:
-            - deps:
-            - ci:
-
             This PR will be automatically closed. Feel free to reopen it once you've linked it to an issue or added appropriate labels.
 
             Thank you for your contribution!
