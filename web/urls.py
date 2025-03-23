@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import include, path
 
-from . import admin_views, peer_challenge_views, quiz_views, views
+from . import admin_views, peer_challenge_views, quiz_views, views, views_avatar
 from .views import (
     GoodsListingView,
     GradeableLinkCreateView,
