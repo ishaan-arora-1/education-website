@@ -6,33 +6,33 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('web', '0036_alter_profile_avatar_clothing_and_more'),
+        ("web", "0036_alter_profile_avatar_clothing_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='profile',
-            name='avatar_eyebrows',
-            field=models.CharField(default='default', max_length=50),
+            model_name="profile",
+            name="avatar_eyebrows",
+            field=models.CharField(default="default", max_length=50),
         ),
         migrations.AlterField(
-            model_name='profile',
-            name='avatar_eyes',
-            field=models.CharField(default='default', max_length=50),
+            model_name="profile",
+            name="avatar_eyes",
+            field=models.CharField(default="default", max_length=50),
         ),
         migrations.AlterField(
-            model_name='profile',
-            name='avatar_mouth',
-            field=models.CharField(default='default', max_length=50),
+            model_name="profile",
+            name="avatar_mouth",
+            field=models.CharField(default="default", max_length=50),
         ),
         migrations.AlterField(
-            model_name='profile',
-            name='avatar_nose',
-            field=models.CharField(default='default', max_length=50),
+            model_name="profile",
+            name="avatar_nose",
+            field=models.CharField(default="default", max_length=50),
         ),
         migrations.AlterField(
-            model_name='profile',
-            name='avatar_top',
-            field=models.CharField(default='short_flat', max_length=50),
+            model_name="profile",
+            name="avatar_top",
+            field=models.CharField(default="short_flat", max_length=50),
         ),
     ]

@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('web', '0037_alter_profile_avatar_eyebrows_and_more'),
+        ("web", "0037_alter_profile_avatar_eyebrows_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='profile',
-            name='profile_picture',
-            field=models.ImageField(blank=True, null=True, upload_to='profile_pics/'),
+            model_name="profile",
+            name="profile_picture",
+            field=models.ImageField(blank=True, upload_to="profile_pics/"),
         ),
     ]

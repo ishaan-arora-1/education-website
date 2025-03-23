@@ -6,78 +6,78 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('web', '0032_rename_completion_date_teamgoalmember_completed_at_and_more'),
+        ("web", "0032_rename_completion_date_teamgoalmember_completed_at_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='profile',
-            name='avatar_accessories',
+            model_name="profile",
+            name="avatar_accessories",
             field=models.CharField(blank=True, max_length=50),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='avatar_background_color',
+            model_name="profile",
+            name="avatar_background_color",
             field=models.CharField(blank=True, max_length=20),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='avatar_clothes',
+            model_name="profile",
+            name="avatar_clothes",
             field=models.CharField(blank=True, max_length=50),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='avatar_clothes_color',
+            model_name="profile",
+            name="avatar_clothes_color",
             field=models.CharField(blank=True, max_length=20),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='avatar_eyebrows',
+            model_name="profile",
+            name="avatar_eyebrows",
             field=models.CharField(blank=True, max_length=50),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='avatar_eyes',
+            model_name="profile",
+            name="avatar_eyes",
             field=models.CharField(blank=True, max_length=50),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='avatar_facial_hair',
+            model_name="profile",
+            name="avatar_facial_hair",
             field=models.CharField(blank=True, max_length=50),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='avatar_facial_hair_color',
+            model_name="profile",
+            name="avatar_facial_hair_color",
             field=models.CharField(blank=True, max_length=20),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='avatar_hair_color',
+            model_name="profile",
+            name="avatar_hair_color",
             field=models.CharField(blank=True, max_length=20),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='avatar_hair_style',
+            model_name="profile",
+            name="avatar_hair_style",
             field=models.CharField(blank=True, max_length=50),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='avatar_mouth',
+            model_name="profile",
+            name="avatar_mouth",
             field=models.CharField(blank=True, max_length=50),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='avatar_skin',
+            model_name="profile",
+            name="avatar_skin",
             field=models.CharField(blank=True, max_length=50),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='avatar_style',
-            field=models.CharField(default='circle', max_length=50),
+            model_name="profile",
+            name="avatar_style",
+            field=models.CharField(default="circle", max_length=50),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='avatar_svg',
-            field=models.TextField(blank=True, help_text='Stored SVG string of the custom avatar'),
+            model_name="profile",
+            name="avatar_svg",
+            field=models.TextField(blank=True, help_text="Stored SVG string of the custom avatar"),
         ),
     ]

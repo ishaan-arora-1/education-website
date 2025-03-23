@@ -19,7 +19,13 @@
           </div>
           <!-- Profile Picture -->
           <div class="mb-6 flex flex-col items-center">
-            {% if user.profile.avatar %}
+            {% if user.profile.avatar_svg %}
+              <div class="w-full h-full p-1.5 transform hover:scale-105 transition-transform duration-200">
+                <div class="w-full h-full overflow-hidden rounded-full flex items-center justify-center">
+                  {{ user.profile.avatar_svg|safe }}
+                </div>
+              </div>
+            {% elif user.profile.avatar %}
               <img src="{{ user.profile.avatar.url }}"
                    alt="{{ user.username }}'s avatar"
                    class="w-32 h-32 rounded-full object-cover mb-4"

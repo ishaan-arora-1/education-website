@@ -79,7 +79,6 @@ urlpatterns += i18n_patterns(
     path("avatar/customize/", views_avatar.customize_avatar, name="customize_avatar"),
     path("avatar/set-as-profile/", views_avatar.set_avatar_as_profile_pic, name="set_avatar_as_profile_pic"),
     path("avatar/preview/", views_avatar.preview_avatar, name="preview_avatar"),
-
     # Admin and Utilities
     path("github_update/", views.github_update, name="github_update"),
     path(f"{settings.ADMIN_URL}/dashboard/", admin_views.admin_dashboard, name="admin_dashboard"),

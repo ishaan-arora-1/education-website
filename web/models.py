@@ -97,20 +97,7 @@ class Profile(models.Model):
     def save(self, *args, **kwargs):
         if not self.referral_code:
             self.referral_code = self.generate_referral_code()
-        if self.avatar:
-            img = Image.open(self.avatar)
-            if img.mode != "RGB":
-                img = img.convert("RGB")
-            # Resize to a square avatar
-            size = (200, 200)
-            img = img.resize(size, Image.Resampling.LANCZOS)
-            # Save the resized image
-            buffer = BytesIO()
-            img.save(buffer, format="JPEG", quality=90)
-            # Update the ImageField
-            file_name = self.avatar.name
-            self.avatar.delete(save=False)  # Delete old image
-            self.avatar.save(file_name, ContentFile(buffer.getvalue()), save=False)
+        # Skip image processing for SVG files
         super().save(*args, **kwargs)
 
     def generate_referral_code(self):

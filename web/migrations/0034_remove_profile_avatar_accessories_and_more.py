@@ -6,62 +6,62 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('web', '0033_profile_avatar_accessories_and_more'),
+        ("web", "0033_profile_avatar_accessories_and_more"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='profile',
-            name='avatar_accessories',
+            model_name="profile",
+            name="avatar_accessories",
         ),
         migrations.RemoveField(
-            model_name='profile',
-            name='avatar_clothes',
+            model_name="profile",
+            name="avatar_clothes",
         ),
         migrations.RemoveField(
-            model_name='profile',
-            name='avatar_clothes_color',
+            model_name="profile",
+            name="avatar_clothes_color",
         ),
         migrations.RemoveField(
-            model_name='profile',
-            name='avatar_eyebrows',
+            model_name="profile",
+            name="avatar_eyebrows",
         ),
         migrations.RemoveField(
-            model_name='profile',
-            name='avatar_eyes',
+            model_name="profile",
+            name="avatar_eyes",
         ),
         migrations.RemoveField(
-            model_name='profile',
-            name='avatar_facial_hair',
+            model_name="profile",
+            name="avatar_facial_hair",
         ),
         migrations.RemoveField(
-            model_name='profile',
-            name='avatar_facial_hair_color',
+            model_name="profile",
+            name="avatar_facial_hair_color",
         ),
         migrations.RemoveField(
-            model_name='profile',
-            name='avatar_hair_color',
+            model_name="profile",
+            name="avatar_hair_color",
         ),
         migrations.RemoveField(
-            model_name='profile',
-            name='avatar_hair_style',
+            model_name="profile",
+            name="avatar_hair_style",
         ),
         migrations.RemoveField(
-            model_name='profile',
-            name='avatar_mouth',
+            model_name="profile",
+            name="avatar_mouth",
         ),
         migrations.RemoveField(
-            model_name='profile',
-            name='avatar_skin',
+            model_name="profile",
+            name="avatar_skin",
         ),
         migrations.AddField(
-            model_name='profile',
-            name='avatar_expression',
-            field=models.CharField(default='neutral', max_length=50),
+            model_name="profile",
+            name="avatar_expression",
+            field=models.CharField(default="neutral", max_length=50),
         ),
         migrations.AlterField(
-            model_name='profile',
-            name='avatar_background_color',
-            field=models.CharField(default='#FFFFFF', max_length=7),
+            model_name="profile",
+            name="avatar_background_color",
+            field=models.CharField(default="#FFFFFF", max_length=7),
         ),
     ]
