@@ -18,7 +18,12 @@ from .models import (
     EducationalVideo,
     ForumCategory,
     Goods,
+    GradeableLink,
+    LinkGrade,
     Meme,
+    NotificationPreference,
+    PeerChallenge,
+    PeerChallengeInvitation,
     ProductImage,
     Profile,
     ProgressTracker,
@@ -52,6 +57,8 @@ __all__ = [
     "ChallengeSubmissionForm",
     "CourseCreationForm",
     "CourseForm",
+    "PeerChallengeForm",
+    "PeerChallengeInvitationForm",
     "SessionForm",
     "ReviewForm",
     "CourseMaterialForm",
@@ -79,6 +86,8 @@ __all__ = [
     "QuizOptionFormSet",
     "TakeQuizForm",
     "AvatarForm",
+    "GradeableLinkForm",
+    "LinkGradeForm",
 ]
 
 
@@ -104,20 +113,37 @@ class UserRegistrationForm(SignupForm):
         widget=TailwindInput(attrs={"placeholder": "Enter referral code"}),
         help_text="Optional - Enter a referral code if you have one",
     )
+    how_did_you_hear_about_us = forms.CharField(
+        max_length=500,
+        required=False,
+        widget=TailwindTextarea(
+            attrs={"rows": 2, "placeholder": "How did you hear about us? You can enter text or a link."}
+        ),
+        help_text="Optional - Tell us how you found us. You can enter text or a link.",
+    )
     captcha = CaptchaField(widget=TailwindCaptchaTextInput)
+    # NEW: Add radio buttons for profile visibility.
+    is_profile_public = forms.TypedChoiceField(
+        required=True,
+        choices=(("True", "Public"), ("False", "Private")),
+        coerce=lambda x: x == "True",  # Convert string to Boolean.
+        widget=forms.RadioSelect,
+        label="Profile Visibility",
+        help_text="Select whether your profile details will be public or private.",
+    )
 
     def __init__(self, *args, **kwargs):
         request = kwargs.pop("request", None)
         super().__init__(*args, **kwargs)
 
-        # Update email field
+        # Update email field widget.
         self.fields["email"].widget = TailwindEmailInput(
             attrs={
                 "placeholder": "your.email@example.com",
                 "value": self.initial.get("email", ""),
             }
         )
-        # Update password field
+        # Update password field widget.
         self.fields["password1"].widget = TailwindInput(
             attrs={
                 "type": "password",
@@ -130,21 +156,29 @@ class UserRegistrationForm(SignupForm):
             }
         )
 
-        # Handle referral code from session or POST data
-        if self.data:  # If form was submitted (POST)
+        # Handle referral code from POST data or session.
+        if self.data:  # If form was submitted.
             referral_code = self.data.get("referral_code")
             if referral_code:
                 self.fields["referral_code"].initial = referral_code
-        elif request and request.session.get("referral_code"):  # If new form (GET) with session data
+        elif request and request.session.get("referral_code"):
             referral_code = request.session.get("referral_code")
             self.fields["referral_code"].initial = referral_code
             self.initial["referral_code"] = referral_code
 
-        # Preserve values on form errors
+        # Preserve values on form errors.
         if self.data:
             for field_name in ["first_name", "last_name", "email", "referral_code", "username"]:
                 if field_name in self.data and field_name in self.fields:
                     self.fields[field_name].widget.attrs["value"] = self.data[field_name]
+
+            # Initialize how_did_you_hear_about_us if provided
+            if "how_did_you_hear_about_us" in self.data:
+                self.fields["how_did_you_hear_about_us"].initial = self.data["how_did_you_hear_about_us"]
+
+        # Set a default for the new field if not provided.
+        if "is_profile_public" not in self.initial:
+            self.initial["is_profile_public"] = "False"  # Default to Private.
 
     def clean_username(self):
         username = self.cleaned_data.get("username")
@@ -162,9 +196,9 @@ class UserRegistrationForm(SignupForm):
             from allauth.account.utils import filter_users_by_email
 
             users = filter_users_by_email(email)
-            if users:  # If any users found with this email
+            if users:
                 raise forms.ValidationError(
-                    "There was a problem with your signup. " "Please try again with a different email address or login."
+                    "There was a problem with your signup. Please try again with a different email address or login."
                 )
         return email
 
@@ -176,34 +210,36 @@ class UserRegistrationForm(SignupForm):
         return referral_code
 
     def save(self, request):
-        # First call parent's save to create the user and send verification email
+        # Create the user using Allauth's default behavior.
         try:
             user = super().save(request)
         except IntegrityError:
             raise forms.ValidationError("This username is already taken. Please choose a different one.")
         except ValueError:
-            # This happens when an email address is already in use but not caught in clean_email
-            # This should be rare given the clean_email validation above
             raise forms.ValidationError(
-                "There was a problem with your signup. " "Please try again with a different email address or login."
+                "There was a problem with your signup. Please try again with a different email address or login."
             )
 
-        # Then update the additional fields
         user.first_name = self.cleaned_data["first_name"]
         user.last_name = self.cleaned_data["last_name"]
         user.save()
 
-        # Update the user's profile
+        # Update the profile with the new radio button value.
+        user.profile.is_profile_public = self.cleaned_data.get("is_profile_public")
+        # Save how_did_you_hear_about_us
+        user.profile.how_did_you_hear_about_us = self.cleaned_data.get("how_did_you_hear_about_us", "")
+        user.profile.save()
+
+        # Update teacher flag if provided.
         if self.cleaned_data.get("is_teacher"):
             user.profile.is_teacher = True
             user.profile.save()
 
-        # Handle the referral
+        # Handle referral code if provided.
         referral_code = self.cleaned_data.get("referral_code")
         if referral_code:
             handle_referral(user, referral_code)
 
-        # Return the user object
         return user
 
 
@@ -496,21 +532,27 @@ class ProfileUpdateForm(forms.ModelForm):
     bio = forms.CharField(
         required=False,
         widget=TailwindTextarea(attrs={"rows": 4}),
-        help_text="Tell us about yourself - this will be visible on your public profile",
+        help_text="Tell us about yourself - this will be visible if your profile is public",
     )
     expertise = forms.CharField(
-        max_length=200,
         required=False,
         widget=TailwindInput(),
         help_text=(
             "List your areas of expertise (e.g. Python, Machine Learning, Web Development) - "
-            "this will be visible on your public profile"
+            "this will be visible if your profile is public"
         ),
     )
     avatar = forms.ImageField(
         required=False,
         widget=TailwindFileInput(),
         help_text="Upload a profile picture (will be cropped to a square and resized to 200x200 pixels)",
+    )
+    is_profile_public = forms.TypedChoiceField(
+        required=True,
+        choices=(("True", "Public"), ("False", "Private")),
+        coerce=lambda x: x == "True",
+        widget=forms.RadioSelect,
+        help_text="Select whether your profile details are public or private.",
     )
 
     class Meta:
@@ -524,6 +566,8 @@ class ProfileUpdateForm(forms.ModelForm):
                 profile = self.instance.profile
                 self.fields["bio"].initial = profile.bio
                 self.fields["expertise"].initial = profile.expertise
+                # Set initial value as a string.
+                self.initial["is_profile_public"] = "True" if profile.is_profile_public else "False"
             except Profile.DoesNotExist:
                 pass
 
@@ -542,6 +586,10 @@ class ProfileUpdateForm(forms.ModelForm):
             profile.expertise = self.cleaned_data["expertise"]
             if self.cleaned_data.get("avatar"):
                 profile.avatar = self.cleaned_data["avatar"]
+
+            # Get the is_profile_public value and ensure it's a boolean
+            is_public = self.cleaned_data.get("is_profile_public")
+            profile.is_profile_public = is_public
             profile.save()
         return user
 
@@ -811,6 +859,67 @@ class ForumCategoryForm(forms.ModelForm):
         help_texts = {
             "icon": "Enter a Font Awesome icon class (e.g., fa-folder, fa-book, fa-code)",
         }
+
+
+class PeerChallengeForm(forms.ModelForm):
+    """Form for creating and editing peer challenges."""
+
+    class Meta:
+        model = PeerChallenge
+        fields = ["quiz", "title", "description", "expires_at"]
+        widgets = {
+            "quiz": TailwindSelect(),
+            "title": TailwindInput(attrs={"placeholder": "Challenge title"}),
+            "description": TailwindTextarea(attrs={"rows": 3, "placeholder": "Describe your challenge"}),
+            "expires_at": TailwindDateTimeInput(attrs={"placeholder": "Expiration date (optional)"}),
+        }
+        help_texts = {
+            "expires_at": "Optional deadline for the challenge",
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Only show quizzes created by the current user
+        if user:
+            self.fields["quiz"].queryset = Quiz.objects.filter(creator=user, status="published")
+
+
+class PeerChallengeInvitationForm(forms.ModelForm):
+    """Form for inviting users to a peer challenge."""
+
+    participants = forms.CharField(
+        widget=TailwindTextarea(attrs={"rows": 2, "placeholder": "Enter usernames, separated by commas"}),
+        help_text="Enter usernames separated by commas",
+    )
+
+    class Meta:
+        model = PeerChallengeInvitation
+        fields = ["message"]
+        widgets = {
+            "message": TailwindTextarea(attrs={"rows": 3, "placeholder": "Add a personal message to your invitation"}),
+        }
+
+    def clean_participants(self):
+        participants = self.cleaned_data.get("participants", "")
+        if not participants:
+            raise forms.ValidationError("You must invite at least one participant")
+
+        usernames = [username.strip() for username in participants.split(",") if username.strip()]
+        if not usernames:
+            raise forms.ValidationError("You must invite at least one participant")
+
+        from django.contrib.auth.models import User
+
+        # Check if users exist
+        found_users = User.objects.filter(username__in=usernames)
+        found_usernames = found_users.values_list("username", flat=True)
+
+        # Get missing usernames
+        missing = set(usernames) - set(found_usernames)
+        if missing:
+            raise forms.ValidationError(f"The following users do not exist: {', '.join(missing)}")
+
+        return found_users
 
     def clean(self):
         cleaned_data = super().clean()
@@ -1406,3 +1515,59 @@ class TakeQuizForm(forms.Form):
                         widget=TailwindTextarea(attrs={"rows": 2, "placeholder": "Your answer..."}),
                         required=False,
                     )
+
+
+class GradeableLinkForm(forms.ModelForm):
+    """Form for submitting a link to be graded."""
+
+    class Meta:
+        model = GradeableLink
+        fields = ["title", "url", "description", "link_type"]
+        widgets = {
+            "title": TailwindInput(attrs={"placeholder": "Enter a descriptive title"}),
+            "url": TailwindInput(attrs={"placeholder": "https://example.com", "type": "url"}),
+            "description": TailwindTextarea(attrs={"rows": 4, "placeholder": "Describe what you want feedback on..."}),
+            "link_type": TailwindSelect(),
+        }
+        help_texts = {
+            "title": "A clear title describing what you want feedback on",
+            "url": "Link to the PR, article, or content you want graded",
+            "description": "Provide context about what you're looking for feedback on",
+        }
+
+
+class LinkGradeForm(forms.ModelForm):
+    """Form for grading a link."""
+
+    class Meta:
+        model = LinkGrade
+        fields = ["grade", "comment"]
+        widgets = {
+            "comment": TailwindTextarea(attrs={"rows": 4, "placeholder": "Comment required for grades below A"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Use radio buttons for grade selection
+        self.fields["grade"].widget = forms.RadioSelect(choices=LinkGrade.GRADE_CHOICES)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        grade = cleaned_data.get("grade")
+        comment = cleaned_data.get("comment")
+
+        if grade not in ["A+", "A"] and not comment:
+            self.add_error("comment", "A comment is required for grades below A.")
+
+        return cleaned_data
+
+
+class NotificationPreferencesForm(forms.ModelForm):
+    class Meta:
+        model = NotificationPreference
+        fields = ["reminder_days_before", "reminder_hours_before", "email_notifications", "in_app_notifications"]
+        widgets = {
+            "reminder_days_before": forms.NumberInput(attrs={"min": 1, "max": 14}),
+            "reminder_hours_before": forms.NumberInput(attrs={"min": 1, "max": 72}),
+        }
