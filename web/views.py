@@ -22,11 +22,13 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
+from django.core.management import call_command
 from django.core.paginator import Paginator
 from django.db import IntegrityError, models, transaction
 from django.db.models import Avg, Count, Q, Sum
 from django.http import (
     FileResponse,
+    Http404,
     HttpResponse,
     HttpResponseForbidden,
     JsonResponse,
@@ -158,6 +160,8 @@ def sitemap(request):
 
 def index(request):
     """Homepage view."""
+    from django.conf import settings
+
     # Store referral code in session if present in URL
     ref_code = request.GET.get("ref")
     if ref_code:
@@ -211,6 +215,7 @@ def index(request):
         "latest_post": latest_post,
         "latest_success_story": latest_success_story,
         "form": form,
+        "is_debug": settings.DEBUG,
     }
     if request.user.is_authenticated:
         user_team_goals = (
@@ -229,6 +234,23 @@ def index(request):
                 "team_invites": team_invites,
             }
         )
+
+        # Add courses that the user is teaching if they have any
+        teaching_courses = (
+            Course.objects.filter(teacher=request.user)
+            .annotate(
+                view_count=Sum("web_requests__count", default=0),
+                enrolled_students=Count("enrollments", filter=Q(enrollments__status="approved")),
+            )
+            .order_by("-created_at")
+        )
+
+        if teaching_courses.exists():
+            context.update(
+                {
+                    "teaching_courses": teaching_courses,
+                }
+            )
     return render(request, "index.html", context)
 
 
@@ -265,16 +287,16 @@ def signup_view(request):
 @login_required
 def profile(request):
     if request.method == "POST":
-        if "avatar" in request.FILES:
-            request.user.profile.avatar = request.FILES["avatar"]
-            request.user.profile.save()
-            return redirect("profile")
-
         form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
+            form.save()  # Save the form data including the is_profile_public field
             request.user.profile.refresh_from_db()  # Refresh the instance so updated Profile is loaded
             messages.success(request, "Profile updated successfully!")
             return redirect("profile")
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"Error in {field}: {error}")
     else:
         # Use the instance so the form loads all updated fields from the database.
         form = ProfileUpdateForm(instance=request.user)
@@ -414,6 +436,17 @@ def course_detail(request, slug):
             ).values_list("session__id", flat=True)
             completed_sessions = course.sessions.filter(id__in=completed_sessions)
 
+    # Get attendance data for all enrolled students
+    student_attendance = {}
+    total_sessions = sessions.count()
+
+    if is_teacher or is_enrolled:
+        for enroll in course.enrollments.all():
+            attended_sessions = SessionAttendance.objects.filter(
+                student=enroll.student, session__course=course, status__in=["present", "late"]
+            ).count()
+            student_attendance[enroll.student.id] = {"attended": attended_sessions, "total": total_sessions}
+
     # Mark past sessions as completed for display
     past_sessions = sessions.filter(end_time__lt=now)
     future_sessions = sessions.filter(end_time__gte=now)
@@ -476,6 +509,7 @@ def course_detail(request, slug):
         "current_month": current_month,
         "prev_month": prev_month,
         "next_month": next_month,
+        "student_attendance": student_attendance,
     }
 
     return render(request, "courses/detail.html", context)
@@ -1798,6 +1832,7 @@ def teacher_dashboard(request):
         "courses": courses,
         "upcoming_sessions": upcoming_sessions,
         "course_stats": course_stats,
+        "total_students": total_students,
         "completion_rate": (total_completed / total_students * 100) if total_students > 0 else 0,
         "total_earnings": round(total_earnings, 2),
         "storefront": storefront,
@@ -2807,18 +2842,23 @@ def current_weekly_challenge(request):
 
 
 def challenge_detail(request, week_number):
-    challenge = get_object_or_404(Challenge, week_number=week_number)
-    submissions = ChallengeSubmission.objects.filter(challenge=challenge)
-    # Check if the current user has submitted this challenge
-    user_submission = None
-    if request.user.is_authenticated:
-        user_submission = ChallengeSubmission.objects.filter(user=request.user, challenge=challenge).first()
+    try:
+        challenge = get_object_or_404(Challenge, week_number=week_number)
+        submissions = ChallengeSubmission.objects.filter(challenge=challenge)
+        # Check if the current user has submitted this challenge
+        user_submission = None
+        if request.user.is_authenticated:
+            user_submission = ChallengeSubmission.objects.filter(user=request.user, challenge=challenge).first()
 
-    return render(
-        request,
-        "web/challenge_detail.html",
-        {"challenge": challenge, "submissions": submissions, "user_submission": user_submission},
-    )
+        return render(
+            request,
+            "web/challenge_detail.html",
+            {"challenge": challenge, "submissions": submissions, "user_submission": user_submission},
+        )
+    except Http404:
+        # Redirect to weekly challenges list if specific weekly challenge not found
+        messages.info(request, "Weekly challenge #" + str(week_number) + " not found. Returning to challenges list.")
+        return redirect("current_weekly_challenge")
 
 
 @login_required
@@ -3491,6 +3531,10 @@ def gsoc_landing_page(request):
 
 def whiteboard(request):
     return render(request, "whiteboard.html")
+
+
+def graphing_calculator(request):
+    return render(request, "graphing_calculator.html")
 
 
 def meme_list(request):
@@ -4820,3 +4864,20 @@ def duplicate_session(request, session_id):
     messages.success(request, msg)
 
     return redirect("course_detail", slug=course.slug)
+
+
+def run_create_test_data(request):
+    """Run the create_test_data management command and redirect to homepage."""
+    from django.conf import settings
+
+    if not settings.DEBUG:
+        messages.error(request, "This action is only available in debug mode.")
+        return redirect("index")
+
+    try:
+        call_command("create_test_data")
+        messages.success(request, "Test data has been created successfully!")
+    except Exception as e:
+        messages.error(request, f"Error creating test data: {str(e)}")
+
+    return redirect("index")
