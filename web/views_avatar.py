@@ -55,6 +55,29 @@ def customize_avatar(request):
     """View for customizing user avatar."""
     profile = request.user.profile
 
+    # Generate initial avatar if none exists
+    if not profile.custom_avatar:
+        from .models import Avatar as AvatarModel
+
+        avatar = AvatarModel(
+            style="circle",
+            background_color="#FFFFFF",
+            top="short_flat",
+            eyebrows="default",
+            eyes="default",
+            nose="default",
+            mouth="default",
+            facial_hair="none",
+            skin_color="light",
+            hair_color="#000000",
+            accessory="none",
+            clothing="hoodie",
+            clothing_color="#0000FF",
+        )
+        avatar.save()
+        profile.custom_avatar = avatar
+        profile.save()
+
     if request.method == "POST":
         form = AvatarForm(request.POST)
         if form.is_valid():
@@ -98,30 +121,6 @@ def customize_avatar(request):
         "clothing_types": [clothing.name.lower() for clothing in ClothingType],
     }
 
-    # Generate initial avatar if none exists
-    profile = request.user.profile
-    if not profile.custom_avatar:
-        from .models import Avatar as AvatarModel
-
-        avatar = AvatarModel(
-            style="circle",
-            background_color="#FFFFFF",
-            top="short_flat",
-            eyebrows="default",
-            eyes="default",
-            nose="default",
-            mouth="default",
-            facial_hair="none",
-            skin_color="light",
-            hair_color="#000000",
-            accessory="none",
-            clothing="hoodie",
-            clothing_color="#0000FF",
-        )
-        avatar.save()
-        profile.custom_avatar = avatar
-        profile.save()
-
     return render(
         request,
         "avatar/customize.html",
@@ -131,7 +130,6 @@ def customize_avatar(request):
             "current_avatar": profile.custom_avatar.svg if profile.custom_avatar else None,
         },
     )
-
 
 @login_required
 def preview_avatar(request):
