@@ -93,7 +93,6 @@ __all__ = [
     "GradeableLinkForm",
     "LinkGradeForm",
     "AwardAchievementForm",
-    "WaitingRoomForm",
 ]
 
 
