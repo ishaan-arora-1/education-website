@@ -148,8 +148,7 @@ class Avatar(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Avatar for {self.profile.user.username if hasattr(self, 'profile') else 'No Profile'}"
-
+        return f"Avatar for {self.profile.user.username if hasattr(self, 'profile') and self.profile else 'No Profile'}"
     def save(self, *args, **kwargs):
         from python_avatars import (
             AccessoryType,
