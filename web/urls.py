@@ -240,6 +240,7 @@ urlpatterns += i18n_patterns(
         name="store_order_management",
     ),
     path("orders/item/<int:item_id>/update-status/", views.update_order_status, name="update_order_status"),
+    path("award-achievement/", views.award_achievement, name="award_achievement"),
     # Analytics
     path(
         "store/<slug:store_slug>/analytics/",
