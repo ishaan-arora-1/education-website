@@ -5,7 +5,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("web", "0038_coursematerial_due_date_and_more"),
+        ("web", "0041_challenge_challenge_type_alter_challenge_week_number_and_more"),
     ]
 
     operations = [
