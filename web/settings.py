@@ -174,7 +174,7 @@ SITE_DOMAIN = "alphaonelabs.com"
 # Allauth settings
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False  # Since we're using email authentication
-ACCOUNT_EMAIL_VERIFICATION = "optional"  # Require email verification
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"  # Require email verification
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_PREVENT_ENUMERATION = True  # Prevent user enumeration
@@ -243,7 +243,7 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Email settings
 if DEBUG:
-    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    EMAIL_BACKEND = "web.email_backend.SlackNotificationEmailBackend"
     print("Using console email backend with Slack notifications for development")
     DEFAULT_FROM_EMAIL = "noreply@example.com"  # Default for development
     SENDGRID_API_KEY = None  # Not needed in development
