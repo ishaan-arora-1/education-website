@@ -787,67 +787,38 @@ class SuccessStoryForm(forms.ModelForm):
 
 
 class LearnForm(forms.ModelForm):
-    title = forms.CharField(
-        max_length=100,
-        widget=TailwindInput(
-            attrs={
-                "placeholder": "Title for your learning request",
-                "class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-orange-500",
-            }
-        ),
-    )
-    description = forms.CharField(
-        widget=TailwindTextarea(
-            attrs={
-                "placeholder": "Describe what you want to learn in detail...",
-                "rows": 4,
-                "class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-orange-500",
-            }
-        ),
-    )
-    subject = forms.ModelChoiceField(
-        queryset=Subject.objects.all().order_by('order', 'name'),
-        widget=TailwindSelect(
-            attrs={
-                "class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-orange-500",
-            }
-        ),
-    )
-    topics = forms.CharField(
-        widget=TailwindInput(
-            attrs={
-                "placeholder": "Enter topics you want to learn (comma-separated)",
-                "class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-orange-500",
-            }
-        ),
-    )
-    email = forms.EmailField(
-        widget=TailwindEmailInput(
-            attrs={
-                "placeholder": "Your email address",
-                "class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-orange-500",
-            }
-        )
-    )
-    message = forms.CharField(
-        widget=TailwindTextarea(
-            attrs={
-                "placeholder": "Any additional message or requirements...",
-                "rows": 3,
-                "class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-orange-500",
-            }
-        ),
-        required=False,
-    )
-    captcha = CaptchaField(
-        widget=TailwindCaptchaTextInput(
-            attrs={"class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-orange-500"}
-        )
-    )
+    """Form for creating and editing waiting rooms."""
 
     class Meta:
         model = WaitingRoom
-        fields = ['title', 'description', 'subject', 'topics']
+        fields = ["title", "description", "subject", "topics"]
+
+        widgets = {
+            "title": TailwindInput(attrs={"placeholder": "What would you like to learn?"}),
+            "description": TailwindTextarea(attrs={"rows": 4, "placeholder": "Describe what you want to learn"}),
+            "subject": TailwindInput(attrs={"placeholder": "Main subject (e.g., Mathematics, Programming)"}),
+            "topics": TailwindInput(
+                attrs={"placeholder": "e.g., Python, Machine Learning, Data Science", "class": "tag-input"}
+            ),
+        }
+        help_texts = {
+            "title": "Give your waiting room a descriptive title",
+            "subject": "The main subject area for this waiting room",
+            "topics": "Enter topics separated by commas",
+        }
+
+    def clean_topics(self):
+        """Validate and clean the topics field."""
+        topics = self.cleaned_data.get("topics")
+        if not topics:
+            raise forms.ValidationError("Please enter at least one topic.")
+
+        # Ensure we have at least one non-empty topic after splitting
+        topic_list = [t.strip() for t in topics.split(",") if t.strip()]
+        if not topic_list:
+            raise forms.ValidationError("Please enter at least one valid topic.")
+
+        return topics
 
 
 class TeachForm(forms.Form):
@@ -1612,41 +1583,6 @@ class TakeQuizForm(forms.Form):
                         widget=TailwindTextarea(attrs={"rows": 2, "placeholder": "Your answer..."}),
                         required=False,
                     )
-
-
-class WaitingRoomForm(forms.ModelForm):
-    """Form for creating and editing waiting rooms."""
-
-    class Meta:
-        model = WaitingRoom
-        fields = ["title", "description", "subject", "topics"]
-
-        widgets = {
-            "title": TailwindInput(attrs={"placeholder": "What would you like to learn?"}),
-            "description": TailwindTextarea(attrs={"rows": 4, "placeholder": "Describe what you want to learn"}),
-            "subject": TailwindInput(attrs={"placeholder": "Main subject (e.g., Mathematics, Programming)"}),
-            "topics": TailwindInput(
-                attrs={"placeholder": "e.g., Python, Machine Learning, Data Science", "class": "tag-input"}
-            ),
-        }
-        help_texts = {
-            "title": "Give your waiting room a descriptive title",
-            "subject": "The main subject area for this waiting room",
-            "topics": "Enter topics separated by commas",
-        }
-
-    def clean_topics(self):
-        """Validate and clean the topics field."""
-        topics = self.cleaned_data.get("topics")
-        if not topics:
-            raise forms.ValidationError("Please enter at least one topic.")
-
-        # Ensure we have at least one non-empty topic after splitting
-        topic_list = [t.strip() for t in topics.split(",") if t.strip()]
-        if not topic_list:
-            raise forms.ValidationError("Please enter at least one valid topic.")
-
-        return topics
 
 
 class GradeableLinkForm(forms.ModelForm):

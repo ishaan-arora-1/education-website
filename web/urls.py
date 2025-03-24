@@ -35,6 +35,7 @@ urlpatterns += i18n_patterns(
     path("", views.index, name="index"),
     path("create-test-data/", views.run_create_test_data, name="create_test_data"),
     path("learn/", views.learn, name="learn"),
+    path("waiting-rooms/", views.waiting_rooms, name="waiting_rooms"),
     path("teach/", views.teach, name="teach"),
     path("about/", views.about, name="about"),
     path("profile/<str:username>/", views.public_profile, name="public_profile"),
@@ -162,7 +163,6 @@ urlpatterns += i18n_patterns(
     path("streak/", streak_detail, name="streak_detail"),
     # Waiting Room URLs
     path("waiting-rooms/", views.waiting_room_list, name="waiting_room_list"),
-    path("waiting-rooms/create/", views.create_waiting_room, name="create_waiting_room"),
     path("waiting-rooms/<int:waiting_room_id>/", views.waiting_room_detail, name="waiting_room_detail"),
     path("waiting-rooms/<int:waiting_room_id>/join/", views.join_waiting_room, name="join_waiting_room"),
     path("waiting-rooms/<int:waiting_room_id>/leave/", views.leave_waiting_room, name="leave_waiting_room"),

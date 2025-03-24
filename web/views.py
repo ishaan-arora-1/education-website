@@ -85,7 +85,6 @@ from .forms import (
     TeamGoalForm,
     TeamInviteForm,
     UserRegistrationForm,
-    WaitingRoomForm,
 )
 from .marketing import (
     generate_social_share_content,
@@ -737,18 +736,66 @@ def about(request):
     return render(request, "about.html")
 
 
+def waiting_rooms(request):
+    # Get open waiting rooms
+    open_rooms = WaitingRoom.objects.filter(status="open").order_by("-created_at")
+
+    # Get fulfilled waiting rooms (ones that have associated courses)
+    fulfilled_rooms = WaitingRoom.objects.filter(status="fulfilled").order_by("-created_at")
+
+    # Get rooms created by the user
+    user_created_rooms = (
+        WaitingRoom.objects.filter(creator=request.user).order_by("-created_at")
+        if request.user.is_authenticated
+        else []
+    )
+
+    # Get rooms the user has joined
+    user_joined_rooms = (
+        WaitingRoom.objects.filter(participants=request.user).order_by("-created_at")
+        if request.user.is_authenticated
+        else []
+    )
+
+    # Get topics for each room
+    room_topics = {}
+    all_rooms = list(open_rooms) + list(fulfilled_rooms) + list(user_created_rooms) + list(user_joined_rooms)
+    for room in all_rooms:
+        # Split topics string into a list
+        room_topics[room.id] = [t.strip() for t in room.topics.split(",")] if room.topics else []
+
+    context = {
+        "open_rooms": open_rooms,
+        "fulfilled_rooms": fulfilled_rooms,
+        "user_created_rooms": user_created_rooms,
+        "user_joined_rooms": user_joined_rooms,
+        "room_topics": room_topics,
+    }
+
+    return render(request, "waiting_rooms.html", context)
+
+
 def learn(request):
     if request.method == "POST":
         form = LearnForm(request.POST)
         if form.is_valid():
             # Create waiting room
             waiting_room = form.save(commit=False)
-            waiting_room.status = 'open'  # Set initial status
+            waiting_room.status = "open"  # Set initial status
+            waiting_room.creator = request.user  # Set the creator
+
+            # Get topics from form and save as comma-separated string
+            topics = form.cleaned_data.get("topics", "")
+            if isinstance(topics, list):
+                topics = ", ".join(topics)
+            waiting_room.topics = topics
+
             waiting_room.save()
 
-            # Get form data for email
-            email = form.cleaned_data["email"]
-            message = form.cleaned_data["message"]
+            # Redirect to waiting rooms page
+            return redirect("waiting_rooms")
+
+            # Get form data
             title = form.cleaned_data["title"]
             description = form.cleaned_data["description"]
             subject = form.cleaned_data["subject"]
@@ -763,8 +810,7 @@ def learn(request):
                     "description": description,
                     "subject": subject,
                     "topics": topics,
-                    "email": email,
-                    "message": message,
+                    "user": request.user.username,
                     "waiting_room_id": waiting_room.id,
                 },
             )
@@ -781,9 +827,9 @@ def learn(request):
                 )
                 messages.success(
                     request,
-                    "Thank you for your learning request! We'll review it and connect you with a suitable teacher soon."
+                    "Thank you for your learning request!",
                 )
-                return redirect("index")
+                return redirect("waiting_rooms")
             except Exception:
                 logger = logging.getLogger(__name__)
                 logger.exception("Error sending email")
@@ -4615,30 +4661,6 @@ def waiting_room_list(request):
         "room_topics": room_topics,
     }
     return render(request, "waiting_room/list.html", context)
-
-
-@login_required
-def create_waiting_room(request):
-    """View for creating a new waiting room."""
-    if request.method == "POST":
-        form = WaitingRoomForm(request.POST)
-        if form.is_valid():
-            waiting_room = form.save(commit=False)
-            waiting_room.creator = request.user
-            waiting_room.save()
-
-            # Add the creator as a participant
-            waiting_room.participants.add(request.user)
-
-            messages.success(request, "Waiting room created successfully!")
-            return redirect("waiting_room_detail", waiting_room_id=waiting_room.id)
-    else:
-        form = WaitingRoomForm()
-
-    context = {
-        "form": form,
-    }
-    return render(request, "waiting_room/create.html", context)
 
 
 def find_matching_courses(waiting_room):

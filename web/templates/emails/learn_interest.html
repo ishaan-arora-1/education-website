@@ -45,25 +45,32 @@
     </div>
     <div class="content">
       <h2>{{ title }}</h2>
-      <p><strong>Waiting Room ID:</strong> {{ waiting_room_id }}</p>
-      <p><strong>Subject:</strong> {{ subject }}</p>
-      <p><strong>Topics:</strong> {{ topics }}</p>
-      <p><strong>From:</strong> {{ email }}</p>
-      
+      <p>
+        <strong>Waiting Room ID:</strong> {{ waiting_room_id }}
+      </p>
+      <p>
+        <strong>Subject:</strong> {{ subject }}
+      </p>
+      <p>
+        <strong>Topics:</strong> {{ topics }}
+      </p>
+      <p>
+        <strong>From:</strong> {{ email }}
+      </p>
       <h3>Description:</h3>
       <p>{{ description }}</p>
-      
       {% if message %}
         <h3>Additional Requirements:</h3>
         <p>{{ message }}</p>
       {% endif %}
-      
       <p class="action-link" style="margin-top: 20px;">
-        <a href="{% url 'create_course_from_waiting_room' waiting_room_id %}" 
-           style="background-color: #f97316; color: white; padding: 10px 20px; 
-                  text-decoration: none; border-radius: 5px; display: inline-block;">
-          Create Course from this Request
-        </a>
+        <a href="{% url 'create_course_from_waiting_room' waiting_room_id %}"
+           style="background-color: #f97316;
+                  color: white;
+                  padding: 10px 20px;
+                  text-decoration: none;
+                  border-radius: 5px;
+                  display: inline-block">Create Course from this Request</a>
       </p>
     </div>
     <div class="footer">
