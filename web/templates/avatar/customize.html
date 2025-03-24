@@ -36,7 +36,7 @@
             <!-- Style -->
             <div>
               <label class="block text-sm font-medium mb-1">Style</label>
-              <select name="avatar_style"
+              <select name="style"
                       class="w-full rounded-lg border-gray-300 dark:border-gray-600">
                 {% for style in avatar_options.styles %}<option value="{{ style }}">{{ style|title }}</option>{% endfor %}
               </select>
@@ -45,14 +45,14 @@
             <div>
               <label class="block text-sm font-medium mb-1">Background Color</label>
               <input type="color"
-                     name="avatar_background_color"
+                     name="background_color"
                      class="w-full h-10 rounded-lg"
                      value="#FFFFFF" />
             </div>
             <!-- Hair Style -->
             <div>
               <label class="block text-sm font-medium mb-1">Hair Style</label>
-              <select name="avatar_top"
+              <select name="top"
                       class="w-full rounded-lg border-gray-300 dark:border-gray-600">
                 {% for style in avatar_options.hair_styles %}<option value="{{ style }}">{{ style|title }}</option>{% endfor %}
               </select>
@@ -61,14 +61,14 @@
             <div>
               <label class="block text-sm font-medium mb-1">Hair Color</label>
               <input type="color"
-                     name="avatar_hair_color"
+                     name="hair_color"
                      class="w-full h-10 rounded-lg"
                      value="#000000" />
             </div>
             <!-- Skin Color -->
             <div>
               <label class="block text-sm font-medium mb-1">Skin Color</label>
-              <select name="avatar_skin_color"
+              <select name="skin_color"
                       class="w-full rounded-lg border-gray-300 dark:border-gray-600">
                 {% for color in avatar_options.skin_colors %}<option value="{{ color }}">{{ color|title }}</option>{% endfor %}
               </select>
@@ -76,7 +76,7 @@
             <!-- Eyes -->
             <div>
               <label class="block text-sm font-medium mb-1">Eyes</label>
-              <select name="avatar_eyes"
+              <select name="eyes"
                       class="w-full rounded-lg border-gray-300 dark:border-gray-600">
                 {% for type in avatar_options.eye_types %}<option value="{{ type }}">{{ type|title }}</option>{% endfor %}
               </select>
@@ -84,7 +84,7 @@
             <!-- Eyebrows -->
             <div>
               <label class="block text-sm font-medium mb-1">Eyebrows</label>
-              <select name="avatar_eyebrows"
+              <select name="eyebrows"
                       class="w-full rounded-lg border-gray-300 dark:border-gray-600">
                 {% for type in avatar_options.eyebrow_types %}<option value="{{ type }}">{{ type|title }}</option>{% endfor %}
               </select>
@@ -92,7 +92,7 @@
             <!-- Nose -->
             <div>
               <label class="block text-sm font-medium mb-1">Nose</label>
-              <select name="avatar_nose"
+              <select name="nose"
                       class="w-full rounded-lg border-gray-300 dark:border-gray-600">
                 {% for type in avatar_options.nose_types %}<option value="{{ type }}">{{ type|title }}</option>{% endfor %}
               </select>
@@ -100,7 +100,7 @@
             <!-- Mouth -->
             <div>
               <label class="block text-sm font-medium mb-1">Mouth</label>
-              <select name="avatar_mouth"
+              <select name="mouth"
                       class="w-full rounded-lg border-gray-300 dark:border-gray-600">
                 {% for type in avatar_options.mouth_types %}<option value="{{ type }}">{{ type|title }}</option>{% endfor %}
               </select>
@@ -108,7 +108,7 @@
             <!-- Facial Hair -->
             <div>
               <label class="block text-sm font-medium mb-1">Facial Hair</label>
-              <select name="avatar_facial_hair"
+              <select name="facial_hair"
                       class="w-full rounded-lg border-gray-300 dark:border-gray-600">
                 {% for type in avatar_options.facial_hair_types %}<option value="{{ type }}">{{ type|title }}</option>{% endfor %}
               </select>
@@ -116,7 +116,7 @@
             <!-- Accessories -->
             <div>
               <label class="block text-sm font-medium mb-1">Accessories</label>
-              <select name="avatar_accessory"
+              <select name="accessory"
                       class="w-full rounded-lg border-gray-300 dark:border-gray-600">
                 {% for type in avatar_options.accessory_types %}<option value="{{ type }}">{{ type|title }}</option>{% endfor %}
               </select>
@@ -124,7 +124,7 @@
             <!-- Clothing -->
             <div>
               <label class="block text-sm font-medium mb-1">Clothing</label>
-              <select name="avatar_clothing"
+              <select name="clothing"
                       class="w-full rounded-lg border-gray-300 dark:border-gray-600">
                 {% for type in avatar_options.clothing_types %}<option value="{{ type }}">{{ type|title }}</option>{% endfor %}
               </select>
@@ -133,7 +133,7 @@
             <div>
               <label class="block text-sm font-medium mb-1">Clothing Color</label>
               <input type="color"
-                     name="avatar_clothing_color"
+                     name="clothing_color"
                      class="w-full h-10 rounded-lg"
                      value="#0000FF" />
             </div>

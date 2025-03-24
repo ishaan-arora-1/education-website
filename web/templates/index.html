@@ -549,10 +549,10 @@
             <h2 class="text-xl font-semibold mb-4 text-center text-gray-800 dark:text-gray-200">Your Avatar</h2>
             <div class="flex flex-col items-center space-y-4">
               <div class="w-24 h-24 rounded-full border-2 border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 overflow-hidden flex items-center justify-center">
-                {% if user.profile.avatar_svg %}
+                {% if user.profile.custom_avatar %}
                   <div class="w-full h-full p-1.5 transform hover:scale-105 transition-transform duration-200">
                     <div class="w-full h-full overflow-hidden rounded-full flex items-center justify-center">
-                      {{ user.profile.avatar_svg|safe }}
+                      {{ user.profile.custom_avatar.svg|safe }}
                     </div>
                   </div>
                 {% else %}

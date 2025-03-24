@@ -27,19 +27,19 @@ def set_avatar_as_profile_pic(request):
     """Set the current avatar as the user's profile picture."""
     if request.method == "POST":
         profile = request.user.profile
-        if profile.avatar_svg:
+        if profile.custom_avatar and profile.custom_avatar.svg:
             try:
                 # Create a unique filename for the SVG
                 import uuid
 
                 filename = f"avatar_{uuid.uuid4().hex[:8]}.svg"
 
-                # Delete old avatar if it exists
+                # Delete old profile picture if it exists
                 if profile.avatar:
                     profile.avatar.delete(save=False)
 
                 # Save the SVG directly
-                svg_file = ContentFile(profile.avatar_svg.encode("utf-8"), name=filename)
+                svg_file = ContentFile(profile.custom_avatar.svg.encode("utf-8"), name=filename)
                 profile.avatar.save(filename, svg_file, save=True)
 
                 messages.success(request, "Avatar set as profile picture successfully!")
@@ -53,54 +53,36 @@ def set_avatar_as_profile_pic(request):
 @login_required
 def customize_avatar(request):
     """View for customizing user avatar."""
+    profile = request.user.profile
+
     if request.method == "POST":
-        form = AvatarForm(request.POST, instance=request.user.profile)
+        form = AvatarForm(request.POST)
         if form.is_valid():
-            profile = form.save(commit=False)
+            # Get or create avatar instance
+            avatar = profile.custom_avatar if profile.custom_avatar else Avatar()
 
-            # Create avatar using python_avatars
-            avatar = Avatar(
-                style=getattr(AvatarStyle, profile.avatar_style.upper(), AvatarStyle.CIRCLE),
-                background_color=profile.avatar_background_color,
-                top=getattr(HairType, profile.avatar_top.upper(), HairType.SHORT_FLAT),
-                eyebrows=getattr(EyebrowType, profile.avatar_eyebrows.upper(), EyebrowType.DEFAULT),
-                eyes=getattr(EyeType, profile.avatar_eyes.upper(), EyeType.DEFAULT),
-                nose=getattr(NoseType, profile.avatar_nose.upper(), NoseType.DEFAULT),
-                mouth=getattr(MouthType, profile.avatar_mouth.upper(), MouthType.DEFAULT),
-                facial_hair=getattr(FacialHairType, profile.avatar_facial_hair.upper(), FacialHairType.NONE),
-                skin_color=getattr(SkinColor, profile.avatar_skin_color.upper(), SkinColor.LIGHT),
-                hair_color=profile.avatar_hair_color,
-                accessory=getattr(AccessoryType, profile.avatar_accessory.upper(), AccessoryType.NONE),
-                clothing=getattr(ClothingType, profile.avatar_clothing.upper(), ClothingType.HOODIE),
-                clothing_color=profile.avatar_clothing_color,
-            )
+            # Update avatar fields from form
+            for field in form.cleaned_data:
+                setattr(avatar, field, form.cleaned_data[field])
 
-            # Save SVG string
-            profile.avatar_svg = avatar.render()
-            profile.save()
+            # Save avatar (this will also generate the SVG)
+            avatar.save()
+
+            # Link avatar to profile if not already linked
+            if not profile.custom_avatar:
+                profile.custom_avatar = avatar
+                profile.save()
 
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-                return JsonResponse({"success": True, "avatar_svg": profile.avatar_svg})
+                return JsonResponse({"success": True, "avatar_svg": avatar.svg})
             return redirect("profile")
     else:
-        # Initialize form with current profile values
-        profile = request.user.profile
-        initial_data = {
-            "avatar_style": profile.avatar_style,
-            "avatar_background_color": profile.avatar_background_color,
-            "avatar_top": profile.avatar_top,
-            "avatar_eyebrows": profile.avatar_eyebrows,
-            "avatar_eyes": profile.avatar_eyes,
-            "avatar_nose": profile.avatar_nose,
-            "avatar_mouth": profile.avatar_mouth,
-            "avatar_facial_hair": profile.avatar_facial_hair,
-            "avatar_skin_color": profile.avatar_skin_color,
-            "avatar_hair_color": profile.avatar_hair_color,
-            "avatar_accessory": profile.avatar_accessory,
-            "avatar_clothing": profile.avatar_clothing,
-            "avatar_clothing_color": profile.avatar_clothing_color,
-        }
-        form = AvatarForm(instance=profile, initial=initial_data)
+        # Initialize form with current avatar values if it exists
+        initial_data = {}
+        if profile.custom_avatar:
+            for field in AvatarForm.base_fields:
+                initial_data[field] = getattr(profile.custom_avatar, field)
+        form = AvatarForm(initial=initial_data)
 
     # Get available options from python_avatars
     avatar_options = {
@@ -118,29 +100,36 @@ def customize_avatar(request):
 
     # Generate initial avatar if none exists
     profile = request.user.profile
-    if not profile.avatar_svg:
-        avatar = Avatar(
-            style=getattr(AvatarStyle, profile.avatar_style.upper(), AvatarStyle.CIRCLE),
-            background_color=profile.avatar_background_color,
-            top=getattr(HairType, profile.avatar_top.upper(), HairType.SHORT_FLAT),
-            eyebrows=getattr(EyebrowType, profile.avatar_eyebrows.upper(), EyebrowType.DEFAULT),
-            eyes=getattr(EyeType, profile.avatar_eyes.upper(), EyeType.DEFAULT),
-            nose=getattr(NoseType, profile.avatar_nose.upper(), NoseType.DEFAULT),
-            mouth=getattr(MouthType, profile.avatar_mouth.upper(), MouthType.DEFAULT),
-            facial_hair=getattr(FacialHairType, profile.avatar_facial_hair.upper(), FacialHairType.NONE),
-            skin_color=getattr(SkinColor, profile.avatar_skin_color.upper(), SkinColor.LIGHT),
-            hair_color=profile.avatar_hair_color,
-            accessory=getattr(AccessoryType, profile.avatar_accessory.upper(), AccessoryType.NONE),
-            clothing=getattr(ClothingType, profile.avatar_clothing.upper(), ClothingType.HOODIE),
-            clothing_color=profile.avatar_clothing_color,
+    if not profile.custom_avatar:
+        from .models import Avatar as AvatarModel
+
+        avatar = AvatarModel(
+            style="circle",
+            background_color="#FFFFFF",
+            top="short_flat",
+            eyebrows="default",
+            eyes="default",
+            nose="default",
+            mouth="default",
+            facial_hair="none",
+            skin_color="light",
+            hair_color="#000000",
+            accessory="none",
+            clothing="hoodie",
+            clothing_color="#0000FF",
         )
-        profile.avatar_svg = avatar.render()
+        avatar.save()
+        profile.custom_avatar = avatar
         profile.save()
 
     return render(
         request,
         "avatar/customize.html",
-        {"form": form, "avatar_options": avatar_options, "current_avatar": profile.avatar_svg},
+        {
+            "form": form,
+            "avatar_options": avatar_options,
+            "current_avatar": profile.custom_avatar.svg if profile.custom_avatar else None,
+        },
     )
 
 
@@ -151,21 +140,19 @@ def preview_avatar(request):
         try:
             data = json.loads(request.body)
             avatar = Avatar(
-                style=getattr(AvatarStyle, data.get("avatar_style", "CIRCLE").upper(), AvatarStyle.CIRCLE),
-                background_color=data.get("avatar_background_color", "#FFFFFF"),
-                top=getattr(HairType, data.get("avatar_top", "SHORT_FLAT").upper(), HairType.SHORT_FLAT),
-                eyebrows=getattr(EyebrowType, data.get("avatar_eyebrows", "DEFAULT").upper(), EyebrowType.DEFAULT),
-                eyes=getattr(EyeType, data.get("avatar_eyes", "DEFAULT").upper(), EyeType.DEFAULT),
-                nose=getattr(NoseType, data.get("avatar_nose", "DEFAULT").upper(), NoseType.DEFAULT),
-                mouth=getattr(MouthType, data.get("avatar_mouth", "DEFAULT").upper(), MouthType.DEFAULT),
-                facial_hair=getattr(
-                    FacialHairType, data.get("avatar_facial_hair", "NONE").upper(), FacialHairType.NONE
-                ),
-                skin_color=getattr(SkinColor, data.get("avatar_skin_color", "LIGHT").upper(), SkinColor.LIGHT),
-                hair_color=data.get("avatar_hair_color", "#000000"),
-                accessory=getattr(AccessoryType, data.get("avatar_accessory", "NONE").upper(), AccessoryType.NONE),
-                clothing=getattr(ClothingType, data.get("avatar_clothing", "HOODIE").upper(), ClothingType.HOODIE),
-                clothing_color=data.get("avatar_clothing_color", "#0000FF"),
+                style=getattr(AvatarStyle, data.get("style", "CIRCLE").upper(), AvatarStyle.CIRCLE),
+                background_color=data.get("background_color", "#FFFFFF"),
+                top=getattr(HairType, data.get("top", "SHORT_FLAT").upper(), HairType.SHORT_FLAT),
+                eyebrows=getattr(EyebrowType, data.get("eyebrows", "DEFAULT").upper(), EyebrowType.DEFAULT),
+                eyes=getattr(EyeType, data.get("eyes", "DEFAULT").upper(), EyeType.DEFAULT),
+                nose=getattr(NoseType, data.get("nose", "DEFAULT").upper(), NoseType.DEFAULT),
+                mouth=getattr(MouthType, data.get("mouth", "DEFAULT").upper(), MouthType.DEFAULT),
+                facial_hair=getattr(FacialHairType, data.get("facial_hair", "NONE").upper(), FacialHairType.NONE),
+                skin_color=getattr(SkinColor, data.get("skin_color", "LIGHT").upper(), SkinColor.LIGHT),
+                hair_color=data.get("hair_color", "#000000"),
+                accessory=getattr(AccessoryType, data.get("accessory", "NONE").upper(), AccessoryType.NONE),
+                clothing=getattr(ClothingType, data.get("clothing", "HOODIE").upper(), ClothingType.HOODIE),
+                clothing_color=data.get("clothing_color", "#0000FF"),
             )
             return JsonResponse({"success": True, "avatar_svg": avatar.render()})
         except Exception as e:

@@ -11,6 +11,7 @@ from django.utils.text import slugify
 from markdownx.fields import MarkdownxFormField
 
 from .models import (
+    Avatar,
     BlogPost,
     ChallengeSubmission,
     Course,
@@ -964,36 +965,36 @@ class AvatarForm(forms.ModelForm):
     """Form for customizing user avatars."""
 
     class Meta:
-        model = Profile
+        model = Avatar
         fields = [
-            "avatar_style",
-            "avatar_background_color",
-            "avatar_top",
-            "avatar_eyebrows",
-            "avatar_eyes",
-            "avatar_nose",
-            "avatar_mouth",
-            "avatar_facial_hair",
-            "avatar_skin_color",
-            "avatar_hair_color",
-            "avatar_accessory",
-            "avatar_clothing",
-            "avatar_clothing_color",
+            "style",
+            "background_color",
+            "top",
+            "eyebrows",
+            "eyes",
+            "nose",
+            "mouth",
+            "facial_hair",
+            "skin_color",
+            "hair_color",
+            "accessory",
+            "clothing",
+            "clothing_color",
         ]
         widgets = {
-            "avatar_style": TailwindSelect(),
-            "avatar_background_color": TailwindInput(attrs={"type": "color"}),
-            "avatar_top": TailwindSelect(),
-            "avatar_eyebrows": TailwindSelect(),
-            "avatar_eyes": TailwindSelect(),
-            "avatar_nose": TailwindSelect(),
-            "avatar_mouth": TailwindSelect(),
-            "avatar_facial_hair": TailwindSelect(),
-            "avatar_skin_color": TailwindSelect(),
-            "avatar_hair_color": TailwindInput(attrs={"type": "color"}),
-            "avatar_accessory": TailwindSelect(),
-            "avatar_clothing": TailwindSelect(),
-            "avatar_clothing_color": TailwindInput(attrs={"type": "color"}),
+            "style": TailwindSelect(),
+            "background_color": TailwindInput(attrs={"type": "color"}),
+            "top": TailwindSelect(),
+            "eyebrows": TailwindSelect(),
+            "eyes": TailwindSelect(),
+            "nose": TailwindSelect(),
+            "mouth": TailwindSelect(),
+            "facial_hair": TailwindSelect(),
+            "skin_color": TailwindSelect(),
+            "hair_color": TailwindInput(attrs={"type": "color"}),
+            "accessory": TailwindSelect(),
+            "clothing": TailwindSelect(),
+            "clothing_color": TailwindInput(attrs={"type": "color"}),
         }
 
 

@@ -1,3 +1,4 @@
+import django.db.models.deletion
 from django.db import migrations, models
 
 
@@ -8,81 +9,45 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Add all final field definitions in one go
+        # Step 1: Create the Avatar model
+        migrations.CreateModel(
+            name="Avatar",
+            fields=[
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("style", models.CharField(default="circle", max_length=50)),
+                ("background_color", models.CharField(default="#FFFFFF", max_length=7)),
+                ("top", models.CharField(default="short_flat", max_length=50)),
+                ("eyebrows", models.CharField(default="default", max_length=50)),
+                ("eyes", models.CharField(default="default", max_length=50)),
+                ("nose", models.CharField(default="default", max_length=50)),
+                ("mouth", models.CharField(default="default", max_length=50)),
+                ("facial_hair", models.CharField(default="none", max_length=50)),
+                ("skin_color", models.CharField(default="light", max_length=50)),
+                ("hair_color", models.CharField(default="#000000", max_length=7)),
+                ("accessory", models.CharField(default="none", max_length=50)),
+                ("clothing", models.CharField(default="hoodie", max_length=50)),
+                ("clothing_color", models.CharField(default="#0000FF", max_length=7)),
+                ("svg", models.TextField(blank=True, help_text="Stored SVG string of the custom avatar")),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+            ],
+        ),
+        # Step 2: Add the custom_avatar field to Profile
         migrations.AddField(
             model_name="profile",
-            name="avatar_accessory",
-            field=models.CharField(default="none", max_length=50),
+            name="custom_avatar",
+            field=models.OneToOneField(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="profile",
+                to="web.avatar",
+            ),
         ),
-        migrations.AddField(
-            model_name="profile",
-            name="avatar_background_color",
-            field=models.CharField(default="#FFFFFF", max_length=7),
-        ),
-        migrations.AddField(
-            model_name="profile",
-            name="avatar_clothing",
-            field=models.CharField(default="hoodie", max_length=50),
-        ),
-        migrations.AddField(
-            model_name="profile",
-            name="avatar_clothing_color",
-            field=models.CharField(default="#0000FF", max_length=7),
-        ),
-        migrations.AddField(
-            model_name="profile",
-            name="avatar_eyebrows",
-            field=models.CharField(default="default", max_length=50),
-        ),
-        migrations.AddField(
-            model_name="profile",
-            name="avatar_eyes",
-            field=models.CharField(default="default", max_length=50),
-        ),
-        migrations.AddField(
-            model_name="profile",
-            name="avatar_facial_hair",
-            field=models.CharField(default="none", max_length=50),
-        ),
-        migrations.AddField(
-            model_name="profile",
-            name="avatar_hair_color",
-            field=models.CharField(default="#000000", max_length=7),
-        ),
-        migrations.AddField(
-            model_name="profile",
-            name="avatar_mouth",
-            field=models.CharField(default="default", max_length=50),
-        ),
-        migrations.AddField(
-            model_name="profile",
-            name="avatar_nose",
-            field=models.CharField(default="default", max_length=50),
-        ),
-        migrations.AddField(
-            model_name="profile",
-            name="avatar_skin_color",
-            field=models.CharField(default="light", max_length=50),
-        ),
-        migrations.AddField(
-            model_name="profile",
-            name="avatar_style",
-            field=models.CharField(default="circle", max_length=50),
-        ),
-        migrations.AddField(
-            model_name="profile",
-            name="avatar_svg",
-            field=models.TextField(blank=True, help_text="Stored SVG string of the custom avatar"),
-        ),
-        migrations.AddField(
-            model_name="profile",
-            name="avatar_top",
-            field=models.CharField(default="short_flat", max_length=50),
-        ),
-        # Final avatar field configuration
+        # Step 3: Update the avatar field
         migrations.AlterField(
             model_name="profile",
             name="avatar",
-            field=models.ImageField(blank=True, upload_to="avatars"),
+            field=models.ImageField(blank=True, default="", upload_to="avatars"),
         ),
     ]

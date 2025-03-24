@@ -262,10 +262,10 @@
             <div class="relative">
               <button onclick="toggleUserDropdown()"
                       class="flex items-center space-x-2 focus:outline-none">
-                {% if user.profile.avatar_svg %}
+                {% if user.profile.custom_avatar %}
                   <div class="w-12 h-12 p-1.5 transform hover:scale-105 transition-transform duration-200">
                     <div class="w-full h-full overflow-hidden rounded-full flex items-center justify-center">
-                      {{ user.profile.avatar_svg|safe }}
+                      {{ user.profile.custom_avatar.svg|safe }}
                     </div>
                   </div>
                 {% elif user.profile.avatar %}
