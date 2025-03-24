@@ -733,12 +733,37 @@ class SuccessStoryForm(forms.ModelForm):
         }
 
 
-class LearnForm(forms.Form):
-    subject = forms.CharField(
+class LearnForm(forms.ModelForm):
+    title = forms.CharField(
         max_length=100,
         widget=TailwindInput(
             attrs={
-                "placeholder": "What would you like to learn?",
+                "placeholder": "Title for your learning request",
+                "class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-orange-500",
+            }
+        ),
+    )
+    description = forms.CharField(
+        widget=TailwindTextarea(
+            attrs={
+                "placeholder": "Describe what you want to learn in detail...",
+                "rows": 4,
+                "class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-orange-500",
+            }
+        ),
+    )
+    subject = forms.ModelChoiceField(
+        queryset=Subject.objects.all().order_by('order', 'name'),
+        widget=TailwindSelect(
+            attrs={
+                "class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-orange-500",
+            }
+        ),
+    )
+    topics = forms.CharField(
+        widget=TailwindInput(
+            attrs={
+                "placeholder": "Enter topics you want to learn (comma-separated)",
                 "class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-orange-500",
             }
         ),
@@ -754,8 +779,8 @@ class LearnForm(forms.Form):
     message = forms.CharField(
         widget=TailwindTextarea(
             attrs={
-                "placeholder": "Tell us more about what you want to learn...",
-                "rows": 4,
+                "placeholder": "Any additional message or requirements...",
+                "rows": 3,
                 "class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-orange-500",
             }
         ),
@@ -766,6 +791,10 @@ class LearnForm(forms.Form):
             attrs={"class": "block w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-orange-500"}
         )
     )
+
+    class Meta:
+        model = WaitingRoom
+        fields = ['title', 'description', 'subject', 'topics']
 
 
 class TeachForm(forms.Form):

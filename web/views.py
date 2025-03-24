@@ -669,18 +669,31 @@ def learn(request):
     if request.method == "POST":
         form = LearnForm(request.POST)
         if form.is_valid():
-            subject = form.cleaned_data["subject"]
+            # Create waiting room
+            waiting_room = form.save(commit=False)
+            waiting_room.status = 'open'  # Set initial status
+            waiting_room.save()
+
+            # Get form data for email
             email = form.cleaned_data["email"]
             message = form.cleaned_data["message"]
+            title = form.cleaned_data["title"]
+            description = form.cleaned_data["description"]
+            subject = form.cleaned_data["subject"]
+            topics = form.cleaned_data["topics"]
 
             # Prepare email content
-            email_subject = f"Learning Interest: {subject}"
+            email_subject = f"New Learning Request: {title}"
             email_body = render_to_string(
                 "emails/learn_interest.html",
                 {
+                    "title": title,
+                    "description": description,
                     "subject": subject,
+                    "topics": topics,
                     "email": email,
                     "message": message,
+                    "waiting_room_id": waiting_room.id,
                 },
             )
 
@@ -694,15 +707,23 @@ def learn(request):
                     html_message=email_body,
                     fail_silently=False,
                 )
-                messages.success(request, "Thank you for your interest! We'll be in touch soon.")
+                messages.success(
+                    request,
+                    "Thank you for your learning request! We'll review it and connect you with a suitable teacher soon."
+                )
                 return redirect("index")
             except Exception as e:
                 print(f"Error sending email: {e}")
-                messages.error(request, "Sorry, there was an error sending your inquiry. Please try again later.")
+                messages.error(request, "Sorry, there was an error processing your request. Please try again later.")
+                waiting_room.delete()  # Clean up the waiting room if email fails
     else:
         initial_data = {}
         if request.GET.get("subject"):
-            initial_data["subject"] = request.GET.get("subject")
+            try:
+                subject = Subject.objects.get(name=request.GET.get("subject"))
+                initial_data["subject"] = subject.id
+            except Subject.DoesNotExist:
+                pass
         form = LearnForm(initial=initial_data)
 
     return render(request, "learn.html", {"form": form})
