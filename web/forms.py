@@ -11,8 +11,8 @@ from django.utils.text import slugify
 from markdownx.fields import MarkdownxFormField
 
 from .models import (
-    Avatar,
     Achievement,
+    Avatar,
     BlogPost,
     ChallengeSubmission,
     Course,

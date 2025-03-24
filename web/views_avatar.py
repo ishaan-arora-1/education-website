@@ -131,6 +131,7 @@ def customize_avatar(request):
         },
     )
 
+
 @login_required
 def preview_avatar(request):
     """AJAX endpoint for previewing avatar changes."""
