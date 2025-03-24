@@ -56,6 +56,7 @@ from django.views.generic import (
 from .calendar_sync import generate_google_calendar_link, generate_ical_feed, generate_outlook_calendar_link
 from .decorators import teacher_required
 from .forms import (
+    AwardAchievementForm,
     BlogPostForm,
     ChallengeSubmissionForm,
     CourseForm,
@@ -1068,6 +1069,41 @@ def mark_session_completed(request, session_id):
 
     messages.success(request, "Session marked as completed!")
     return redirect("course_detail", slug=session.course.slug)
+
+
+@login_required
+def award_achievement(request):
+    try:
+        profile = request.user.profile
+        if not profile.is_teacher:
+            messages.error(request, "You do not have permission to award achievements.")
+            return redirect("teacher_dashboard")
+    except Profile.DoesNotExist:
+        messages.error(request, "Profile not found.")
+        return redirect("teacher_dashboard")
+
+    if request.method == "POST":
+        form = AwardAchievementForm(request.POST, teacher=request.user)
+        if form.is_valid():
+            Achievement.objects.create(
+                student=form.cleaned_data["student"],
+                course=form.cleaned_data["course"],
+                achievement_type=form.cleaned_data["achievement_type"],
+                title=form.cleaned_data["title"],
+                description=form.cleaned_data["description"],
+                badge_icon=form.cleaned_data["badge_icon"],
+            )
+            messages.success(
+                request,
+                f'Achievement "{form.cleaned_data["title"]}" awarded to {form.cleaned_data["student"].username}.',
+            )
+            return redirect("teacher_dashboard")
+        else:
+            # Show an error message if the form is invalid
+            messages.error(request, "There was an error in the form submission. Please check the form and try again.")
+    else:
+        form = AwardAchievementForm(teacher=request.user)
+    return render(request, "award_achievement.html", {"form": form})
 
 
 @login_required
