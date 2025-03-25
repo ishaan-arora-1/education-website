@@ -106,7 +106,6 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
     "web.middleware.WebRequestMiddleware",
     "web.middleware.GlobalExceptionMiddleware",
-    "web.middleware.WaitingRoomValidationMiddleware",
 ]
 
 if DEBUG and not TESTING:
