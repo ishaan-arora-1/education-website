@@ -54,24 +54,17 @@
               <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">My Activity</h3>
               <ul class="space-y-2">
                 <li>
-                  <a href="#"
+                  <a href="{% url 'my_forum_topics' %}"
                      class="flex items-center py-2 px-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                     <i class="fa-solid fa-pen-to-square text-teal-300 mr-2"></i>
                     My Topics
                   </a>
                 </li>
                 <li>
-                  <a href="#"
+                  <a href="{% url 'my_forum_replies' %}"
                      class="flex items-center py-2 px-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                     <i class="fa-solid fa-reply text-teal-300 mr-2"></i>
                     My Replies
-                  </a>
-                </li>
-                <li>
-                  <a href="#"
-                     class="flex items-center py-2 px-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                    <i class="fa-solid fa-bookmark text-teal-300 mr-2"></i>
-                    Bookmarked
                   </a>
                 </li>
               </ul>
@@ -120,7 +113,7 @@
                     <div class="flex-1 min-w-0">
                       <div class="flex items-baseline justify-between mb-1">
                         <div class="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                          <span class="font-medium text-gray-700 dark:text-gray-300">{{ topic.author.get_full_name|default:topic.author.username }}</span>
+                          <span class="font-medium text-gray-700 dark:text-gray-300">{{ topic.author.username }}</span>
                           <span class="mx-2">•</span>
                           <span class="whitespace-nowrap">{{ topic.created_at|timesince }} ago</span>
                           <span class="mx-2">•</span>
@@ -159,45 +152,6 @@
                   </div>
                 </div>
               {% endfor %}
-            {% endfor %}
-          </div>
-          <!-- Categories Grid -->
-          <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">All Categories</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {% for category in categories %}
-              <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-200">
-                <div class="p-4">
-                  <a href="{% url 'forum_category' slug=category.slug %}" class="block">
-                    <h2 class="text-lg font-semibold mb-2 flex items-center text-teal-300">
-                      <i class="fa-solid {{ category.icon|default:'fa-folder' }} mr-2"></i>
-                      {{ category.name }}
-                    </h2>
-                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2 h-10">{{ category.description }}</p>
-                    <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-                      <span class="flex items-center">
-                        <i class="fa-solid fa-message mr-1"></i>
-                        {{ category.topics.count }} topics
-                      </span>
-                      <span class="flex items-center">
-                        <i class="fa-solid fa-clock mr-1"></i>
-                        {{ category.last_activity|default:"No activity" }}
-                      </span>
-                    </div>
-                  </a>
-                </div>
-              </div>
-            {% empty %}
-              <div class="col-span-full text-center py-8 text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-lg shadow">
-                <i class="fa-solid fa-comment-slash text-4xl mb-2"></i>
-                <p class="mb-4">No categories have been created yet.</p>
-                {% if user.is_staff or user.profile.is_teacher %}
-                  <a href="{% url 'create_forum_category' %}"
-                     class="inline-flex items-center bg-teal-300 hover:bg-teal-400 text-white font-semibold px-4 py-2 rounded-lg">
-                    <i class="fa-solid fa-folder-plus mr-2"></i>
-                    Create the First Category
-                  </a>
-                {% endif %}
-              </div>
             {% endfor %}
           </div>
         </div>

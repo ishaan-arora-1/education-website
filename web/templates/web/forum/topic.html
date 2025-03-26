@@ -60,24 +60,17 @@
               <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">My Activity</h3>
               <ul class="space-y-2">
                 <li>
-                  <a href="#"
+                  <a href="{% url 'my_forum_topics' %}"
                      class="flex items-center py-2 px-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                     <i class="fa-solid fa-pen-to-square text-teal-300 mr-2"></i>
                     My Topics
                   </a>
                 </li>
                 <li>
-                  <a href="#"
+                  <a href="{% url 'my_forum_replies' %}"
                      class="flex items-center py-2 px-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                     <i class="fa-solid fa-reply text-teal-300 mr-2"></i>
                     My Replies
-                  </a>
-                </li>
-                <li>
-                  <a href="#"
-                     class="flex items-center py-2 px-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                    <i class="fa-solid fa-bookmark text-teal-300 mr-2"></i>
-                    Bookmarked
                   </a>
                 </li>
               </ul>
@@ -125,9 +118,7 @@
                   </div>
                 {% endif %}
                 <div>
-                  <div class="font-medium text-gray-800 dark:text-gray-200">
-                    {{ topic.author.get_full_name|default:topic.author.username }}
-                  </div>
+                  <div class="font-medium text-gray-800 dark:text-gray-200">{{ topic.author.username }}</div>
                   <div class="text-xs text-gray-500 dark:text-gray-400">
                     <time datetime="{{ topic.created_at|date:'Y-m-d H:i' }}">
                       {{ topic.created_at|timesince }} ago
@@ -179,9 +170,7 @@
                     <div class="flex-1">
                       <div class="flex items-start justify-between mb-2">
                         <div>
-                          <span class="font-medium text-gray-700 dark:text-gray-300">
-                            {{ reply.author.get_full_name|default:reply.author.username }}
-                          </span>
+                          <span class="font-medium text-gray-700 dark:text-gray-300">{{ reply.author.username }}</span>
                           <time datetime="{{ reply.created_at|date:'Y-m-d H:i' }}"
                                 class="text-xs text-gray-500 dark:text-gray-400 ml-2">
                             {{ reply.created_at|timesince }} ago
