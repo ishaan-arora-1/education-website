@@ -75,6 +75,7 @@ handler404 = "web.views.custom_404"
 handler500 = "web.views.custom_500"
 
 INSTALLED_APPS = [
+    'channels',
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -87,6 +88,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "captcha",
     "markdownx",
+    "django_htmx",
     "web",
 ]
 
@@ -104,6 +106,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "django_htmx.middleware.HtmxMiddleware",
     "web.middleware.WebRequestMiddleware",
     "web.middleware.GlobalExceptionMiddleware",
 ]
@@ -141,7 +144,13 @@ CAPTCHA_FILTER_FUNCTIONS = ("captcha.helpers.post_smooth",)
 CAPTCHA_2X_IMAGE = True
 CAPTCHA_TEST_MODE = False
 
-WSGI_APPLICATION = "web.wsgi.application"
+ASGI_APPLICATION = "web.asgi.application"
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer'
+    }
+}
 
 
 DATABASES = {
@@ -173,7 +182,7 @@ SITE_DOMAIN = "alphaonelabs.com"
 # Allauth settings
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False  # Since we're using email authentication
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"  # Require email verification
+ACCOUNT_EMAIL_VERIFICATION = "optional"  # Require email verification
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_PREVENT_ENUMERATION = True  # Prevent user enumeration

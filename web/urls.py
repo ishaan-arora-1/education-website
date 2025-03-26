@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import include, path
 
-from . import admin_views, peer_challenge_views, quiz_views, views, views_avatar
+from . import admin_views, peer_challenge_views, quiz_views, views, views_avatar, virtual_classroom_views
 from .views import (
     GoodsListingView,
     GradeableLinkCreateView,
@@ -16,7 +16,7 @@ from .views import (
     notification_preferences,
     sales_analytics,
     sales_data,
-    streak_detail,
+    streak_detail
 )
 
 # Non-prefixed URLs
@@ -381,7 +381,23 @@ urlpatterns += i18n_patterns(
         name="update_teacher_notes",
     ),
     path("award-badge/", views.award_badge, name="award_badge"),
+    # Virtual Classroom URLs
+    path('sessions/<int:session_id>/classroom/', virtual_classroom_views.virtual_classroom, name='virtual_classroom'),
+    path('classroom/<int:classroom_id>/select-seat/', virtual_classroom_views.select_seat, name='select_seat'),
+    path('classroom/raise-hand/', virtual_classroom_views.raise_hand, name='raise_hand'),
+    path('classroom/start-speaking/<int:hand_raise_id>/', virtual_classroom_views.start_speaking, name='start_speaking'),
+    path('classroom/upload-content/<int:seat_id>/', virtual_classroom_views.upload_content, name='upload_content'),
+    path('classroom/share-link/', virtual_classroom_views.share_link, name='share_link'),
+    path('classroom/<int:classroom_id>/start-update-round/', virtual_classroom_views.start_update_round, name='start_update_round'),
+    path('classroom/end-update-turn/<int:turn_id>/', virtual_classroom_views.end_update_turn, name='end_update_turn'),
+    path('classroom/toggle-laptop/', virtual_classroom_views.toggle_laptop, name='toggle_laptop'),
+    path('classroom/<int:classroom_id>/update-round/', virtual_classroom_views.get_update_round_html, name='get_update_round_html'),
+    path('classroom/current-speaker/<int:turn_id>/', virtual_classroom_views.get_current_speaker_html, name='get_current_speaker_html'),
+    path('classroom/raise-hand/', virtual_classroom_views.raise_hand, name='raise_hand'),
+    # TEMPORARY: Test URL for virtual classroom
+    path('classroom/test/', virtual_classroom_views.test_virtual_classroom, name='test_virtual_classroom'),
     prefix_default_language=True,
+
 )
 
 handler404 = "web.views.custom_404"

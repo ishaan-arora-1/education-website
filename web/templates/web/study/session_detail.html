@@ -2,8 +2,7 @@
 
 {% load i18n %}
 
-{% block content %}
-  <main class="flex-1 w-full max-w-[90rem] mx-auto mt-6 px-4 md:px-6">
+{% block content %} <main class="flex-1 w-full max-w-[90rem] mx-auto mt-6 px-4 md:px-6">
     <div class="border border-gray-200 dark:border-gray-700 rounded-lg">
       <div class="p-6">
         <h1 class="text-2xl font-bold mb-6 flex items-center">
@@ -24,6 +23,17 @@
               <span class="font-medium">{{ session.end_time }}</span>
             </div>
           </div>
+          
+          <!-- Virtual Classroom Button -->
+          <div class="mt-4">
+            <a href="{% url 'virtual_classroom' session.id %}" class="inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
+                {% trans "Enter Virtual Classroom" %}
+            </a>
+          </div>
+          
           {% if session.is_virtual %}
             <div class="mt-4 p-4 bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 rounded-lg">
               <div class="flex items-center space-x-2">
@@ -62,10 +72,7 @@
         </div>
       </div>
     </div>
-  </main>
-  {% if is_teacher %}
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteModal"
+  </main> {% if is_teacher %} <!-- Delete Confirmation Modal --> <div id="deleteModal"
          class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div class="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
         <h2 class="text-xl font-bold mb-4">{% trans "Delete Session" %}</h2>
@@ -87,6 +94,5 @@
           </form>
         </div>
       </div>
-    </div>
-  {% endif %}
+    </div> {% endif %}
 {% endblock content %}

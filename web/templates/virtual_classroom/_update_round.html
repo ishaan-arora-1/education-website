@@ -1,0 +1,29 @@
+<div id="updateRoundContainer" class="mt-4 bg-white shadow-md rounded-lg p-4 border-l-4 border-purple-500">
+    <h3 class="text-lg font-bold mb-2">Update Round</h3>
+    <div class="flex items-center mb-3">
+        <div class="w-full bg-gray-200 rounded-full h-2.5">
+            <div id="timerProgress" class="bg-purple-600 h-2.5 rounded-full" style="width: 100%"></div>
+        </div>
+        <span id="remainingTime" class="ml-2 text-sm font-medium" data-total-seconds="{{ update_round.duration_seconds }}" data-remaining-seconds="{{ remaining_seconds }}">{% if remaining_seconds %}{{ remaining_seconds|floatformat:0 }}s{% else %}{{ update_round.duration_seconds|floatformat:0 }}s{% endif %}</span>
+    </div>
+    
+    {% if current_turn %}
+    <div id="currentSpeaker" class="bg-blue-50 p-3 rounded-lg mb-2">
+        <p class="font-medium">Current speaker: <span class="font-bold">{{ current_turn.seat.student.username }}</span></p>
+        
+        <!-- Show "Done" button only if this is the current user or the teacher -->
+        {% if request.user == current_turn.seat.student or is_teacher %}
+        <button id="endTurnBtn" 
+                data-turn-id="{{ current_turn.id }}"
+                class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
+                hx-post="{% url 'end_update_turn' current_turn.id %}"
+                hx-trigger="click"
+                hx-swap="outerHTML"
+                hx-target="#currentSpeaker"
+                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' >
+            {% if request.user == current_turn.seat.student %}I'm Done{% else %}Next Student{% endif %}
+        </button>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>

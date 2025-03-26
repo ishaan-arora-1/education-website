@@ -1,0 +1,1392 @@
+{% extends "base.html" %}
+{% load static %}
+{% load django_htmx %}
+
+{% block title %}Virtual Classroom: {{ session.title }}{% endblock %}
+
+{% block extra_head %}
+<meta name="csrf-token" content="{{ csrf_token }}">
+<style>
+    @keyframes seatHighlight {
+        0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+        50% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0.7); }
+        100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+    }
+    
+    .seat-highlight {
+        animation: seatHighlight 1.5s ease-out;
+        z-index: 10;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-4">{{ session.title }}</h1>
+    <div class="mb-4">
+        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+            {{ session.start_time|date:"F j, Y, g:i a" }}
+        </span>
+        <span class="ml-2 text-gray-600">{{ session.course.title }}</span>
+    </div>
+
+    <!-- Teacher controls (visible only to teacher) -->
+    {% if is_teacher %}
+    <div class="bg-white shadow-md rounded-lg p-4 mb-6 border-l-4 border-blue-500">
+        <h2 class="text-xl font-bold mb-2">Teacher Controls</h2>
+        <div class="flex flex-wrap gap-3">
+            <button id="startUpdateRoundBtn" 
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                hx-post="{% url 'start_update_round' classroom.id %}"
+                hx-trigger="click"
+                hx-swap="outerHTML"
+                hx-target="#updateRoundContainer"
+                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' 
+                hx-vals='{"duration_seconds": 120}'>
+                Start Update Round (2min)
+            </button>
+            <div class="dropdown inline-block relative">
+                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
+                    <span>More Options</span>
+                    <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div class="dropdown-menu hidden absolute bg-white shadow-lg rounded mt-1 py-2 w-48 z-10">
+                    <a href="#" id="clearAllSeatsBtn" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">Clear All Seats</a>
+                    <a href="#" id="randomizeSeatsBtn" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">Randomize Seats</a>
+                    <a href="#" id="endClassBtn" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">End Class</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Virtual Classroom -->
+        <div class="lg:col-span-2">
+            <div class="bg-white shadow-md rounded-lg p-4 border">
+                <h2 class="text-xl font-bold mb-4">Classroom</h2>
+                
+                <!-- Teacher's desk at the front -->
+                <div class="bg-gray-100 p-3 mb-6 rounded-lg flex items-center justify-center">
+                    <div class="bg-blue-100 p-2 rounded-lg flex items-center space-x-2 w-48">
+                        <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                            T
+                        </div>
+                        <div>
+                            <div class="font-semibold">{{ session.course.teacher.username }}</div>
+                            <div class="text-xs text-gray-600">Teacher</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Student seating grid -->
+                <div id="seating-grid" class="grid grid-cols-{{ classroom.columns }} gap-2 mb-4">
+                    {% for seat in seats %}
+                    <div id="seat-{{ seat.id }}" class="seat relative" 
+                         data-row="{{ seat.row }}" 
+                         data-col="{{ seat.column }}" 
+                         data-id="{{ seat.id }}"
+                         data-status="{{ seat.status }}"
+                         hx-post="{% url 'select_seat' classroom.id %}"
+                         hx-trigger="click"
+                         hx-swap="outerHTML"
+                         hx-target="#seating-grid"
+                         hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' 
+                         hx-vals='{"row": {{ seat.row }}, "column": {{ seat.column }}}'>
+                        <div class="aspect-w-1 aspect-h-1">
+                            <div class="w-full h-full flex items-center justify-center 
+                                        {% if seat.status == 'empty' %}bg-gray-100 cursor-pointer hover:bg-gray-200
+                                        {% elif seat.status == 'occupied' %}bg-green-100 border-2 border-green-300
+                                        {% elif seat.status == 'hand_raised' %}bg-yellow-100 border-2 border-yellow-400
+                                        {% elif seat.status == 'speaking' %}bg-blue-100 border-2 border-blue-400 animate-pulse
+                                        {% endif %} 
+                                        rounded-lg p-1">
+                                {% if seat.student %}
+                                <div class="text-center">
+                                    <div class="avatar w-8 h-8 mx-auto bg-gray-300 rounded-full flex items-center justify-center text-gray-700 font-bold">
+                                        {% if seat.student.profile.avatar %}
+                                        <img src="{{ seat.student.profile.avatar.url }}" alt="{{ seat.student.username }}" class="rounded-full w-full h-full object-cover">
+                                        {% else %}
+                                        {{ seat.student.username|first|upper }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-xs mt-1 font-medium truncate">{{ seat.student.username }}</div>
+                                </div>
+                                {% else %}
+                                <div class="text-xs text-gray-500">Empty Seat</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Virtual laptop icon (only if seat is occupied) -->
+                        {% if seat.student %}
+                        <!-- Laptop button -->
+                        <button class="absolute bottom-0 right-0 bg-white rounded-full p-1 shadow-md laptop-btn"
+                                data-seat-id="{{ seat.id }}"
+                                hx-post="{% url 'toggle_laptop' %}"
+                                hx-trigger="click"
+                                hx-swap="outerHTML"
+                                hx-target="#seating-grid"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                            </svg>
+                        </button>
+                        
+                        <!-- Hand raise button (only if current user's seat) -->
+                        {% if seat.student == request.user %}
+                        <button class="absolute top-0 right-0 {% if seat.status == 'hand_raised' %}bg-yellow-500{% else %}bg-white{% endif %} rounded-full p-1 shadow-md hand-raise-btn"
+                                hx-post="{% url 'raise_hand' %}"
+                                hx-trigger="click"
+                                hx-swap="outerHTML"
+                                hx-target="#seating-grid"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}">
+                            <svg class="w-4 h-4 {% if seat.status == 'hand_raised' %}text-white{% else %}text-gray-600{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11"></path>
+                            </svg>
+                        </button>
+                        {% endif %}
+                        {% endif %}
+                        
+                        <!-- Hand raise icon -->
+                        {% if seat.status == 'hand_raised' %}
+                        <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                            <svg class="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Active Update Round (if exists) -->
+            {% if active_update_round %}
+            <div id="updateRoundContainer" class="mt-4 bg-white shadow-md rounded-lg p-4 border-l-4 border-purple-500">
+                <h3 class="text-lg font-bold mb-2">Update Round</h3>
+                <div class="flex items-center mb-3">
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div id="timerProgress" class="bg-purple-600 h-2.5 rounded-full" style="width: 100%"></div>
+                    </div>
+                    <span id="remainingTime" class="ml-2 text-sm font-medium">2:00</span>
+                </div>
+                
+                {% if current_turn %}
+                <div id="currentSpeaker" class="bg-blue-50 p-3 rounded-lg mb-2">
+                    <p class="font-medium">Current speaker: <span class="font-bold">{{ current_turn.seat.student.username }}</span></p>
+                    
+                    <!-- Show "Done" button only if this is the current user or the teacher -->
+                    {% if request.user == current_turn.seat.student or is_teacher %}
+                    <button id="endTurnBtn" 
+                            data-turn-id="{{ current_turn.id }}"
+                            class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
+                            hx-post="{% url 'end_update_turn' current_turn.id %}"
+                            hx-trigger="click"
+                            hx-swap="outerHTML"
+                            hx-target="#currentSpeaker">
+                        {% if request.user == current_turn.seat.student %}I'm Done{% else %}Next Student{% endif %}
+                    </button>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <!-- Empty container for update round to be filled by HTMX -->
+            <div id="updateRoundContainer"></div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="lg:col-span-1">
+            <!-- Student Controls (if student) -->
+            {% if is_student and not is_teacher %}
+            <div class="bg-white shadow-md rounded-lg p-4 mb-4 border">
+                <h2 class="text-xl font-bold mb-4">Student Controls</h2>
+                
+                {% if not user_seat %}
+                <div class="mb-4 text-center">
+                    <p class="text-gray-700 mb-2">Please select an available seat to join the class</p>
+                </div>
+                {% else %}
+                <div class="flex flex-col gap-2">
+                    <button id="raiseHandBtn" 
+                        class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded"
+                        hx-post="{% url 'raise_hand' %}"
+                        hx-trigger="click"
+                        hx-swap="outerHTML"
+                        hx-target="#seating-grid"
+                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                        hx-include="#seating-grid">
+                        {% if user_seat.status == 'hand_raised' %}Lower Hand{% else %}Raise Hand{% endif %}
+                    </button>
+                    <button id="shareLaptopBtn" 
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                            hx-post="{% url 'toggle_laptop' %}"
+                            hx-trigger="click"
+                            hx-swap="outerHTML"
+                            hx-target="#seating-grid"
+                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                            hx-include="#seating-grid">
+                        {% if user_seat.laptop_open %}Close{% else %}Open{% endif %} Laptop
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Hand Raise Queue (for teacher) -->
+            {% if is_teacher %}
+            <div class="bg-white shadow-md rounded-lg p-4 mb-4 border">
+                <h2 class="text-xl font-bold mb-4">Raised Hands</h2>
+                
+                {% if active_hand_raises %}
+                <ul class="space-y-2" id="handRaiseQueue">
+                    {% for hand_raise in active_hand_raises %}
+                    <li class="flex items-center justify-between p-2 bg-yellow-50 rounded-lg">
+                        <div class="flex items-center space-x-2">
+                            <div class="avatar w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-700 font-bold">
+                                {% if hand_raise.seat.student.profile.avatar %}
+                                <img src="{{ hand_raise.seat.student.profile.avatar.url }}" alt="{{ hand_raise.seat.student.username }}" class="rounded-full w-full h-full object-cover">
+                                {% else %}
+                                {{ hand_raise.seat.student.username|first|upper }}
+                                {% endif %}
+                            </div>
+                            <span class="font-medium">{{ hand_raise.seat.student.username }}</span>
+                        </div>
+                        <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded text-sm"
+                                hx-post="{% url 'start_speaking' hand_raise.id %}"
+                                hx-trigger="click"
+                                hx-swap="outerHTML"
+                                hx-target="#seating-grid"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                hx-include="#seating-grid">
+                            Select
+                        </button>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-gray-500 text-center">No hands raised</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Shared Content -->
+            <div class="bg-white shadow-md rounded-lg p-4 border">
+                <h2 class="text-xl font-bold mb-4">Shared Content</h2>
+                <div id="sharedContentContainer">
+                    <p class="text-gray-500 text-center">No content shared yet</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Laptop Modal -->
+<div id="laptopModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
+        <div class="border-b px-4 py-2 flex items-center justify-between">
+            <h3 class="text-lg font-bold">Virtual Laptop</h3>
+            <button id="closeLaptopBtn" class="text-gray-500 hover:text-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="p-4">
+            <div class="mb-4">
+                <h4 class="font-bold mb-2">Share Content</h4>
+                <form id="contentUploadForm" enctype="multipart/form-data">
+                    <input type="hidden" id="laptopSeatId" name="seat_id" value="">
+                    
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Upload Type</label>
+                        <select id="contentType" name="content_type" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="screenshot">Screenshot</option>
+                            <option value="document">Document</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">File</label>
+                        <input type="file" id="contentFile" name="file" class="block w-full text-sm text-gray-500
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-md file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-blue-50 file:text-blue-700
+                            hover:file:bg-blue-100">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
+                        <textarea id="contentDescription" name="description" rows="2" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end">
+                        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            Share
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="mt-4 pt-4 border-t">
+                <h4 class="font-bold mb-2">Share Link</h4>
+                <form id="linkShareForm">
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">URL</label>
+                        <input type="url" id="linkUrl" name="link" required class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
+                        <textarea id="linkDescription" name="description" rows="2" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end">
+                        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            Share Link
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/htmx.org@1.6.0"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get CSRF token from meta tag
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
+        // Add CSRF token to all HTMX requests
+        document.body.addEventListener('htmx:configRequest', function(evt) {
+            evt.detail.headers['X-CSRFToken'] = csrfToken;
+        });
+        
+        // WebSocket setup with reconnection logic
+        const classroomId = '{{ classroom.id }}';
+        const sessionId = '{{ session.id }}';
+        
+        // Make sure we have a valid classroom ID
+        if (!classroomId || classroomId === '') {
+            console.error('Error: No classroom ID found');
+        }
+        
+        const ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
+        const wsUrl = ws_scheme + '://' + window.location.host + '/ws/classroom/' + classroomId + '/';
+        
+        // WebSocket connection with reconnection logic
+        let socket;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        const reconnectDelay = 2000; // Start with 2 seconds
+        
+        // UI update functions
+        // This function is implemented in detail below
+        // Keeping this as a reference to the implementation below
+        function updateSeatUI(seatId, status, studentName) {
+            console.log(`Updating seat ${seatId} status to ${status} for ${studentName}`);
+            // Delegate to the detailed implementation below
+            updateSeatUIDetailed(seatId, status, studentName);
+        }
+        
+        function updateHandRaiseUI(seatId, raised, studentName) {
+            console.log(`${studentName} ${raised ? 'raised' : 'lowered'} hand on seat ${seatId}`);
+            // Refresh the seating grid to reflect changes
+            const seatingGrid = document.getElementById('seating-grid');
+            if (seatingGrid) {
+                htmx.ajax('GET', `/en/sessions/${sessionId}/classroom/?refresh_grid=true`, '#seating-grid');
+            }
+        }
+        
+        function updateSpeakingUI(seatId, isSpeaking, studentName) {
+            console.log(`${studentName} is ${isSpeaking ? 'now speaking' : 'no longer speaking'} from seat ${seatId}`);
+            // Refresh the seating grid to reflect changes
+            const seatingGrid = document.getElementById('seating-grid');
+            if (seatingGrid) {
+                htmx.ajax('GET', `/en/sessions/${sessionId}/classroom/?refresh_grid=true`, '#seating-grid');
+            }
+        }
+        
+        function updateRoundUI(data) {
+            console.log('Updating round UI with data:', data);
+            // Refresh the update round container
+            const updateRoundContainer = document.getElementById('updateRoundContainer');
+            if (updateRoundContainer) {
+                htmx.ajax('GET', `/en/classroom/${classroomId}/update-round/`, '#updateRoundContainer');
+            }
+        }
+        
+        function updateSharedContentUI(data) {
+            console.log('Updating shared content UI with data:', data);
+            
+            // Get the shared content container
+            const container = document.getElementById('sharedContentContainer');
+            if (!container) {
+                console.error('Shared content container not found');
+                return;
+            }
+            
+            // Clear empty state message if it exists
+            const emptyState = container.querySelector('.empty-state');
+            if (emptyState) {
+                container.removeChild(emptyState);
+            }
+            
+            // Create a new content card
+            const card = document.createElement('div');
+            card.className = 'bg-white shadow-md rounded-lg p-3 mb-3 border-l-4 border-blue-500';
+            
+            // Determine the icon based on content type
+            let icon = '';
+            if (data.content_type === 'screenshot') {
+                icon = '<svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>';
+            } else if (data.content_type === 'document') {
+                icon = '<svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>';
+            } else {
+                icon = '<svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>';
+            }
+            
+            // Format the content card
+            card.innerHTML = `
+                <div class="flex items-start">
+                    ${icon}
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                            <div class="font-medium">${data.student_name} shared ${data.content_type}</div>
+                            <div class="text-xs text-gray-500">Just now</div>
+                        </div>
+                        ${data.description ? `<p class="text-sm text-gray-600 mt-1">${data.description}</p>` : ''}
+                    </div>
+                </div>
+            `;
+            
+            // Add the card to the container (newest first)
+            container.insertBefore(card, container.firstChild);
+            
+            // Add a subtle animation
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(-10px)';
+            card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            
+            // Trigger animation after a small delay
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 50);
+        }
+        
+        function connectWebSocket() {
+            console.log('Connecting to WebSocket at:', wsUrl);
+            socket = new WebSocket(wsUrl);
+            
+            socket.onopen = function(e) {
+                console.log('WebSocket connection established');
+                reconnectAttempts = 0; // Reset reconnect attempts on successful connection
+                
+                // Send a ping to verify connection is working
+                setTimeout(() => {
+                    if (socket.readyState === WebSocket.OPEN) {
+                        socket.send(JSON.stringify({type: 'ping'}));
+                    }
+                }, 1000);
+            };
+            
+            socket.onmessage = function(e) {
+                try {
+                    const data = JSON.parse(e.data);
+                    console.log('WebSocket message received:', data);
+                    
+                    // Handle different message types
+                    if (data.type === 'seat_update') {
+                        // Check if this is our own update (to avoid double-processing)
+                        const isOwnUpdate = data.student_id == '{{ request.user.id }}';
+                        if (!isOwnUpdate) {
+                            // Add a small delay to prevent race conditions with HTMX updates
+                            setTimeout(() => {
+                                updateSeatUIDetailed(data.seat_id, data.status, data.student_name);
+                            }, 200);
+                        }
+                    } else if (data.type === 'hand_raise') {
+                        updateHandRaiseUI(data.seat_id, data.raised, data.student_name);
+                    } else if (data.type === 'speaking_update') {
+                        updateSpeakingUI(data.seat_id, data.is_speaking, data.student_name);
+                    } else if (data.type === 'update_round') {
+                        updateRoundUI(data);
+                    } else if (data.type === 'content_shared') {
+                        console.log('Content shared message received:', data);
+                        updateSharedContentUI(data);
+                    } else if (data.type === 'update_round_started') {
+                        console.log('Update round started event received:', data);
+                        // Reload the update round container
+                        const updateRoundContainer = document.getElementById('updateRoundContainer');
+                        if (updateRoundContainer) {
+                            htmx.ajax('GET', `/en/classroom/${classroom_id}/update-round/`, '#updateRoundContainer');
+                        }
+                    } else if (data.type === 'update_turn_ended') {
+                        console.log('Update turn ended event received:', data);
+                        // Reload the current speaker section
+                        const currentSpeaker = document.getElementById('currentSpeaker');
+                        if (currentSpeaker && data.next_turn_id) {
+                            htmx.ajax('GET', `/en/classroom/current-speaker/${data.next_turn_id}/`, '#currentSpeaker');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error processing WebSocket message:', error);
+                }
+            };
+            
+            socket.onclose = function(e) {
+                console.log('WebSocket connection closed with code:', e.code);
+                
+                // Attempt to reconnect unless it was a normal closure
+                if (e.code !== 1000 && reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++;
+                    const delay = reconnectDelay * Math.pow(1.5, reconnectAttempts - 1);
+                    console.log(`Attempting to reconnect (${reconnectAttempts}/${maxReconnectAttempts}) in ${delay}ms...`);
+                    
+                    setTimeout(connectWebSocket, delay);
+                }
+            };
+            
+            socket.onerror = function(err) {
+                console.error('WebSocket error:', err);
+            };
+        }
+        
+        // Initial connection
+        connectWebSocket();
+        
+        // Handle seat selection response
+        // Add seat highlight effect after seat selection
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            // Check if this is a seating grid swap
+            if (evt.detail.target && evt.detail.target.id === 'seating-grid') {
+                // Find the seat that belongs to the current user
+                const userSeats = document.querySelectorAll('.seat[data-status="occupied"]');
+                userSeats.forEach(seat => {
+                    if (seat.querySelector('.avatar')) {
+                        // Add highlight effect
+                        seat.classList.add('seat-highlight');
+                        setTimeout(() => {
+                            seat.classList.remove('seat-highlight');
+                        }, 1500);
+                    }
+                });
+            }
+        });
+        
+        // Handle JSON responses for seat selection (fallback)
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            if (evt.detail.target && evt.detail.target.classList.contains('seat')) {
+                // Check if this was a seat selection request
+                if (evt.detail.requestConfig && evt.detail.requestConfig.url.includes('select-seat')) {
+                    // Check if the response is JSON (should be HTML with our changes)
+                    if (evt.detail.xhr.getResponseHeader('Content-Type') && 
+                        evt.detail.xhr.getResponseHeader('Content-Type').includes('application/json')) {
+                        try {
+                            const response = JSON.parse(evt.detail.xhr.responseText);
+                            console.log('Seat selection response (JSON fallback):', response);
+                        } catch (error) {
+                            console.error('Error parsing seat selection response:', error);
+                        }
+                    }
+                }
+            }
+        });
+        
+        // HTMX event listeners
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            // Initialize timer if update round container was swapped
+            if (evt.detail.target.id === 'updateRoundContainer') {
+                console.log('Update round container swapped, initializing timer');
+                initializeTimer();
+            }
+            
+            // Update UI based on the response
+            if (evt.detail.target.classList.contains('seat')) {
+                const seatId = evt.detail.target.dataset.id;
+                const status = evt.detail.target.dataset.status;
+                const studentName = evt.detail.target.querySelector('.student-name')?.textContent;
+                updateSeatUI(seatId, status, studentName);
+            } else if (evt.detail.target.id === 'raiseHandBtn') {
+                const seatId = evt.detail.target.dataset.seatId;
+                const raised = evt.detail.target.textContent.trim() === 'Lower Hand';
+                updateHandRaiseUI(seatId, raised);
+            } else if (evt.detail.target.id === 'currentSpeaker') {
+                const data = JSON.parse(evt.detail.target.dataset.updateData || '{}');
+                updateRoundUI(data);
+            }
+        });
+        // Handle WebSocket events
+        socket.addEventListener('message', function(e) {
+            const data = JSON.parse(e.data);
+            if (data.type === 'seat_update') {
+                updateSeatUI(data.seat_id, data.status, data.student_name);
+            } else if (data.type === 'hand_raise') {
+                updateHandRaiseUI(data.seat_id, data.raised, data.student_name);
+            } else if (data.type === 'speaking_update') {
+                updateSpeakingUI(data.seat_id, data.is_speaking, data.student_name);
+            } else if (data.type === 'update_round') {
+                updateRoundUI(data);
+            } else if (data.type === 'content_shared') {
+                updateSharedContentUI(data);
+            }
+        });
+
+        // Handle HTMX events
+        document.addEventListener('htmx:afterRequest', function(evt) {
+            if (evt.detail.successful) {
+                const response = evt.detail.xhr.response;
+                try {
+                    const data = JSON.parse(response);
+                    if (data.type === 'seat_update') {
+                        socket.send(JSON.stringify({
+                            'type': 'seat_update',
+                            'seat_id': data.seat_id,
+                            'status': data.status,
+                            'student_name': data.student_name
+                        }));
+                    } else if (data.type === 'hand_raise') {
+                        socket.send(JSON.stringify({
+                            'type': 'hand_raise',
+                            'seat_id': data.seat_id,
+                            'raised': data.raised,
+                            'student_name': data.student_name
+                        }));
+                    }
+                } catch (e) {
+                    // Response wasn't JSON, that's okay
+                }
+            }
+        });
+                    
+        // Initialize tooltips and UI components
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+        
+        // Handle dropdown menus
+        const dropdownButtons = document.querySelectorAll('.dropdown button');
+        dropdownButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const menu = this.nextElementSibling;
+                menu.classList.toggle('hidden');
+            });
+        });
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    menu.classList.add('hidden');
+                });
+            }
+        });
+        
+        // Handle laptop modal
+        const laptopModal = document.getElementById('laptopModal');
+        const laptopButtons = document.querySelectorAll('.laptop-btn');
+        const closeLaptopModalBtn = document.getElementById('closeLaptopModal');
+        const laptopSeatIdInput = document.getElementById('laptopSeatId');
+        
+        laptopButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const seatId = button.dataset.seatId;
+                laptopSeatIdInput.value = seatId;
+                laptopModal.classList.remove('hidden');
+            });
+        });
+        
+        if (closeLaptopModalBtn) {
+            closeLaptopModalBtn.addEventListener('click', function() {
+                laptopModal.classList.add('hidden');
+            });
+        }
+        
+        // Close modal when clicking outside
+        laptopModal?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+            }
+        });
+        
+        // Handle link sharing form
+        const linkShareForm = document.getElementById('linkShareForm');
+        if (linkShareForm) {
+            linkShareForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(linkShareForm);
+                const seatId = laptopSeatIdInput.value;
+                formData.append('seat_id', seatId);
+                
+                // Show loading state
+                const submitBtn = linkShareForm.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sharing...';
+                submitBtn.disabled = true;
+                
+                // Validate link field
+                const link = formData.get('link');
+                if (!link || link.trim() === '') {
+                    alert('Please enter a valid URL to share');
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    return;
+                }
+                
+                // Add CSRF token to form data
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                
+                // Add http:// prefix if missing
+                if (!link.startsWith('http://') && !link.startsWith('https://')) {
+                    formData.set('link', 'https://' + link);
+                }
+                
+                // Send the form data to the server
+                fetch('/en/classroom/share-link/', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || `HTTP error! Status: ${response.status}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Link shared successfully:', data);
+                    
+                    // Reset form
+                    linkShareForm.reset();
+                    
+                    // Close modal
+                    laptopModal.classList.add('hidden');
+                    
+                    // Update UI with the shared link
+                    updateSharedContentUI({
+                        'student_name': '{{ request.user.username }}',
+                        'content_type': 'link',
+                        'description': formData.get('description'),
+                        'content_url': formData.get('link')
+                    });
+                    
+                    // Broadcast to WebSocket
+                    if (socket && socket.readyState === WebSocket.OPEN) {
+                        socket.send(JSON.stringify({
+                            'type': 'content_shared',
+                            'student_name': '{{ request.user.username }}',
+                            'content_type': 'link',
+                            'description': formData.get('description'),
+                            'content_url': formData.get('link')
+                        }));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error sharing link:', error);
+                    alert(error.message || 'Failed to share link. Please try again.');
+                })
+                .finally(() => {
+                    // Reset button state
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                });
+            });
+        }
+        
+        // Handle content upload form
+        const contentUploadForm = document.getElementById('contentUploadForm');
+        if (contentUploadForm) {
+            contentUploadForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(contentUploadForm);
+                const seatId = laptopSeatIdInput.value;
+                formData.append('seat_id', seatId);
+                
+                // Show loading state
+                const submitBtn = contentUploadForm.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sharing...';
+                submitBtn.disabled = true;
+                
+                // Add CSRF token to form data
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                
+                // Send the form data to the server
+                fetch(`/en/classroom/upload-content/${seatId}/`, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Content upload successful:', data);
+                    
+                    // Reset form
+                    contentUploadForm.reset();
+                    
+                    // Close modal
+                    laptopModal.classList.add('hidden');
+                    
+                    // Update UI with the shared content
+                    updateSharedContentUI({
+                        'student_name': '{{ request.user.username }}',
+                        'content_type': formData.get('content_type'),
+                        'description': formData.get('description'),
+                        'content_url': data.file_url || ''
+                    });
+                    
+                    // Broadcast to WebSocket
+                    if (socket && socket.readyState === WebSocket.OPEN) {
+                        socket.send(JSON.stringify({
+                            'type': 'content_shared',
+                            'student_name': '{{ request.user.username }}',
+                            'content_type': formData.get('content_type'),
+                            'description': formData.get('description'),
+                            'content_url': data.file_url || ''
+                        }));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error sharing content:', error);
+                    alert('Failed to share content. Please try again.');
+                })
+                .finally(() => {
+                    // Reset button state
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                });
+            });
+        }
+        });
+        
+        // Initialize UI components once
+        const initializeUI = () => {
+            // Initialize tooltips
+            const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            [...tooltips].forEach(el => new bootstrap.Tooltip(el));
+            
+            // Handle dropdown menus
+            document.querySelectorAll('.dropdown button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const menu = this.nextElementSibling;
+                    menu.classList.toggle('hidden');
+                });
+            });
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.dropdown')) {
+                    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                        menu.classList.add('hidden');
+                    });
+                }
+            });
+        };
+        
+        // Handle laptop modal
+        const initializeLaptopModal = function() {
+            const modal = document.getElementById('laptopModal');
+            const buttons = document.querySelectorAll('.laptop-btn');
+            const closeBtn = document.getElementById('closeLaptopModal');
+            const seatInput = document.getElementById('laptopSeatId');
+            const laptopForm = document.getElementById('laptopForm');
+            
+            if (buttons) {
+                buttons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        seatInput.value = button.dataset.seatId;
+                        modal.classList.remove('hidden');
+                    });
+                });
+            }
+            
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+            }
+            
+            // Close modal when clicking outside
+            modal?.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.add('hidden');
+                }
+            });
+            
+            // Handle link sharing form
+            const linkShareForm = document.getElementById('linkShareForm');
+            if (linkShareForm) {
+                linkShareForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const formData = new FormData(linkShareForm);
+                    if (seatInput && seatInput.value) {
+                        formData.append('seat_id', seatInput.value);
+                    }
+                    
+                    // Let HTMX handle the form submission
+                    htmx.ajax('POST', '/classroom/share-link/', {
+                        values: Object.fromEntries(formData),
+                        target: '#sharedContent',
+                        swap: 'beforeend'
+                    });
+                    
+                    linkShareForm.reset();
+                    modal.classList.add('hidden');
+                });
+            }
+        };
+
+        // Timer handling
+        const initializeTimer = function() {
+            console.log('Initializing timer...');
+            const timerProgress = document.getElementById('timerProgress');
+            const remainingTimeEl = document.getElementById('remainingTime');
+            
+            // Clear any existing interval
+            if (window.timerInterval) {
+                clearInterval(window.timerInterval);
+                window.timerInterval = null;
+            }
+            
+            if (!timerProgress || !remainingTimeEl) {
+                console.log('Timer elements not found in DOM');
+                return;
+            }
+            
+            // Get the total and remaining seconds from data attributes
+            const totalSeconds = parseInt(remainingTimeEl.dataset.totalSeconds || 120);
+            let timeRemaining = parseInt(remainingTimeEl.dataset.remainingSeconds || totalSeconds);
+            
+            console.log(`Timer initialized with ${timeRemaining} seconds remaining out of ${totalSeconds} total`);
+            
+            // Set initial progress bar width based on remaining time
+            const initialWidth = (timeRemaining / totalSeconds) * 100;
+            timerProgress.style.width = `${initialWidth}%`;
+            
+            // Update color based on remaining time
+            if (timeRemaining < 30) {
+                timerProgress.classList.remove('bg-purple-600');
+                timerProgress.classList.add('bg-red-600');
+            } else {
+                timerProgress.classList.remove('bg-red-600');
+                timerProgress.classList.add('bg-purple-600');
+            }
+            
+            function updateTimer() {
+                if (!timerProgress || !remainingTimeEl) {
+                    console.log('Timer elements no longer in DOM, stopping timer');
+                    if (window.timerInterval) clearInterval(window.timerInterval);
+                    return;
+                }
+                
+                timeRemaining -= 1;
+                if (timeRemaining <= 0) {
+                    console.log('Timer complete, stopping interval');
+                    if (window.timerInterval) clearInterval(window.timerInterval);
+                    timeRemaining = 0;
+                }
+                
+                // Update progress bar
+                const newWidth = (timeRemaining / totalSeconds) * 100;
+                timerProgress.style.width = `${newWidth}%`;
+                
+                // Format and display the time
+                const minutes = Math.floor(timeRemaining / 60);
+                const seconds = timeRemaining % 60;
+                remainingTimeEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                // Change color as time runs low
+                if (timeRemaining < 30) {
+                    timerProgress.classList.remove('bg-purple-600');
+                    timerProgress.classList.add('bg-red-600');
+                }
+            }
+            
+            // Start timer if update round is active
+            console.log('Starting timer with interval');
+            window.timerInterval = setInterval(updateTimer, 1000);
+            updateTimer(); // Initial call
+        };
+        
+        // Initialize all components
+        initializeUI();
+        initializeLaptopModal();
+        initializeTimer();
+        
+        // Start update round (teacher only)
+        const startUpdateRoundBtn = document.getElementById('startUpdateRoundBtn');
+        if (startUpdateRoundBtn) {
+            startUpdateRoundBtn.addEventListener('click', async function() {
+                try {
+                    const response = await fetch(`/{% if LANGUAGE_CODE != 'en' %}{{ LANGUAGE_CODE }}/{% endif %}classroom/${roomName}/start-update-round/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify({
+                            duration_seconds: 120 // 2 minutes
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    if (response.ok) {
+                        // Notify others via WebSocket
+                        socket.send(JSON.stringify({
+                            'type': 'update_round',
+                            'round_id': data.round.id,
+                            'action': 'start',
+                            'current_student': data.current_turn.student,
+                            'remaining_time': data.round.duration_seconds
+                        }));
+                        
+                        // Reload page to show update round UI
+                        window.location.reload();
+                    } else {
+                        alert(data.message || 'Could not start update round');
+                    }
+                } catch (error) {
+                    console.error('Error starting update round:', error);
+                    alert('Error starting update round. Please try again.');
+                }
+            });
+        }
+        
+        // End turn button
+        const endTurnBtn = document.getElementById('endTurnBtn');
+        if (endTurnBtn) {
+            endTurnBtn.addEventListener('click', async function() {
+                const turnId = endTurnBtn.dataset.turnId;
+                
+                try {
+                    const response = await fetch(`/{% if LANGUAGE_CODE != 'en' %}{{ LANGUAGE_CODE }}/{% endif %}classroom/end-update-turn/${turnId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken')
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    if (response.ok) {
+                        if (data.completed) {
+                            // Round is complete
+                            socket.send(JSON.stringify({
+                                'type': 'update_round',
+                                'round_id': data.round.id,
+                                'action': 'end',
+                                'current_student': null,
+                                'remaining_time': 0
+                            }));
+                            
+                            // Hide update round container or reload
+                            window.location.reload();
+                        } else {
+                            // Next student's turn
+                            socket.send(JSON.stringify({
+                                'type': 'update_round',
+                                'round_id': data.next_turn.id,
+                                'action': 'turn_change',
+                                'current_student': data.next_turn.student,
+                                'remaining_time': 120 // Reset timer for new student
+                            }));
+                            
+                            // Update UI for next student
+                            document.getElementById('currentSpeaker').innerHTML = `
+                                <p class="font-medium">Current speaker: <span class="font-bold">${data.next_turn.student.username}</span></p>
+                            `;
+                            
+                            // Update end turn button if needed
+                            if (endTurnBtn) {
+                                endTurnBtn.dataset.turnId = data.next_turn.id;
+                            }
+                        }
+                    } else {
+                        alert(data.message || 'Could not end turn');
+                    }
+                } catch (error) {
+                    console.error('Error ending turn:', error);
+                    alert('Error ending turn. Please try again.');
+                }
+            });
+        }
+        
+        // Timer functionality for update rounds
+        let timerInterval;
+        const timerProgress = document.getElementById('timerProgress');
+        const remainingTimeEl = document.getElementById('remainingTime');
+        
+        if (timerProgress && remainingTimeEl) {
+            let timeRemaining = 120; // 2 minutes in seconds
+            
+            function updateTimer() {
+                timeRemaining -= 1;
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    timeRemaining = 0;
+                }
+                
+                const minutes = Math.floor(timeRemaining / 60);
+                const seconds = timeRemaining % 60;
+                remainingTimeEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                // Update progress bar
+                const percentage = (timeRemaining / 120) * 100;
+                timerProgress.style.width = `${percentage}%`;
+                
+                // Change color as time runs low
+                if (timeRemaining < 30) {
+                    timerProgress.classList.remove('bg-purple-600');
+                    timerProgress.classList.add('bg-red-600');
+                }
+            }
+            
+            // Start the timer
+            timerInterval = setInterval(updateTimer, 1000);
+            updateTimer(); // Initial call
+        }
+        
+        // Helper functions
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        function updateSeatUIDetailed(seatId, status, studentName) {
+            const seat = document.querySelector(`.seat[data-id="${seatId}"]`);
+            if (!seat) return;
+            
+            seat.dataset.status = status;
+            
+            const seatContent = seat.querySelector('.seat > div > div');
+            
+            // Update appearance based on status
+            seatContent.className = 'w-full h-full flex items-center justify-center rounded-lg p-1';
+            
+            if (status === 'empty') {
+                seatContent.classList.add('bg-gray-100', 'cursor-pointer', 'hover:bg-gray-200');
+                seatContent.innerHTML = '<div class="text-xs text-gray-500">Empty Seat</div>';
+            } else if (status === 'occupied') {
+                seatContent.classList.add('bg-green-100', 'border-2', 'border-green-300');
+                // Don't update innerHTML as we don't have all the info
+            } else if (status === 'hand_raised') {
+                seatContent.classList.add('bg-yellow-100', 'border-2', 'border-yellow-400');
+                
+                // Add hand icon if not present
+                if (!seat.querySelector('.seat > div + div')) {
+                    const handIcon = document.createElement('div');
+                    handIcon.className = 'absolute -top-4 left-1/2 transform -translate-x-1/2';
+                    handIcon.innerHTML = `
+                        <svg class="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path>
+                        </svg>
+                    `;
+                    seat.appendChild(handIcon);
+                }
+            } else if (status === 'speaking') {
+                seatContent.classList.add('bg-blue-100', 'border-2', 'border-blue-400', 'animate-pulse');
+            }
+        }
+        
+        function updateHandRaiseUI(seatId, raised, studentName) {
+            // Update hand raise queue if we're the teacher
+            const handRaiseQueue = document.getElementById('handRaiseQueue');
+            
+            if (handRaiseQueue) {
+                if (raised) {
+                    // Add to queue if not already there
+                    const existingItem = handRaiseQueue.querySelector(`[data-seat-id="${seatId}"]`);
+                    if (!existingItem) {
+                        // Create and add new item
+                        const li = document.createElement('li');
+                        li.className = 'flex items-center justify-between p-2 bg-yellow-50 rounded-lg';
+                        li.dataset.seatId = seatId;
+                        li.innerHTML = `
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-yellow-200 rounded-full flex items-center justify-center text-yellow-800 font-bold mr-2">
+                                    ${studentName[0].toUpperCase()}
+                                </div>
+                                <span>${studentName}</span>
+                            </div>
+                            <button class="call-on-student-btn bg-blue-500 hover:bg-blue-700 text-white text-xs font-bold py-1 px-2 rounded"
+                                    data-hand-raise-id="${seatId}">
+                                Call On
+                            </button>
+                        `;
+                        
+                        // If empty placeholder exists, remove it
+                        const emptyPlaceholder = handRaiseQueue.querySelector('p.text-gray-500');
+                        if (emptyPlaceholder) {
+                            emptyPlaceholder.remove();
+                        }
+                        
+                        handRaiseQueue.appendChild(li);
+                        
+                        // Add event listener to new button
+                        const newButton = li.querySelector('.call-on-student-btn');
+                        newButton.addEventListener('click', function() {
+                            // Handle calling on student (same as above)
+                        });
+                    }
+                } else {
+                    // Remove from queue
+                    const item = handRaiseQueue.querySelector(`[data-seat-id="${seatId}"]`);
+                    if (item) {
+                        item.remove();
+                        
+                        // If queue is now empty, add placeholder
+                        if (handRaiseQueue.children.length === 0) {
+                            handRaiseQueue.innerHTML = '<p class="text-gray-500 text-center">No hands raised</p>';
+                        }
+                    }
+                }
+            }
+            
+            // Update seat UI
+            const seat = document.querySelector(`.seat[data-id="${seatId}"]`);
+            if (seat) {
+                updateSeatUI(seatId, raised ? 'hand_raised' : 'occupied', studentName);
+            }
+        }
+        
+        function updateSpeakingUI(seatId, isSpeaking, studentName) {
+            // Update all seats first (only one should be speaking)
+            document.querySelectorAll('.seat[data-status="speaking"]').forEach(seat => {
+                if (seat.dataset.id !== seatId) {
+                    updateSeatUI(seat.dataset.id, 'occupied', null);
+                }
+            });
+            
+            // Then update the speaking seat
+            if (isSpeaking) {
+                updateSeatUI(seatId, 'speaking', studentName);
+            }
+        }
+        
+        function updateRoundUI(data) {
+            const updateRoundContainer = document.getElementById('updateRoundContainer');
+            
+            if (!updateRoundContainer) {
+                // Reload to show the update round UI
+                window.location.reload();
+                return;
+            }
+            
+            if (data.action === 'end') {
+                // Round ended, reload to update UI
+                window.location.reload();
+                return;
+            }
+            
+            if (data.action === 'turn_change') {
+                // Update current speaker
+                const currentSpeaker = document.getElementById('currentSpeaker');
+                if (currentSpeaker) {
+                    currentSpeaker.innerHTML = `
+                        <p class="font-medium">Current speaker: <span class="font-bold">${data.current_student.username}</span></p>
+                    `;
+                }
+                
+                // Reset timer
+                if (remainingTimeEl && timerProgress) {
+                    clearInterval(timerInterval);
+                    timeRemaining = data.remaining_time;
+                    
+                    // Restart timer
+                    timerInterval = setInterval(updateTimer, 1000);
+                    updateTimer(); // Initial call
+                }
+            }
+        }
+        
+        function addSharedContent(content) {
+            const container = document.getElementById('sharedContentContainer');
+            if (!container) return;
+            
+            // Clear empty state if it exists
+            if (container.querySelector('p.text-gray-500')) {
+                container.innerHTML = '';
+            }
+            
+            // Create content card
+            const card = document.createElement('div');
+            card.className = 'mb-3 p-3 bg-white border rounded-lg';
+            
+            if (content.type === 'screenshot' || content.type === 'document') {
+                card.innerHTML = `
+                    <div class="mb-2">
+                        <a href="${content.url}" target="_blank" class="text-blue-600 hover:underline">
+                            ${content.type === 'screenshot' ? 'Screenshot' : 'Document'}
+                        </a>
+                        <span class="text-xs text-gray-500 ml-2">${new Date(content.shared_at).toLocaleTimeString()}</span>
+                    </div>
+                    ${content.type === 'screenshot' ? `<img src="${content.url}" alt="Screenshot" class="w-full h-auto rounded">` : ''}
+                    ${content.description ? `<p class="mt-2 text-sm">${content.description}</p>` : ''}
+                `;
+            } else if (content.type === 'link') {
+                card.innerHTML = `
+                    <div class="mb-1">
+                        <a href="${content.url}" target="_blank" class="text-blue-600 hover:underline font-medium">
+                            ${content.url.substring(0, 50)}${content.url.length > 50 ? '...' : ''}
+                        </a>
+                        <span class="text-xs text-gray-500 ml-2">${new Date(content.shared_at).toLocaleTimeString()}</span>
+                    </div>
+                    ${content.description ? `<p class="mt-1 text-sm">${content.description}</p>` : ''}
+                `;
+            }
+            
+            // Prepend to container (newest first)
+            container.prepend(card);
+        }
+        
+        function updateSharedContentUI(data) {
+            // This would need to fetch the content details
+            // For now, we'll just add a placeholder
+            const container = document.getElementById('sharedContentContainer');
+            if (!container) return;
+            
+            // Clear empty state if it exists
+            if (container.querySelector('p.text-gray-500')) {
+                container.innerHTML = '';
+            }
+            
+            const card = document.createElement('div');
+            card.className = 'mb-3 p-3 bg-white border rounded-lg';
+            card.innerHTML = `
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    <div>
+                        <div>${data.student_name} shared ${data.content_type}</div>
+                        <div class="text-xs text-gray-500">Just now</div>
+                    </div>
+                </div>
+            `;
+            
+            // Prepend to container (newest first)
+            container.prepend(card);
+            };
+</script>
+{% endblock %}

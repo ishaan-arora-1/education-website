@@ -1,0 +1,19 @@
+{% if current_turn %}
+<div id="currentSpeaker" class="bg-blue-50 p-3 rounded-lg mb-2">
+    <p class="font-medium">Current speaker: <span class="font-bold">{{ current_turn.seat.student.username }}</span></p>
+    
+    <!-- Show "Done" button only if this is the current user or the teacher -->
+    {% if request.user == current_turn.seat.student or is_teacher %}
+    <button id="endTurnBtn" 
+            data-turn-id="{{ current_turn.id }}"
+            class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
+            hx-post="{% url 'end_update_turn' current_turn.id %}"
+            hx-trigger="click"
+            hx-swap="outerHTML"
+            hx-target="#currentSpeaker"
+            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' >
+        {% if request.user == current_turn.seat.student %}I'm Done{% else %}Next Student{% endif %}
+    </button>
+    {% endif %}
+</div>
+{% endif %}

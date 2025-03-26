@@ -1,0 +1,88 @@
+{% load static %}
+<div id="seating-grid" class="grid grid-cols-{{ classroom.columns }} gap-2 mb-4">
+    {% for seat in seats %}
+    <div id="seat-{{ seat.id }}" class="seat relative w-32 h-32"
+         data-row="{{ seat.row }}" 
+         data-col="{{ seat.column }}" 
+         data-id="{{ seat.id }}"
+         data-status="{{ seat.status }}"
+         hx-post="{% url 'select_seat' classroom.id %}"
+         hx-trigger="click"
+         hx-target="this"
+         hx-swap="outerHTML"
+         hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+         hx-vals='{"row": {{ seat.row }}, "column": {{ seat.column }}}'>
+        <div class="absolute inset-0 flex flex-col items-center justify-center transition-all duration-300">
+            <div class="w-full h-full flex items-center justify-center 
+                        {% if seat.status == 'empty' %}bg-gray-100 hover:bg-gray-200 cursor-pointer
+                        {% elif seat.status == 'occupied' %}bg-green-100 border-2 border-green-300
+                        {% elif seat.status == 'hand_raised' %}bg-yellow-100 border-2 border-yellow-400
+                        {% elif seat.status == 'speaking' %}bg-blue-100 border-2 border-blue-400 animate-pulse{% endif %} 
+                        rounded-lg p-2">
+                {% if seat.student %}
+                <div class="text-center space-y-1">
+                    <div class="w-8 h-8 mx-auto bg-gray-300 rounded-full flex items-center justify-center text-gray-700 font-bold">
+                        {% if seat.student.profile.avatar %}
+                        <img src="{{ seat.student.profile.avatar.url }}" alt="{{ seat.student.username }}" 
+                             class="rounded-full w-full h-full object-cover">
+                        {% else %}
+                        {{ seat.student.username|first|upper }}
+                        {% endif %}
+                    </div>
+                    <div class="text-xs font-medium truncate">{{ seat.student.username }}</div>
+                </div>
+                {% else %}
+                <div class="text-xs text-gray-500">Empty Seat</div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if seat.student %}
+        <button class="absolute bottom-1 right-1 bg-white rounded-full p-1 shadow-md hover:shadow-lg transition-shadow w-6 h-6"
+                data-seat-id="{{ seat.id }}"
+                hx-post="{% url 'toggle_laptop' %}"
+                hx-trigger="click"
+                hx-target="this"
+                hx-swap="outerHTML"
+                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+            {% if seat.laptop_open %}
+            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+            {% else %}
+            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+            </svg>
+            {% endif %}
+        </button>
+        {% endif %}
+
+        {% if seat.status == 'hand_raised' %}
+        <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+            <svg class="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+            </svg>
+        </div>
+        {% endif %}
+
+        {% if seat.student == request.user %}
+        <button class="absolute top-1 right-1 bg-white rounded-full p-1 shadow-md hover:shadow-lg transition-shadow w-6 h-6"
+                hx-post="{% url 'raise_hand' %}"
+                hx-trigger="click"
+                hx-target="this"
+                hx-swap="outerHTML"
+                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+            {% if seat.status == 'hand_raised' %}
+            <svg class="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            {% else %}
+            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11"></path>
+            </svg>
+            {% endif %}
+        </button>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
