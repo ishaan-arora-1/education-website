@@ -5,13 +5,14 @@ from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import include, path
 
-from . import admin_views, quiz_views, views
+from . import admin_views, quiz_views, views, views_classroom
 from .views import GoodsListingView, add_goods_to_cart, sales_analytics, sales_data, streak_detail
 
 # Non-prefixed URLs
 urlpatterns = [
     path("i18n/", include("django.conf.urls.i18n")),  # Language selection URLs
     path("captcha/", include("captcha.urls")),  # CAPTCHA URLs should not be language-prefixed
+    path("classroom/<int:classroom_id>/share/", views_classroom.share, name="share"),  # Share endpoint should not be language-prefixed
 ]
 
 if settings.DEBUG:
@@ -268,7 +269,19 @@ urlpatterns += i18n_patterns(
         name="grade_short_answer",
     ),
     path("quizzes/<int:quiz_id>/analytics/", quiz_views.quiz_analytics, name="quiz_analytics"),
-    prefix_default_language=True,
+
+    # Virtual Classroom URLs
+    path("classroom/", views_classroom.classroom_lobby, name="classroom_lobby"),
+    path("classroom/session/<int:session_id>/", views_classroom.virtual_classroom, name="virtual_classroom"),
+    path("classroom/standalone/<int:standalone_id>/", views_classroom.virtual_classroom, name="virtual_classroom_standalone"),
+    path("classroom/standalone/start/", views_classroom.start_standalone_session, name="start_standalone_session"),
+    path("classroom/<int:classroom_id>/select-seat/", views_classroom.select_seat, name="select_seat"),
+    path("classroom/<int:classroom_id>/toggle-hand/", views_classroom.toggle_hand, name="toggle_hand"),
+    path("classroom/hand/<int:hand_id>/select/", views_classroom.select_speaker, name="select_speaker"),
+
+    path("classroom/<int:classroom_id>/start-round/", views_classroom.start_update_round, name="start_update_round"),
+    path("classroom/round/<int:round_id>/complete/", views_classroom.complete_speaker_turn, name="complete_speaker_turn"),
+    prefix_default_language=True
 )
 
 handler404 = "web.views.custom_404"

@@ -817,6 +817,121 @@ class BlogComment(models.Model):
         return f"Comment by {self.author.username} on {self.post.title}"
 
 
+class StandaloneSession(models.Model):
+    title = models.CharField(max_length=200)
+    host = models.ForeignKey(User, on_delete=models.CASCADE, related_name='hosted_sessions')
+    description = models.TextField(blank=True)
+    start_time = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+    max_participants = models.IntegerField(default=30)
+    access_code = models.CharField(max_length=6, unique=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.access_code:
+            # Generate a random 6-character code
+            chars = string.ascii_uppercase + string.digits
+            while True:
+                code = ''.join(random.choices(chars, k=6))
+                if not StandaloneSession.objects.filter(access_code=code).exists():
+                    self.access_code = code
+                    break
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.title} ({self.access_code})"
+
+
+class VirtualClassroom(models.Model):
+    session = models.OneToOneField(Session, on_delete=models.CASCADE, related_name='virtual_classroom', null=True, blank=True)
+    standalone_session = models.OneToOneField(StandaloneSession, on_delete=models.CASCADE, related_name='virtual_classroom', null=True, blank=True)
+    grid_rows = models.IntegerField(default=5)
+    grid_columns = models.IntegerField(default=6)
+    is_active = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        if not (self.session or self.standalone_session) or (self.session and self.standalone_session):
+            raise ValidationError("A virtual classroom must be associated with either a course session OR a standalone session, not both or neither.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        if self.session:
+            return f"Virtual Classroom for {self.session}"
+        return f"Virtual Classroom for {self.standalone_session}"
+
+
+class VirtualSeat(models.Model):
+    classroom = models.ForeignKey(VirtualClassroom, on_delete=models.CASCADE, related_name='seats')
+    student = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='virtual_seats')
+    row = models.IntegerField()
+    column = models.IntegerField()
+    is_occupied = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['classroom', 'row', 'column']
+        ordering = ['row', 'column']
+
+    def __str__(self):
+        return f"Seat ({self.row}, {self.column}) in {self.classroom}"
+
+
+class VirtualHand(models.Model):
+    classroom = models.ForeignKey(VirtualClassroom, on_delete=models.CASCADE, related_name='raised_hands')
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='hand_raises')
+    raised_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+    selected_for_speaking = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['raised_at']
+
+    def __str__(self):
+        return f"{self.student.username}'s hand in {self.classroom}"
+
+
+class Share(models.Model):
+    SHARE_TYPES = [
+        ('screenshot', 'Screenshot'),
+        ('link', 'Link')
+    ]
+
+    classroom = models.ForeignKey(VirtualClassroom, on_delete=models.CASCADE, related_name='screen_shares')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_shares')
+    share_type = models.CharField(max_length=10, choices=SHARE_TYPES)
+    screenshot = models.ImageField(upload_to='shares/screenshots/', blank=True, null=True)
+    link = models.URLField(blank=True)
+    title = models.CharField(max_length=200, blank=True)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.sender.username}'s {self.share_type} in {self.classroom}"
+
+
+class UpdateRound(models.Model):
+    classroom = models.ForeignKey(VirtualClassroom, on_delete=models.CASCADE, related_name='update_rounds')
+    duration = models.IntegerField(help_text='Duration in seconds')
+    current_speaker = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='speaking_rounds')
+    is_active = models.BooleanField(default=True)
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_speakers = models.ManyToManyField(User, related_name='completed_rounds')
+
+    class Meta:
+        ordering = ['-started_at']
+
+    def __str__(self):
+        return f"Update round in {self.classroom} at {self.started_at}"
+
+
 class SuccessStory(models.Model):
     STATUS_CHOICES = [
         ("published", "Published"),

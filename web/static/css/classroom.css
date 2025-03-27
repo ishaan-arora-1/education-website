@@ -1,0 +1,157 @@
+/* Virtual Classroom Grid */
+.classroom-grid {
+    display: grid;
+    gap: 1rem;
+    padding: 2rem;
+    background-color: #f8fafc;
+    border-radius: 0.5rem;
+}
+
+/* Seat Styles */
+.seat {
+    aspect-ratio: 1;
+    position: relative;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.seat:not(.occupied):hover {
+    background-color: #e2e8f0;
+    transform: scale(1.05);
+}
+
+.seat.occupied {
+    background-color: #dbeafe;
+}
+
+/* Avatar Container */
+.avatar-container {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-image {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 9999px;
+    margin-bottom: 0.5rem;
+}
+
+/* Hand Raise Indicator */
+.hand-indicator {
+    position: absolute;
+    top: -0.5rem;
+    right: -0.5rem;
+    color: #eab308;
+    animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-25%);
+    }
+}
+
+/* Screen Share */
+.screen-share-preview {
+    max-width: 100%;
+    border-radius: 0.375rem;
+    margin-top: 0.5rem;
+}
+
+/* Update Round Timer */
+.timer {
+    font-family: monospace;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+/* Modal Backdrop */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Modal Content */
+.modal-content {
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 28rem;
+}
+
+/* Form Controls */
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-input {
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-primary {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2563eb;
+}
+
+.btn-secondary {
+    background-color: #e2e8f0;
+    color: #475569;
+}
+
+.btn-secondary:hover {
+    background-color: #cbd5e1;
+}
+
+/* Utility Classes */
+.space-y-2 > * + * {
+    margin-top: 0.5rem;
+}
+
+.space-y-4 > * + * {
+    margin-top: 1rem;
+}
+
+.space-x-2 > * + * {
+    margin-left: 0.5rem;
+}
