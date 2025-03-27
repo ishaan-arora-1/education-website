@@ -1961,9 +1961,6 @@ def student_dashboard(request):
     Dashboard view for students showing enrollments, progress, upcoming sessions, learning streak,
     and an Achievements section.
     """
-    if request.user.profile.is_teacher:
-        messages.error(request, "This dashboard is for students only.")
-        return redirect("profile")
 
     # Update the learning streak.
     streak, created = LearningStreak.objects.get_or_create(user=request.user)
