@@ -129,6 +129,7 @@ from .models import (
     ProductImage,
     Profile,
     ProgressTracker,
+    Review,
     SearchLog,
     Session,
     SessionAttendance,
@@ -507,12 +508,101 @@ def create_course_from_waiting_room(request, waiting_room_id):
     return redirect(reverse("create_course"))
 
 
+@login_required
+@teacher_required
+def add_featured_review(request, slug, review_id):
+    # Get the course and review
+    course = get_object_or_404(Course, slug=slug)
+    review = get_object_or_404(Review, id=review_id, course=course)
+
+    # Check if the user is the course teacher
+    if request.user != course.teacher:
+        messages.error(request, "Only the course teacher can manage featured reviews.")
+        return redirect(reverse("course_detail", kwargs={"slug": slug}))
+
+    # Set the is_featured field to True
+    review.is_featured = True
+    review.save()
+    messages.success(request, "Review has been featured.")
+
+    # Redirect to the course detail page
+    url = reverse("course_detail", kwargs={"slug": slug})
+    return redirect(f"{url}#course_reviews")
+
+
+@login_required
+@teacher_required
+def remove_featured_review(request, slug, review_id):
+    # Get the course and review
+    course = get_object_or_404(Course, slug=slug)
+    review = get_object_or_404(Review, id=review_id, course=course)
+
+    # Check if the user is the course teacher
+    if request.user != course.teacher:
+        messages.error(request, "Only the course teacher can manage featured reviews.")
+        return redirect(reverse("course_detail", kwargs={"slug": slug}))
+
+    # Set the is_featured field to False
+    review.is_featured = False
+    review.save()
+
+    # Redirect to the course detail page
+    url = reverse("course_detail", kwargs={"slug": slug})
+    return redirect(f"{url}#course_reviews")
+
+
+@login_required
+def edit_review(request, slug, review_id):
+    course = get_object_or_404(Course, slug=slug)
+    review = get_object_or_404(Review, id=review_id, course__slug=slug)
+
+    # Security check - only allow editing own reviews
+    if request.user.id != review.student.id:
+        messages.error(request, "You can only edit your own reviews.")
+        return redirect("course_detail", slug=slug)
+
+    if request.method == "POST":
+        form = ReviewForm(request.POST, instance=review)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.save()
+            messages.success(request, "Your review has been updated.")
+            url = reverse("course_detail", kwargs={"slug": slug})
+            return redirect(f"{url}#course_reviews")
+    else:
+        form = ReviewForm(instance=review)
+
+    context = {
+        "form": form,
+        "course": course,
+        "review": review,
+        "action": "Edit",
+    }
+    return render(request, "courses/edit_or_add_review.html", context)
+
+
+@login_required
+def delete_review(request, slug, review_id):
+    review = get_object_or_404(Review, id=review_id, course__slug=slug)
+
+    # Security check - only allow deleting own reviews
+    if request.user.id != review.student.id:
+        messages.error(request, "You can only delete your own reviews.")
+    else:
+        review.delete()
+        messages.success(request, "Your review has been deleted.")
+
+    url = reverse("course_detail", kwargs={"slug": slug})
+    return redirect(f"{url}#course_reviews")
+
+
 def course_detail(request, slug):
     course = get_object_or_404(Course, slug=slug)
     sessions = course.sessions.all().order_by("start_time")
     now = timezone.now()
     is_teacher = request.user == course.teacher
     completed_sessions = []
+    # Check if user is the teacher of this course
 
     # Get enrollment if user is authenticated
     enrollment = None
@@ -587,6 +677,26 @@ def course_detail(request, slug):
                 calendar_week.append({"date": date, "in_month": True, "has_session": date in session_dates})
         calendar_weeks.append(calendar_week)
 
+    # Check if the current user has already reviewed this course
+    user_review = None
+    if request.user.is_authenticated:
+        user_review = Review.objects.filter(student=request.user, course=course).first()
+
+    # Get all reviews That not featured for this course
+    reviews = course.reviews.filter(is_featured=False).order_by("-created_at")
+
+    # Get the featured review
+    featured_review = Review.objects.filter(is_featured=True, course=course)
+
+    # Get all reviews sum
+    reviews_num = reviews.count() + featured_review.count()
+
+    # Calculate rating distribution for visualization
+    rating_counts = Review.objects.filter(course=course).values("rating").annotate(count=Count("id"))
+    rating_distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+    for item in rating_counts:
+        rating_distribution[item["rating"]] = item["count"]
+
     context = {
         "course": course,
         "sessions": sessions,
@@ -603,6 +713,11 @@ def course_detail(request, slug):
         "student_attendance": student_attendance,
         "completed_enrollment_count": course.enrollments.filter(status="completed").count(),
         "in_progress_enrollment_count": course.enrollments.filter(status="in_progress").count(),
+        "featured_review": featured_review,
+        "reviews": reviews,
+        "user_review": user_review,
+        "rating_distribution": rating_distribution,
+        "reviews_num": reviews_num,
     }
 
     return render(request, "courses/detail.html", context)
@@ -671,7 +786,9 @@ def add_session(request, slug):
 
 @login_required
 def add_review(request, slug):
-    course = get_object_or_404(Course, slug=slug)
+    course = Course.objects.get(slug=slug)
+    student = request.user
+
     if not request.user.enrollments.filter(course=course).exists():
         messages.error(request, "Only enrolled students can review the course!")
         return redirect("course_detail", slug=slug)
@@ -679,16 +796,20 @@ def add_review(request, slug):
     if request.method == "POST":
         form = ReviewForm(request.POST)
         if form.is_valid():
+            if Review.objects.filter(student=student, course=course).exists():
+                messages.error(request, "You have already reviewed this course.")
+                return redirect("course_detail", slug=slug)
             review = form.save(commit=False)
-            review.student = request.user
+            review.student = student
             review.course = course
             review.save()
             messages.success(request, "Review added successfully!")
-            return redirect("course_detail", slug=slug)
+            url = reverse("course_detail", kwargs={"slug": slug})
+            return redirect(f"{url}#course_reviews")
     else:
         form = ReviewForm()
 
-    return render(request, "courses/add_review.html", {"form": form, "course": course})
+    return render(request, "courses/edit_or_add_review.html", {"form": form, "course": course, "action": "Add"})
 
 
 @login_required
