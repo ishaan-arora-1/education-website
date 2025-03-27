@@ -5512,9 +5512,6 @@ def create_study_group(request):
 def progress_visualization(request):
     """Generate and render progress visualization statistics for a student's enrolled courses."""
     user = request.user
-    if request.user.profile.is_teacher:
-        messages.error(request, "This Progress Chart is for students only.")
-        return redirect("profile")
 
     # Create a unique cache key based on user ID
     cache_key = f"user_progress_{user.id}"
