@@ -75,6 +75,8 @@ handler404 = "web.views.custom_404"
 handler500 = "web.views.custom_500"
 
 INSTALLED_APPS = [
+    'daphne',
+    'channels',
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -141,6 +143,17 @@ CAPTCHA_2X_IMAGE = True
 CAPTCHA_TEST_MODE = False
 
 WSGI_APPLICATION = "web.wsgi.application"
+ASGI_APPLICATION = "web.asgi.application"
+
+# Channels configuration
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 
 
 DATABASES = {
@@ -224,7 +237,15 @@ USE_I18N = True
 USE_TZ = True
 
 
-STATIC_URL = "static/"
+# Static files settings
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [
+    BASE_DIR / 'web' / 'static',
+]
+
+# Whitenoise configuration
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

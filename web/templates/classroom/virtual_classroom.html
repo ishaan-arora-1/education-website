@@ -3,6 +3,40 @@
 {% load i18n %}
 
 {% block extra_head %}
+    <!-- Voice chat styles -->
+    <style>
+        .voice-controls {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
+            display: flex;
+            gap: 1rem;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            border-radius: 9999px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .voice-indicator {
+            position: absolute;
+            top: -0.5rem;
+            right: -0.5rem;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 9999px;
+            background-color: #10B981;
+            border: 2px solid white;
+            opacity: 0;
+            transition: opacity 150ms ease-in-out;
+        }
+        
+        .speaking .voice-indicator {
+            opacity: 1;
+        }
+    </style>
 <link rel="stylesheet" href="{% static 'css/classroom.css' %}">
 <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 <script src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
@@ -114,6 +148,21 @@
                 </div>
             </div>
             {% endif %}
+            
+            <!-- Voice Controls -->
+            <div class="voice-controls">
+                <button @click="toggleMicrophone"
+                        class="p-3 rounded-full transition-all duration-200"
+                        :class="micEnabled ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'">
+                    <i class="fas" :class="micEnabled ? 'fa-microphone' : 'fa-microphone-slash'"></i>
+                </button>
+                {% if is_teacher %}
+                <button @click="toggleStudentMics"
+                        class="p-3 rounded-full transition-all duration-200 bg-blue-500 hover:bg-blue-600">
+                    <i class="fas" :class="studentMicsEnabled ? 'fa-volume-up' : 'fa-volume-mute'"></i>
+                </button>
+                {% endif %}
+            </div>
 
             <!-- Student Desks -->
             <div class="classroom-wall rounded-lg p-8">
@@ -468,57 +517,231 @@
 </div>
 {% endblock %}
 
+{% block extra_css %}
+{{ block.super }}
+<style>
+.voice-indicator {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #9ca3af;
+    transition: background-color 0.2s;
+}
+
+.voice-indicator.speaking {
+    background-color: #34d399;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.5);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+</style>
+{% endblock %}
+
 {% block extra_js %}
-<script>
-    const CLASSROOM_DATA = {
-        id: "{{ classroom.id }}",
-        handRaised: {% if hand_raised %}true{% else %}false{% endif %},
-        activeRound: {% if active_round %}true{% else %}false{% endif %},
-        currentSpeaker: {% if active_round and active_round.current_speaker %}"{{ active_round.current_speaker.username|escapejs }}"{% else %}null{% endif %},
-        timeRemaining: {% if active_round %}{{ active_round.duration }}{% else %}0{% endif %}
-    };
+    <script src="{% static 'js/voice-chat.js' %}"></script>
+    <!-- Configuration -->
+    <script type="text/template" id="classroom-config">
+        {
+            "id": "{{ classroom.id|escapejs }}",
+            "handRaised": {{ hand_raised|yesno:"true,false" }},
+            "activeRound": {{ active_round|yesno:"true,false" }},
+            "currentSpeaker": {% if active_round and active_round.current_speaker %}"{{ active_round.current_speaker.username|escapejs }}"{% else %}null{% endif %},
+            "timeRemaining": {{ active_round.duration|default:0 }},
+            "voiceChat": {
+                "classroomId": "{{ classroom.id|escapejs }}",
+                "userId": "{{ request.user.id|escapejs }}",
+                "isTeacher": {{ is_teacher|yesno:"true,false" }},
+                "defaultMuted": {{ is_teacher|yesno:"false,true" }}
+            }
+        }
+    </script>
+    <script type="text/javascript">
+    (function() {
+        var config = JSON.parse(document.getElementById('classroom-config').textContent);
+        var classroomData = {
+            id: config.id,
+            handRaised: config.handRaised,
+            activeRound: config.activeRound,
+            currentSpeaker: config.currentSpeaker,
+            timeRemaining: config.timeRemaining
+        };
+
+        var voiceChatConfig = {
+            classroomId: config.voiceChat.classroomId,
+            userId: config.voiceChat.userId,
+            isTeacher: config.voiceChat.isTeacher,
+            defaultMuted: config.voiceChat.defaultMuted
+        };
+
+        window.CLASSROOM_DATA = classroomData;
+        window.VOICE_CHAT_CONFIG = voiceChatConfig;
+
+        var voiceChatStore = {
+            instance: null,
+            initialize: function() {
+                if (!this.instance) {
+                    this.instance = new VoiceChat(
+                        voiceChatConfig.classroomId,
+                        voiceChatConfig.userId,
+                        voiceChatConfig.isTeacher
+                    );
+                    this.instance.initialize();
+                }
+            },
+            getInstance: function() {
+                return this.instance;
+            }
+        };
+
+        var classroomComponent = function() {
+            return {
+                classroomId: classroomData.id,
+                handRaised: classroomData.handRaised,
+                activeRound: classroomData.activeRound,
+                currentSpeaker: classroomData.currentSpeaker,
+                timeRemaining: classroomData.timeRemaining,
+                toggleHand: function() {
+                    this.handRaised = !this.handRaised;
+                },
+                updateTimeRemaining: function(time) {
+                    this.timeRemaining = time;
+                }
+            };
+        };
+
+        document.addEventListener('alpine:init', function() {
+            Alpine.store('voiceChat', voiceChatStore);
+            Alpine.data('classroom', classroomComponent);
+        });
+    })();
+    </script>
+
+    <!-- Voice Controls -->
+    <div class="fixed bottom-4 right-4" x-data="voiceControls">
+        <button @click="toggleMute()" 
+                class="relative p-3 rounded-full transition-colors shadow-lg" 
+                :class="muted ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'">
+            <i class="fas" :class="muted ? 'fa-microphone-slash' : 'fa-microphone'"></i>
+            <div class="voice-indicator" :class="{'speaking': speaking}"></div>
+        </button>
+    </div>
+
+    <!-- Alpine.js Initialization -->
+    <script type="text/javascript">
+    // Initialize voice chat instance
+    let voiceChatInstance = null;
+
+    function initVoiceChat() {
+        if (!voiceChatInstance) {
+            try {
+                voiceChatInstance = new VoiceChat(
+                    window.VOICE_CHAT_CONFIG.classroomId,
+                    window.VOICE_CHAT_CONFIG.userId,
+                    window.VOICE_CHAT_CONFIG.isTeacher
+                );
+                voiceChatInstance.initialize();
+                console.log('Voice chat initialized successfully');
+            } catch (error) {
+                console.error('Failed to initialize voice chat:', error);
+            }
+        }
+        return voiceChatInstance;
+    }
 
     document.addEventListener('alpine:init', () => {
+        // Initialize voice controls component
+        Alpine.data('voiceControls', () => ({
+            muted: window.VOICE_CHAT_CONFIG.defaultMuted,
+            speaking: false,
+            init() {
+                // Initialize voice chat when component is mounted
+                initVoiceChat();
+
+                // Set up voice activity detection
+                document.addEventListener('voice-activity-start', (e) => {
+                    if (e.detail.userId === window.VOICE_CHAT_CONFIG.userId) {
+                        this.speaking = true;
+                    }
+                });
+
+                document.addEventListener('voice-activity-end', (e) => {
+                    if (e.detail.userId === window.VOICE_CHAT_CONFIG.userId) {
+                        this.speaking = false;
+                    }
+                });
+            },
+            toggleMute() {
+                this.muted = !this.muted;
+                const instance = voiceChatInstance;
+                if (instance) {
+                    instance.setMicrophoneMute(this.muted);
+                }
+            }
+        }));
+
+        // Initialize voice chat component
+        Alpine.data('voiceChat', () => ({
+            muted: window.VOICE_CHAT_CONFIG.defaultMuted,
+            speaking: false,
+            init() {
+                const store = Alpine.store('voiceChat');
+                store.initialize();
+
+                // Handle voice activity events
+                document.addEventListener('voice-activity-start', (e) => {
+                    if (e.detail.userId === window.VOICE_CHAT_CONFIG.userId) {
+                        this.speaking = true;
+                    }
+                });
+
+                document.addEventListener('voice-activity-end', (e) => {
+                    if (e.detail.userId === window.VOICE_CHAT_CONFIG.userId) {
+                        this.speaking = false;
+                    }
+                });
+            },
+            toggleMute() {
+                this.muted = !this.muted;
+                const instance = Alpine.store('voiceChat').getInstance();
+                if (instance) {
+                    instance.setMicrophoneMute(this.muted);
+                }
+            }
+        }));
+
+        // Initialize classroom component
         Alpine.data('classroom', () => ({
-            classroomId: window.CLASSROOM_DATA ? window.CLASSROOM_DATA.id : null,
-            handRaised: window.CLASSROOM_DATA ? window.CLASSROOM_DATA.handRaised : false,
-            activeRound: window.CLASSROOM_DATA ? window.CLASSROOM_DATA.activeRound : null,
+            classroomId: window.CLASSROOM_DATA.id,
+            handRaised: window.CLASSROOM_DATA.handRaised,
+            activeRound: window.CLASSROOM_DATA.activeRound,
+            timeRemaining: window.CLASSROOM_DATA.timeRemaining,
             currentSpeaker: window.CLASSROOM_DATA ? window.CLASSROOM_DATA.currentSpeaker : null,
-            timeRemaining: window.CLASSROOM_DATA ? window.CLASSROOM_DATA.timeRemaining : 0,
             shareType: 'screenshot',
             showShareModal: false,
+            toggleHand() {
+                this.handRaised = !this.handRaised;
+            },
             init() {
                 if (this.activeRound) {
                     this.startTimer();
                 }
             },
-            async shareLink(e) {
-                e.preventDefault();
-                try {
-                    const formData = new FormData(e.target);
-                    formData.append('share_type', 'link');
-                    
-                    const response = await fetch(`/classroom/${this.classroomId}/share/`, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        this.showShareModal = false;
-                        window.location.reload();
-                    } else {
-                        const data = await response.json();
-                        alert(data.error || 'Failed to share link');
-                    }
-                } catch (error) {
-                    console.error('Error sharing link:', error);
-                    alert('Failed to share link');
-                }
-            },
-            
             async shareScreenshot(e) {
                 e.preventDefault();
                 try {
