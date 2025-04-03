@@ -133,7 +133,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "web.middleware.WebRequestMiddleware",
-    "web.middleware.GlobalExceptionMiddleware",
+    # "web.middleware.GlobalExceptionMiddleware",
 ]
 
 if DEBUG and not TESTING:
