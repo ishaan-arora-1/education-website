@@ -3,10 +3,25 @@ import sys
 from pathlib import Path
 
 import environ
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
+# Initialize Sentry SDK for error reporting
+sentry_sdk.init(
+    dsn=os.environ.get("SENTRY_DSN", ""),
+    integrations=[DjangoIntegration()],
+    traces_sample_rate=0.5,  # Adjust sampling rate as needed
+    send_default_pii=True,  # Send user information with errors
+    # Set environment based on DEBUG setting
+    environment="development" if os.environ.get("ENVIRONMENT") == "development" else "production",
+    # Add additional configuration options
+    attach_stacktrace=True,  # Attach stacktraces to messages
+    sample_rate=1.0,  # Process all errors (adjust if needed)
+    profiles_sample_rate=0.1,  # Add performance profiling
+    enable_tracing=True,  # Enable performance monitoring
+)
 
 env = environ.Env()
 
@@ -18,7 +33,7 @@ if os.path.exists(env_file):
 else:
     print("No .env file found.")
 
-SECRET_KEY = env.str("SECRET_KEY", default="gdmkogcniogkxlyrelgdmkogcniogkxlyrelvmmrjblzfoxufovmmrjblzfoxufo")
+SECRET_KEY = env.str("SECRET_KEY", default="django-insecure-5kyff0s@l_##j3jawec5@b%!^^e(j7v)ouj4b7q6kru#o#a)o3")
 # Debug settings
 ENVIRONMENT = env.str("ENVIRONMENT", default="development")
 
