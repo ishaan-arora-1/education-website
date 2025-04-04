@@ -26,6 +26,15 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunSQL(
+            # First drop the existing index if it exists
+            sql="""
+            DROP INDEX IF EXISTS web_meme_slug_7c5abfde_like;
+            """,
+            reverse_sql="""
+            CREATE INDEX IF NOT EXISTS web_meme_slug_7c5abfde_like ON web_meme USING btree (slug varchar_pattern_ops);
+            """,
+        ),
         migrations.AddField(
             model_name="meme",
             name="slug",
