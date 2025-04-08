@@ -7057,7 +7057,7 @@ def users_list(request: HttpRequest) -> HttpResponse:
 
     # Add statistics for each user to create fun scorecards
     for profile in profiles:
-        if profile.user.is_teacher:
+        if profile.is_teacher:
             # Teacher stats
             courses = Course.objects.filter(teacher=profile.user).prefetch_related("enrollments", "reviews")
             profile.total_courses = courses.count()
