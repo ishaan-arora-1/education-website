@@ -95,7 +95,12 @@ CSRF_TRUSTED_ORIGINS = [
 
 # Error handling
 handler404 = "web.views.custom_404"
-handler500 = "web.views.custom_500"
+# Custom handler for 429 (too many requests)
+handler429 = "web.views.custom_429"
+
+# Admin notification settings
+ADMINS = [("Admin", os.getenv("EMAIL_FROM"))]
+SERVER_EMAIL = os.getenv("EMAIL_FROM")  # Email address error messages come from
 
 INSTALLED_APPS = [
     "django.contrib.admin",
