@@ -7234,3 +7234,139 @@ def topic_detail(request, pk):
     }
 
     return render(request, "web/forum/topic.html", context)
+
+
+def contributors_list_view(request):
+    # Check if cached data is available
+    cached_context = cache.get("contributors_context")
+    if cached_context:
+        return render(request, "web/contributors_list.html", cached_context)
+
+    # Initialize a dictionary to track contributor stats
+    contributor_stats = {}
+
+    # Function to add a contributor to our stats dictionary
+    def add_contributor(username, avatar_url, profile_url):
+        if username not in contributor_stats:
+            contributor_stats[username] = {
+                "username": username,
+                "avatar_url": avatar_url,
+                "profile_url": profile_url,
+                "merged_pr_count": 0,
+                "closed_pr_count": 0,
+                "open_pr_count": 0,
+                "total_pr_count": 0,
+                "prs_url": f"https://github.com/AlphaOneLabs/education-website/pulls?q=is:pr+author:{username}",
+            }
+
+    try:
+        # Fetch closed PRs first (includes both merged and non-merged closed PRs)
+        closed_prs = []
+        for page in range(1, 11):  # Limit to 10 pages to prevent hitting API rate limits
+            response = github_api_request(
+                f"{GITHUB_API_BASE}/repos/AlphaOneLabs/education-website/pulls",
+                params={"state": "closed", "per_page": 100, "page": page},
+            )
+            if not response or len(response) == 0:
+                break
+
+            closed_prs.extend(response)
+            time.sleep(0.5)  # Add delay to avoid hitting rate limits
+
+        # Process closed PRs
+        for pr in closed_prs:
+            username = pr["user"]["login"]
+
+            # Skip bots and specific users
+            if "[bot]" in username or "dependabot" in username or username == "A1L13N":
+                continue
+
+            avatar_url = pr["user"]["avatar_url"]
+            profile_url = pr["user"]["html_url"]
+
+            # Add to our tracking
+            add_contributor(username, avatar_url, profile_url)
+
+            # Update the appropriate count based on whether it was merged
+            if pr["merged_at"]:
+                contributor_stats[username]["merged_pr_count"] += 1
+            else:
+                contributor_stats[username]["closed_pr_count"] += 1
+
+        # Now fetch open PRs
+        open_prs = []
+        for page in range(1, 6):  # Limit to 5 pages for open PRs
+            response = github_api_request(
+                f"{GITHUB_API_BASE}/repos/AlphaOneLabs/education-website/pulls",
+                params={"state": "open", "per_page": 100, "page": page},
+            )
+            if not response or len(response) == 0:
+                break
+
+            open_prs.extend(response)
+            time.sleep(0.5)  # Add delay to avoid hitting rate limits
+
+        # Process open PRs
+        for pr in open_prs:
+            username = pr["user"]["login"]
+
+            # Skip bots and specific users
+            if "[bot]" in username or "dependabot" in username or username == "A1L13N":
+                continue
+
+            avatar_url = pr["user"]["avatar_url"]
+            profile_url = pr["user"]["html_url"]
+
+            # Add to our tracking
+            add_contributor(username, avatar_url, profile_url)
+
+            # Update open PR count
+            contributor_stats[username]["open_pr_count"] += 1
+
+        # Calculate total PR count and filter out users with no merged PRs
+        contributors = []
+        for username, stats in contributor_stats.items():
+            # Skip contributors with no merged PRs
+            if stats["merged_pr_count"] == 0:
+                continue
+
+            # Calculate total PR count
+            stats["total_pr_count"] = stats["merged_pr_count"] + stats["closed_pr_count"] + stats["open_pr_count"]
+
+            # Calculate a smart score that prioritizes merged PRs but penalizes imbalances
+            # Formula: (merged_pr_count * 10) - penalties for imbalanced contributions
+            smart_score = stats["merged_pr_count"] * 10
+
+            # Penalize if closed PRs are more than half of merged PRs (could indicate issues with code quality)
+            if stats["closed_pr_count"] > (stats["merged_pr_count"] / 2):
+                smart_score -= (stats["closed_pr_count"] - (stats["merged_pr_count"] / 2)) * 2
+
+            # Penalize if open PRs are more than merged PRs (could indicate abandonment issues)
+            if stats["open_pr_count"] > stats["merged_pr_count"]:
+                smart_score -= stats["open_pr_count"] - stats["merged_pr_count"]
+
+            # Calculate a contribution ratio: merged/(total) - higher is better
+            if stats["total_pr_count"] > 0:
+                stats["contribution_ratio"] = stats["merged_pr_count"] / stats["total_pr_count"]
+            else:
+                stats["contribution_ratio"] = 0
+
+            # Store the smart score
+            stats["smart_score"] = smart_score
+
+            contributors.append(stats)
+
+        # Sort by smart score (primary) and then by merged PR count (secondary)
+        contributors.sort(key=lambda x: (x["smart_score"], x["merged_pr_count"]), reverse=True)
+
+        # Store the context in cache for 12 hours
+        context = {"contributors": contributors}
+        cache.set("contributors_context", context, 12 * 60 * 60)
+
+        return render(request, "web/contributors_list.html", context)
+
+    except Exception as e:
+        # Log the error
+        print(f"Error fetching contributors: {e}")
+        # Return an empty list in case of error
+        return render(request, "web/contributors_list.html", {"contributors": []})
