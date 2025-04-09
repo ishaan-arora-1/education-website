@@ -141,6 +141,14 @@
                           <i class="fa-solid fa-comments mr-1"></i>
                           {{ topic.replies.count }} replies
                         </span>
+                        <span class="flex items-center">
+                          <i class="fa-solid fa-arrow-up text-teal-300 mr-1"></i>
+                          {{ topic.upvote_count }} upvotes
+                        </span>
+                        <span class="flex items-center">
+                          <i class="fa-solid fa-arrow-down text-red-300 mr-1"></i>
+                          {{ topic.downvote_count }} downvotes
+                        </span>
                         {% if topic.replies.count > 0 %}
                           <span class="flex items-center">
                             <i class="fa-solid fa-clock mr-1"></i>
