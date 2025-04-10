@@ -3716,6 +3716,15 @@ class GoodsDetailView(generic.DetailView):
         context["other_products"] = Goods.objects.exclude(pk=self.object.pk)[:12]  # Fetch other products
         view_data = WebRequest.objects.filter(path=self.request.path).aggregate(total_views=Coalesce(Sum("count"), 0))
         context["view_count"] = view_data["total_views"]
+
+        # Add cart count for each product
+        products_with_cart_count = []
+        for product in context["other_products"]:
+            product.cart_count = product.cart_items.count()
+            products_with_cart_count.append(product)
+
+        context["other_products"] = products_with_cart_count
+
         return context
 
 
@@ -3841,6 +3850,15 @@ class GoodsListingView(ListView):
         context = super().get_context_data(**kwargs)
         context["store_names"] = Storefront.objects.values_list("name", flat=True).distinct()
         context["categories"] = Goods.objects.values_list("category", flat=True).distinct()
+
+        # Add cart count for each product
+        products_with_cart_count = []
+        for product in context["products"]:
+            product.cart_count = product.cart_items.count()
+            products_with_cart_count.append(product)
+
+        context["products"] = products_with_cart_count
+
         return context
 
 
