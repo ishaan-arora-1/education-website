@@ -1194,27 +1194,51 @@
                   fetchTitleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                   fetchTitleBtn.disabled = true;
 
-                  // Fetch the video title
-                  fetch(`/fetch-video-title/?url=${encodeURIComponent(url)}`)
-                      .then(response => response.json())
+                  // Extract the YouTube video ID from the URL
+                  const videoId = extractYouTubeId(url);
+
+                  if (!videoId) {
+                      fetchTitleBtn.innerHTML = '<i class="fas fa-search"></i>';
+                      fetchTitleBtn.disabled = false;
+                      showMessage('Invalid YouTube URL format', 'error');
+                      return;
+                  }
+
+                  // Use YouTube's oEmbed API to fetch the video title (client-side)
+                  const oEmbedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+
+                  fetch(oEmbedUrl)
+                      .then(response => {
+                          if (!response.ok) {
+                              throw new Error('Failed to fetch video information');
+                          }
+                          return response.json();
+                      })
                       .then(data => {
                           fetchTitleBtn.innerHTML = '<i class="fas fa-search"></i>';
                           fetchTitleBtn.disabled = false;
 
-                          if (data.error) {
-                              showMessage(data.error, 'error');
-                          } else {
+                          if (data.title) {
                               videoTitleInput.value = data.title;
                               showMessage('Title fetched successfully!', 'success');
+                          } else {
+                              showMessage('Could not retrieve video title', 'error');
                           }
                       })
                       .catch(error => {
                           fetchTitleBtn.innerHTML = '<i class="fas fa-search"></i>';
                           fetchTitleBtn.disabled = false;
-                          showMessage('Failed to fetch video title', 'error');
-                          console.error('Error:', error);
+                          showMessage('Failed to fetch video title. Check if the URL is correct.', 'error');
+                          console.error('Error fetching video title:', error);
                       });
               });
+          }
+
+          // Function to extract YouTube video ID from various URL formats
+          function extractYouTubeId(url) {
+              const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+              const match = url.match(regExp);
+              return (match && match[2].length === 11) ? match[2] : null;
           }
 
           if (quickForm) {
