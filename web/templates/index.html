@@ -591,6 +591,8 @@
                            placeholder="Video title (auto-filled)"
                            required
                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
+                    <!-- Hidden description field that gets auto-filled with YouTube data -->
+                    <input type="hidden" id="video-description" name="description" value="" />
                     <div class="flex gap-2">
                       <select id="video-category"
                               name="category"
@@ -1219,17 +1221,31 @@
                           fetchTitleBtn.disabled = false;
 
                           if (data.title) {
+                              // Set the title field
                               videoTitleInput.value = data.title;
-                              showMessage('Title fetched successfully!', 'success');
+
+                              // Set the description field with author info and description
+                              const descriptionField = document.getElementById('video-description');
+                              let description = `Video by ${data.author_name || 'YouTube creator'}`;
+
+                              if (data.description) {
+                                  description += `\n\n${data.description}`;
+                              } else {
+                                  description += `\n\nA video about ${data.title}`;
+                              }
+
+                              descriptionField.value = description;
+
+                              showMessage('Video information fetched successfully!', 'success');
                           } else {
-                              showMessage('Could not retrieve video title', 'error');
+                              showMessage('Could not retrieve video information', 'error');
                           }
                       })
                       .catch(error => {
                           fetchTitleBtn.innerHTML = '<i class="fas fa-search"></i>';
                           fetchTitleBtn.disabled = false;
-                          showMessage('Failed to fetch video title. Check if the URL is correct.', 'error');
-                          console.error('Error fetching video title:', error);
+                          showMessage('Failed to fetch video information. Check if the URL is correct.', 'error');
+                          console.error('Error fetching video information:', error);
                       });
               });
           }
@@ -1256,23 +1272,37 @@
                   // Get CSRF token from the form
                   const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
+                  // Log the form data for debugging
+                  console.log('Form data being submitted:');
+                  for (let pair of formData.entries()) {
+                      console.log(pair[0] + ': ' + pair[1]);
+                  }
+
                   fetch('/videos/upload/', {
                           method: 'POST',
                           body: formData,
                           headers: {
                               'X-Requested-With': 'XMLHttpRequest',
                               'X-CSRFToken': csrfToken
-                          }
+                          },
+                          credentials: 'same-origin'
                       })
                       .then(response => {
+                          console.log('Response status:', response.status);
+                          console.log('Response headers:', [...response.headers]);
+
                           if (!response.ok) {
-                              throw new Error('Network response was not ok');
+                              return response.text().then(text => {
+                                  console.error('Error response body:', text);
+                                  throw new Error(`Server responded with status: ${response.status}`);
+                              });
                           }
                           return response.json();
                       })
                       .then(data => {
                           submitBtn.innerHTML = originalBtnContent;
                           submitBtn.disabled = false;
+                          console.log('Success response:', data);
 
                           if (data.success) {
                               // Reset the form
@@ -1287,13 +1317,14 @@
                               }
                           } else {
                               showMessage(data.error || 'Failed to add video', 'error');
+                              console.error('Error details from server:', data);
                           }
                       })
                       .catch(error => {
                           submitBtn.innerHTML = originalBtnContent;
                           submitBtn.disabled = false;
-                          showMessage('Error adding video', 'error');
-                          console.error('Error:', error);
+                          showMessage('Error adding video: ' + error.message, 'error');
+                          console.error('Fetch error:', error);
                       });
               });
           }
