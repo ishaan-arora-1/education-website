@@ -540,7 +540,7 @@
               {% if user.is_authenticated %}
                 <div class="flex items-center space-x-2">
                   <input type="text"
-                         value="{{ request.scheme }}://{{ request.get_host }}{% url 'index' %}?ref={{ user.profile.referral_code }}"
+                         value="{{ request.scheme }}://{{ request.get_host }}{% url 'handle_referral' code=user.profile.referral_code %}"
                          class="text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-3 py-1.5 flex-1"
                          readonly
                          id="referralLink" />
@@ -567,7 +567,7 @@
               <div class="mt-4 border-t border-purple-100 dark:border-purple-800 pt-4">
                 <h4 class="text-sm font-semibold text-purple-800 dark:text-purple-200 mb-3">
                   <i class="fas fa-crown text-yellow-500 mr-2"></i>
-                  Top Referrers
+                  Top Referral Activity
                 </h4>
                 <div class="space-y-2">
                   {% for referrer in top_referrers %}
@@ -593,7 +593,9 @@
                       </div>
                     </div>
                   {% empty %}
-                    <p class="text-sm text-gray-500 dark:text-gray-400 text-center">No referrals yet. Be the first!</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 text-center">
+                      No referral activity yet. Share your link to be the first!
+                    </p>
                   {% endfor %}
                 </div>
               </div>
