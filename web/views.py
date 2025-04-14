@@ -213,21 +213,24 @@ def index(request):
     if ref_code:
         request.session["referral_code"] = ref_code
 
-    # Get top referrers
-    top_referrers = Profile.objects.annotate(
-        total_signups=models.Count("referrals"),
-        total_enrollments=models.Count(
-            "referrals__user__enrollments", filter=models.Q(referrals__user__enrollments__status="approved")
-        ),
-        total_clicks=models.Count(
-            "referrals__user",
-            filter=models.Q(
-                referrals__user__username__in=WebRequest.objects.filter(path__contains="ref=").values_list(
-                    "user", flat=True
-                )
+    # Get top referrers - fixing how total_clicks is calculated
+
+    top_referrers = (
+        Profile.objects.prefetch_related("referrals", "referrals__user__enrollments")
+        .annotate(
+            total_signups=models.Count("referrals"),
+            total_enrollments=models.Count(
+                "referrals__user__enrollments", filter=models.Q(referrals__user__enrollments__status="approved")
             ),
-        ),
-    ).order_by("-total_signups", "-total_enrollments")[:3]
+        )
+        .order_by("-total_signups", "-total_enrollments")[:3]
+    )
+
+    # Add click counts manually since WebRequest.user is a CharField, not a ForeignKey
+    for referrer in top_referrers:
+        ref_param = f"ref={referrer.referral_code}"
+        clicks = WebRequest.objects.filter(path__contains=ref_param).count()
+        referrer.total_clicks = clicks
 
     # Get current user's profile if authenticated
     profile = request.user.profile if request.user.is_authenticated else None
