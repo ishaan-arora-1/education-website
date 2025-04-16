@@ -58,6 +58,22 @@ from .models import (
 admin.site.unregister(EmailAddress)
 
 
+# Create a custom EmailAddress admin
+@admin.register(EmailAddress)
+class EmailAddressAdmin(admin.ModelAdmin):
+    list_display = ("email", "user", "primary", "verified")
+    list_filter = ("primary", "verified")
+    search_fields = ("email", "user__username", "user__email")
+    raw_id_fields = ("user",)
+    ordering = ("-verified", "-primary", "email")
+
+    fieldsets = ((None, {"fields": ("user", "email", "primary", "verified")}),)
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related("user")
+
+
 class ProfileInline(admin.StackedInline):
     model = Profile
     can_delete = False
