@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Virtual Classroom{% endblock title %}
+
+{% block extra_head %}
+<!-- Phaser.js library -->
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+<!-- CSRF Token -->
+{% csrf_token %}
+{% endblock extra_head %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+  <h1 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Virtual Classroom</h1>
+  
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 mb-6">
+    <p class="text-gray-600 dark:text-gray-300 mb-4">
+      Welcome to the virtual classroom! Move around using arrow keys or WASD. 
+      Interact with objects by pressing the E key when prompted.
+    </p>
+    
+    <!-- Game container with fixed aspect ratio -->
+    <div class="flex justify-center items-center">
+      <div class="relative w-full max-w-4xl" style="padding-top: 56.25%"> <!-- 16:9 aspect ratio -->
+        <div id="classroom-game" class="absolute top-0 left-0 w-full h-full rounded-lg overflow-hidden border-2 border-teal-300"></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Action button that appears when near interactive objects -->
+  <div id="interaction-button" class="fixed bottom-10 right-10 bg-teal-300 hover:bg-teal-400 text-white px-6 py-2 rounded-lg transition duration-200 shadow-lg hidden">
+    <span id="interaction-text">Interact</span>
+  </div>
+
+  <!-- List of users in the classroom -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4">
+    <h2 class="text-xl font-bold mb-2 text-gray-700 dark:text-gray-300">Classroom Occupants</h2>
+    <div id="users-list" class="space-y-2">
+      <!-- Users will be populated here via JavaScript -->
+    </div>
+  </div>
+</div>
+
+<!-- Game data from backend -->
+<script>
+  // Initialize game state and user data with default values if not provided by backend
+  const initialGameState = {% if game_state %}{{ game_state|safe }}{% else %}null{% endif %};
+  const currentUser = {
+    id: {% if user.id %}{{ user.id }}{% else %}null{% endif %},
+    username: {% if user.username %}"{{ user.username }}"{% else %}"Guest"{% endif %},
+    avatar: {% if user.profile.avatar_url %}"{{ user.profile.avatar_url }}"{% else %}""{% endif %}
+  };
+
+  // Initialize interaction button
+  document.addEventListener('DOMContentLoaded', function() {
+    const interactButton = document.getElementById('interaction-button');
+    if (interactButton) {
+      interactButton.addEventListener('click', () => {
+        interactButton.classList.add('clicked');
+        setTimeout(() => {
+          interactButton.classList.remove('clicked');
+        }, 100);
+      });
+    }
+  });
+</script>
+
+{% load static %}
+<script src="{% static 'js/classroom/game.js' %}"></script>
+{% endblock content %} 

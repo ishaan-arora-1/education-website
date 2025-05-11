@@ -5205,7 +5205,7 @@ def educational_videos_list(request: HttpRequest) -> HttpResponse:
 
 def fetch_video_oembed(video_url):
     """
-    Hits YouTube or Vimeo’s oEmbed endpoint and returns a dict
+    Hits YouTube or Vimeo's oEmbed endpoint and returns a dict
     containing 'title' and 'description' (if available).
     """
     # YouTube IDs are always 11 chars
