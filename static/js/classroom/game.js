@@ -37,6 +37,7 @@ let csrfToken = '';
 let debugText; // For showing debug info
 let isPlayerSeated = false;
 let currentChair = null;
+let currentCharacterKey = 'character';
 
 // Preload game assets
 function preload() {
@@ -50,8 +51,12 @@ function preload() {
 
   // Character assets
   this.load.spritesheet('character', '/static/images/classroom/character.png', { 
-    frameWidth: 32, 
-    frameHeight: 48 
+    frameWidth: 64, 
+    frameHeight: 64 
+  });
+  this.load.spritesheet('character-2', '/static/images/classroom/character-2.png', { 
+    frameWidth: 64, 
+    frameHeight: 64 
   });
   
   // Classroom assets
@@ -96,7 +101,7 @@ function create() {
     createClassroomObjects(this);
     
     // Create player character
-    player = this.physics.add.sprite(400, 300, 'character');
+    player = this.physics.add.sprite(400, 300, currentCharacterKey);
     player.setCollideWorldBounds(true);
     player.setSize(20, 30);
     player.setOffset(6, 15);
@@ -154,22 +159,10 @@ function createClassroomObjects(scene) {
   // Create static group for interactable objects
   interactableObjects = scene.physics.add.staticGroup();
 
-  // Add classroom walls
-  const wallThickness = 20;
-  const walls = [
-    scene.add.rectangle(0, 0, config.width, wallThickness, 0x808080).setOrigin(0), // Top
-    scene.add.rectangle(0, config.height - wallThickness, config.width, wallThickness, 0x808080).setOrigin(0), // Bottom
-    scene.add.rectangle(0, 0, wallThickness, config.height, 0x808080).setOrigin(0), // Left
-    scene.add.rectangle(config.width - wallThickness, 0, wallThickness, config.height, 0x808080).setOrigin(0) // Right
-  ];
-
-  walls.forEach(wall => {
-    scene.physics.add.existing(wall, true);
-    wall.setDepth(1);
-  });
+  // Remove wall rectangles (do not add them)
 
   // Add whiteboard
-  const whiteboard = interactableObjects.create(config.width / 2, wallThickness + 50, 'whiteboard');
+  const whiteboard = interactableObjects.create(config.width / 2, 70, 'whiteboard');
   whiteboard.setScale(0.8);
   whiteboard.refreshBody();
   whiteboard.name = 'whiteboard';
@@ -178,13 +171,13 @@ function createClassroomObjects(scene) {
   // Add windows
   const windowSpacing = 200;
   for (let x = windowSpacing; x < config.width - windowSpacing; x += windowSpacing) {
-    const window = scene.add.image(x, wallThickness + 20, 'window');
+    const window = scene.add.image(x, 40, 'window');
     window.setScale(0.6);
     window.setDepth(0);
   }
 
   // Add door
-  const door = interactableObjects.create(config.width - wallThickness - 40, config.height - wallThickness - 40, 'door');
+  const door = interactableObjects.create(config.width - 60, config.height - 60, 'door');
   door.setScale(0.7);
   door.refreshBody();
   door.name = 'door';
@@ -217,38 +210,46 @@ function createClassroomObjects(scene) {
       chair.name = `chair-${row}-${col}`;
       chair.chairId = `chair_${row}_${col}`;
       chair.setDepth(1);
-      chair.isChair = true;  // Flag to identify chairs
+      chair.isChair = true;
     }
   }
 }
 
 // Create character animations
 function createAnimations(scene) {
+  // Remove old animations if they exist
+  [
+    'walk-down', 'walk-left', 'walk-right', 'walk-up',
+    'idle-down', 'idle-left', 'idle-right', 'idle-up'
+  ].forEach(key => {
+    if (scene.anims.exists(key)) scene.anims.remove(key);
+  });
+
   // Walk animations
   scene.anims.create({
     key: 'walk-down',
-    frames: scene.anims.generateFrameNumbers('character', { start: 0, end: 3 }),
+    frames: scene.anims.generateFrameNumbers(currentCharacterKey, { start: 0, end: 3 }),
     frameRate: 8,
     repeat: -1
   });
 
   scene.anims.create({
     key: 'walk-left',
-    frames: scene.anims.generateFrameNumbers('character', { start: 4, end: 7 }),
+    frames: scene.anims.generateFrameNumbers(currentCharacterKey, { start: 4, end: 7 }),
     frameRate: 8,
     repeat: -1
   });
 
   scene.anims.create({
     key: 'walk-right',
-    frames: scene.anims.generateFrameNumbers('character', { start: 8, end: 11 }),
+    frames: scene.anims.generateFrameNumbers(currentCharacterKey, { start: 8, end: 11 }),
     frameRate: 8,
     repeat: -1
   });
 
   scene.anims.create({
     key: 'walk-up',
-    frames: scene.anims.generateFrameNumbers('character', { start: 12, end: 15 }),
+    frames: scene.anims.generateFrameNumbers(currentCharacterKey, { start: 12, end: 15 }),
     frameRate: 8,
     repeat: -1
   });
@@ -256,25 +257,25 @@ function createAnimations(scene) {
   // Idle animations
   scene.anims.create({
     key: 'idle-down',
-    frames: [{ key: 'character', frame: 0 }],
+    frames: [{ key: currentCharacterKey, frame: 0 }],
     frameRate: 1
   });
 
   scene.anims.create({
     key: 'idle-left',
-    frames: [{ key: 'character', frame: 4 }],
+    frames: [{ key: currentCharacterKey, frame: 4 }],
     frameRate: 1
   });
 
   scene.anims.create({
     key: 'idle-right',
-    frames: [{ key: 'character', frame: 8 }],
+    frames: [{ key: currentCharacterKey, frame: 8 }],
     frameRate: 1
   });
 
   scene.anims.create({
     key: 'idle-up',
-    frames: [{ key: 'character', frame: 12 }],
+    frames: [{ key: currentCharacterKey, frame: 12 }],
     frameRate: 1
   });
 }
@@ -563,4 +564,21 @@ function updateUsersList() {
 }
 
 // Update the DOMContentLoaded event listener
-document.addEventListener('DOMContentLoaded', updateUsersList); 
+document.addEventListener('DOMContentLoaded', updateUsersList);
+
+function swapCharacter() {
+  currentCharacterKey = (currentCharacterKey === 'character') ? 'character-2' : 'character';
+  player.setTexture(currentCharacterKey);
+  createAnimations(player.scene);
+  player.anims.play('idle-down', true);
+}
+
+// Attach event listener after DOM is loaded
+if (typeof window !== 'undefined') {
+  window.addEventListener('DOMContentLoaded', function() {
+    const swapBtn = document.getElementById('swap-character-btn');
+    if (swapBtn) {
+      swapBtn.addEventListener('click', swapCharacter);
+    }
+  });
+} 

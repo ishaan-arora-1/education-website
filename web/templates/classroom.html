@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Virtual Classroom{% endblock title %}
 
@@ -10,46 +11,43 @@
 {% endblock extra_head %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-6">
-  <h1 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Virtual Classroom</h1>
-  
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 mb-6">
-    <p class="text-gray-600 dark:text-gray-300 mb-4">
-      Welcome to the virtual classroom! Move around using arrow keys or WASD. 
-      Interact with objects by pressing the E key when prompted.
-    </p>
-    
-    <!-- Game container with fixed aspect ratio -->
-    <div class="flex justify-center items-center">
-      <div class="relative w-full max-w-4xl" style="padding-top: 56.25%"> <!-- 16:9 aspect ratio -->
-        <div id="classroom-game" class="absolute top-0 left-0 w-full h-full rounded-lg overflow-hidden border-2 border-teal-300"></div>
+<div class="w-full h-[calc(100vh-4rem)] bg-white dark:bg-gray-800 flex flex-col">
+  <div class="flex-1 flex flex-row">
+    <!-- Game container full screen -->
+    <div class="flex-1 flex items-center justify-center">
+      <div id="classroom-game" class="w-full h-full rounded-lg overflow-hidden border-2 border-teal-300"></div>
+    </div>
+    <!-- Users list on the right -->
+    <div class="w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 m-4 h-fit self-start">
+      <h2 class="text-xl font-bold mb-2 text-gray-700 dark:text-gray-300">Classroom Occupants</h2>
+      <div id="users-list" class="space-y-2">
+        <!-- Users will be populated here via JavaScript -->
+      </div>
+      <div class="mt-6 flex flex-col items-center">
+        <button id="swap-character-btn" class="bg-gray-100 hover:bg-teal-300 dark:bg-gray-700 dark:hover:bg-teal-400 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg shadow transition duration-200 flex flex-col items-center">
+          <img src="{% static 'images/classroom/character-2.png' %}" alt="Character 2" class="w-12 h-12 mb-1 rounded" />
+          <span class="text-xs">Switch Character</span>
+        </button>
       </div>
     </div>
   </div>
-  
   <!-- Action button that appears when near interactive objects -->
-  <div id="interaction-button" class="fixed bottom-10 right-10 bg-teal-300 hover:bg-teal-400 text-white px-6 py-2 rounded-lg transition duration-200 shadow-lg hidden">
+  <div id="interaction-button" class="fixed bottom-10 right-10 bg-teal-300 hover:bg-teal-400 text-white px-6 py-2 rounded-lg transition duration-200 shadow-lg hidden z-50">
     <span id="interaction-text">Interact</span>
-  </div>
-
-  <!-- List of users in the classroom -->
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4">
-    <h2 class="text-xl font-bold mb-2 text-gray-700 dark:text-gray-300">Classroom Occupants</h2>
-    <div id="users-list" class="space-y-2">
-      <!-- Users will be populated here via JavaScript -->
-    </div>
   </div>
 </div>
 
 <!-- Game data from backend -->
+<script id="game-state-json" type="application/json">{{ game_state|safe }}</script>
+<script id="current-user-json" type="application/json">{
+  "id": {% if user.id %}{{ user.id }}{% else %}null{% endif %},
+  "username": {% if user.username %}"{{ user.username }}"{% else %}"Guest"{% endif %},
+  "avatar": {% if user.profile.avatar_url %}"{{ user.profile.avatar_url }}"{% else %}""{% endif %}
+}</script>
 <script>
-  // Initialize game state and user data with default values if not provided by backend
-  const initialGameState = {% if game_state %}{{ game_state|safe }}{% else %}null{% endif %};
-  const currentUser = {
-    id: {% if user.id %}{{ user.id }}{% else %}null{% endif %},
-    username: {% if user.username %}"{{ user.username }}"{% else %}"Guest"{% endif %},
-    avatar: {% if user.profile.avatar_url %}"{{ user.profile.avatar_url }}"{% else %}""{% endif %}
-  };
+  // Parse game state and user data from JSON script tags
+  const initialGameState = JSON.parse(document.getElementById('game-state-json').textContent || 'null');
+  const currentUser = JSON.parse(document.getElementById('current-user-json').textContent || '{}');
 
   // Initialize interaction button
   document.addEventListener('DOMContentLoaded', function() {
@@ -65,6 +63,5 @@
   });
 </script>
 
-{% load static %}
 <script src="{% static 'js/classroom/game.js' %}"></script>
 {% endblock content %} 
