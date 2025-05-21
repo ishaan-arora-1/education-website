@@ -690,8 +690,8 @@ class EducationalVideo(models.Model):
     @property
     def thumbnail_url(self):
         """
-        Build the URL for YouTube’s high-quality default thumbnail.
-        Returns None if this isn’t a YouTube video.
+        Build the URL for YouTube's high-quality default thumbnail.
+        Returns None if this isn't a YouTube video.
         """
         vid = self.youtube_id
         if vid:
@@ -3057,8 +3057,7 @@ class VirtualClassroom(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     max_students = models.PositiveIntegerField(default=30)
-    customization = models.OneToOneField('VirtualClassroomCustomization', on_delete=models.SET_NULL, null=True, blank=True)
-    
+
     def __str__(self):
         return f"{self.name} - {self.teacher.username}"
 
@@ -3068,11 +3067,11 @@ class VirtualClassroom(models.Model):
 class VirtualClassroomCustomization(models.Model):
     """Model for storing virtual classroom customization settings."""
     classroom = models.OneToOneField(VirtualClassroom, on_delete=models.CASCADE, related_name='customization_settings')
-    wall_color = models.CharField(max_length=7, default="#FFFFFF")  # Hex color
-    floor_color = models.CharField(max_length=7, default="#F5F5F5")  # Hex color
+    wall_color = models.CharField(max_length=7, default="#E6E2D7")  # Hex color
+    floor_color = models.CharField(max_length=7, default="#C7B299")  # Hex color
     desk_color = models.CharField(max_length=7, default="#8B4513")  # Hex color
     chair_color = models.CharField(max_length=7, default="#4B0082")  # Hex color
-    board_color = models.CharField(max_length=7, default="#000000")  # Hex color
+    board_color = models.CharField(max_length=7, default="#005C53")  # Hex color
     number_of_rows = models.PositiveIntegerField(default=5)
     desks_per_row = models.PositiveIntegerField(default=6)
     has_plants = models.BooleanField(default=True)
