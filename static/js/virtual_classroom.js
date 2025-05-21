@@ -15,25 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
     }
 
-    // Constants - these will be updated when settings are loaded
-    let COLORS = {
-        WALL: '#FFFFFF',
-        FLOOR: '#F5F5F5',
-        DESK: '#8B4513',
-        CHAIR: '#4B0082',
-        BOARD: '#000000'
-    };
-
-    let SETTINGS = {
-        NUM_ROWS: 5,
-        DESKS_PER_ROW: 6,
-        HAS_PLANTS: true,
-        HAS_WINDOWS: true,
-        HAS_BOOKSHELF: true,
-        HAS_CLOCK: true,
-        HAS_CARPET: true
-    };
-
     // Load settings from form data (which comes from the database)
     function loadSettings() {
         // Read values from the form
@@ -52,39 +33,57 @@ document.addEventListener('DOMContentLoaded', () => {
             has_carpet: document.getElementById('hasCarpet').checked
         };
 
-        // Update the constants
-        COLORS.WALL = settings.wall_color;
-        COLORS.FLOOR = settings.floor_color;
-        COLORS.DESK = settings.desk_color;
-        COLORS.CHAIR = settings.chair_color;
-        COLORS.BOARD = settings.board_color;
-
-        SETTINGS.NUM_ROWS = settings.number_of_rows;
-        SETTINGS.DESKS_PER_ROW = settings.desks_per_row;
-        SETTINGS.HAS_PLANTS = settings.has_plants;
-        SETTINGS.HAS_WINDOWS = settings.has_windows;
-        SETTINGS.HAS_BOOKSHELF = settings.has_bookshelf;
-        SETTINGS.HAS_CLOCK = settings.has_clock;
-        SETTINGS.HAS_CARPET = settings.has_carpet;
-
         return settings;
     }
+
+    // Initialize state with settings from form
+    const state = {
+        settings: loadSettings(),
+        character: {
+            position: { x: 400, y: 300 },
+            velocity: { x: 0, y: 0 },
+            direction: 'down',
+            isMoving: false,
+            walkFrame: 0
+        },
+        keysPressed: {},
+        lastUpdateTime: Date.now()
+    };
+
+    // Initialize COLORS and SETTINGS from state
+    const COLORS = {
+        WALL: state.settings.wall_color,
+        FLOOR: state.settings.floor_color,
+        DESK: state.settings.desk_color,
+        CHAIR: state.settings.chair_color,
+        BOARD: state.settings.board_color
+    };
+
+    const SETTINGS = {
+        NUM_ROWS: state.settings.number_of_rows,
+        DESKS_PER_ROW: state.settings.desks_per_row,
+        HAS_PLANTS: state.settings.has_plants,
+        HAS_WINDOWS: state.settings.has_windows,
+        HAS_BOOKSHELF: state.settings.has_bookshelf,
+        HAS_CLOCK: state.settings.has_clock,
+        HAS_CARPET: state.settings.has_carpet
+    };
 
     // Save settings to database via AJAX
     function saveSettings(settings) {
         const data = {
-            wallColor: settings.wall_color,
-            floorColor: settings.floor_color,
-            deskColor: settings.desk_color,
-            chairColor: settings.chair_color,
-            boardColor: settings.board_color,
-            numRows: settings.number_of_rows,
-            desksPerRow: settings.desks_per_row,
-            hasPlants: settings.has_plants,
-            hasWindows: settings.has_windows,
-            hasBookshelf: settings.has_bookshelf,
-            hasClock: settings.has_clock,
-            hasCarpet: settings.has_carpet
+            wall_color: settings.wall_color,
+            floor_color: settings.floor_color,
+            desk_color: settings.desk_color,
+            chair_color: settings.chair_color,
+            board_color: settings.board_color,
+            number_of_rows: settings.number_of_rows,
+            desks_per_row: settings.desks_per_row,
+            has_plants: settings.has_plants,
+            has_windows: settings.has_windows,
+            has_bookshelf: settings.has_bookshelf,
+            has_clock: settings.has_clock,
+            has_carpet: settings.has_carpet
         };
 
         fetch(window.location.href, {
@@ -100,6 +99,28 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(data => {
             if (data.status === 'success') {
                 console.log('Customization saved successfully');
+                
+                // Add delay to ensure state persistence
+                setTimeout(() => {
+                    // Update state and constants
+                    state.settings = settings;
+                    COLORS.WALL = settings.wall_color;
+                    COLORS.FLOOR = settings.floor_color;
+                    COLORS.DESK = settings.desk_color;
+                    COLORS.CHAIR = settings.chair_color;
+                    COLORS.BOARD = settings.board_color;
+
+                    SETTINGS.NUM_ROWS = settings.number_of_rows;
+                    SETTINGS.DESKS_PER_ROW = settings.desks_per_row;
+                    SETTINGS.HAS_PLANTS = settings.has_plants;
+                    SETTINGS.HAS_WINDOWS = settings.has_windows;
+                    SETTINGS.HAS_BOOKSHELF = settings.has_bookshelf;
+                    SETTINGS.HAS_CLOCK = settings.has_clock;
+                    SETTINGS.HAS_CARPET = settings.has_carpet;
+
+                    // Re-render the classroom with updated settings
+                    renderClassroom();
+                }, 100);
             }
         })
         .catch(error => console.error('Error saving customization:', error));
@@ -155,19 +176,70 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // State management
-    const state = {
-        settings: loadSettings(),
-        character: {
-            position: { x: 400, y: 300 },
-            velocity: { x: 0, y: 0 },
-            direction: 'down',
-            isMoving: false,
-            walkFrame: 0
-        },
-        keysPressed: {},
-        lastUpdateTime: Date.now()
-    };
+    // Initialize the classroom
+    function init() {
+        // Initialize form with current settings FIRST
+        updateFormValues(state.settings);
+        
+        // Initialize COLORS and SETTINGS from state
+        Object.assign(COLORS, {
+            WALL: state.settings.wall_color,
+            FLOOR: state.settings.floor_color,
+            DESK: state.settings.desk_color,
+            CHAIR: state.settings.chair_color,
+            BOARD: state.settings.board_color
+        });
+
+        Object.assign(SETTINGS, {
+            NUM_ROWS: state.settings.number_of_rows,
+            DESKS_PER_ROW: state.settings.desks_per_row,
+            HAS_PLANTS: state.settings.has_plants,
+            HAS_WINDOWS: state.settings.has_windows,
+            HAS_BOOKSHELF: state.settings.has_bookshelf,
+            HAS_CLOCK: state.settings.has_clock,
+            HAS_CARPET: state.settings.has_carpet
+        });
+
+        // Add event listeners for all inputs
+        const colorInputs = ['wallColor', 'floorColor', 'deskColor', 'chairColor', 'boardColor'];
+        colorInputs.forEach(id => {
+            const input = document.getElementById(id);
+            if (input) {
+                input.addEventListener('change', () => {
+                    const newSettings = loadSettings();
+                    saveSettings(newSettings);
+                });
+            }
+        });
+
+        const rangeInputs = ['numRows', 'desksPerRow'];
+        rangeInputs.forEach(id => {
+            const input = document.getElementById(id);
+            if (input) {
+                input.addEventListener('change', () => {
+                    const newSettings = loadSettings();
+                    saveSettings(newSettings);
+                });
+            }
+        });
+
+        const checkboxInputs = ['hasPlants', 'hasWindows', 'hasBookshelf', 'hasClock', 'hasCarpet'];
+        checkboxInputs.forEach(id => {
+            const input = document.getElementById(id);
+            if (input) {
+                input.addEventListener('change', () => {
+                    const newSettings = loadSettings();
+                    saveSettings(newSettings);
+                });
+            }
+        });
+
+        // Initial render
+        renderClassroom();
+
+        // Start character animation loop
+        requestAnimationFrame(updateCharacter);
+    }
 
     // DOM elements
     const classroomContainer = document.getElementById('classroomContainer');
@@ -184,36 +256,35 @@ document.addEventListener('DOMContentLoaded', () => {
     // Color input handlers
     document.querySelectorAll('input[type="color"]').forEach(input => {
         input.addEventListener('input', (e) => {
-            const setting = e.target.id.replace(/([A-Z])/g, '_$1').toLowerCase();
-            state.settings[setting] = e.target.value;
-            document.getElementById(e.target.id + 'Value').textContent = e.target.value;
-            saveSettings(state.settings);
-            renderClassroom();
+            const settings = loadSettings();
+            const settingKey = e.target.id.replace(/([A-Z])/g, '_$1').toLowerCase();
+            settings[settingKey] = e.target.value;
+            document.getElementById(`${e.target.id}Value`).textContent = e.target.value;
+            state.settings = settings;
+            saveSettings(settings);
         });
     });
 
     // Range input handlers
     document.querySelectorAll('input[type="range"]').forEach(input => {
         input.addEventListener('input', (e) => {
-            const mapping = {
-                'numRows': 'number_of_rows',
-                'desksPerRow': 'desks_per_row'
-            };
-            const setting = mapping[e.target.id] || e.target.id.replace(/([A-Z])/g, '_$1').toLowerCase();
-            state.settings[setting] = parseInt(e.target.value);
-            document.getElementById(e.target.id + 'Value').textContent = e.target.value;
-            saveSettings(state.settings);
-            renderClassroom();
+            const settings = loadSettings();
+            const settingKey = e.target.id.replace(/([A-Z])/g, '_$1').toLowerCase();
+            settings[settingKey] = parseInt(e.target.value);
+            document.getElementById(`${e.target.id}Value`).textContent = e.target.value;
+            state.settings = settings;
+            saveSettings(settings);
         });
     });
 
     // Checkbox handlers
     document.querySelectorAll('input[type="checkbox"]').forEach(input => {
         input.addEventListener('change', (e) => {
-            const setting = e.target.id.replace(/([A-Z])/g, '_$1').toLowerCase();
-            state.settings[setting] = e.target.checked;
-            saveSettings(state.settings);
-            renderClassroom();
+            const settings = loadSettings();
+            const settingKey = e.target.id.replace(/([A-Z])/g, '_$1').toLowerCase();
+            settings[settingKey] = e.target.checked;
+            state.settings = settings;
+            saveSettings(settings);
         });
     });
 
@@ -896,7 +967,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return cookieValue;
     }
 
-    // Initial render and start animation loop
-    renderClassroom();
-    requestAnimationFrame(updateCharacter);
+    // Call init directly
+    init();
 }); 

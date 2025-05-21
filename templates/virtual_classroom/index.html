@@ -128,7 +128,7 @@
                     <input
                         type="checkbox"
                         id="hasPlants"
-                        {% if customization.has_plants|default:True %}checked{% endif %}
+                        {% if customization.has_plants %}checked{% endif %}
                         class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                     />
                     <label for="hasPlants" class="ml-2 text-sm text-gray-700">Plants</label>
@@ -138,7 +138,7 @@
                     <input
                         type="checkbox"
                         id="hasWindows"
-                        {% if customization.has_windows|default:True %}checked{% endif %}
+                        {% if customization.has_windows %}checked{% endif %}
                         class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                     />
                     <label for="hasWindows" class="ml-2 text-sm text-gray-700">Windows</label>
@@ -148,7 +148,7 @@
                     <input
                         type="checkbox"
                         id="hasBookshelf"
-                        {% if customization.has_bookshelf|default:True %}checked{% endif %}
+                        {% if customization.has_bookshelf %}checked{% endif %}
                         class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                     />
                     <label for="hasBookshelf" class="ml-2 text-sm text-gray-700">Bookshelf</label>
@@ -158,7 +158,7 @@
                     <input
                         type="checkbox"
                         id="hasClock"
-                        {% if customization.has_clock|default:True %}checked{% endif %}
+                        {% if customization.has_clock %}checked{% endif %}
                         class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                     />
                     <label for="hasClock" class="ml-2 text-sm text-gray-700">Clock</label>
@@ -168,7 +168,7 @@
                     <input
                         type="checkbox"
                         id="hasCarpet"
-                        {% if customization.has_carpet|default:True %}checked{% endif %}
+                        {% if customization.has_carpet %}checked{% endif %}
                         class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                     />
                     <label for="hasCarpet" class="ml-2 text-sm text-gray-700">Carpet</label>
