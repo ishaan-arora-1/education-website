@@ -857,6 +857,10 @@ def course_detail(request, slug):
     discount_relative = reverse("apply_discount_via_referrer")
     discount_params = urlencode({"course_id": course.id})
     discount_url = request.build_absolute_uri(f"{discount_relative}?{discount_params}")
+
+    # Get active virtual classroom for the course
+    virtual_classroom = course.virtual_classrooms.filter(is_active=True).first()
+
     context = {
         "course": course,
         "sessions": sessions,
@@ -879,6 +883,7 @@ def course_detail(request, slug):
         "rating_distribution": rating_distribution,
         "reviews_num": reviews_num,
         "discount_url": discount_url,
+        "virtual_classroom": virtual_classroom,
     }
 
     return render(request, "courses/detail.html", context)
@@ -4659,18 +4664,11 @@ def virtual_classroom_list(request):
 @login_required
 def virtual_classroom_create(request):
     """View to create a new virtual classroom."""
-    # Get the course if provided in the query parameters
-    course = None
-    if request.GET.get('course'):
-        course = get_object_or_404(Course, id=request.GET.get('course'), teacher=request.user)
-
     if request.method == 'POST':
         form = VirtualClassroomForm(request.POST, user=request.user)
         if form.is_valid():
             classroom = form.save(commit=False)
             classroom.teacher = request.user
-            if course:
-                classroom.course = course
             classroom.save()
             
             # Create default customization
@@ -4681,14 +4679,10 @@ def virtual_classroom_create(request):
             messages.success(request, 'Virtual classroom created successfully!')
             return redirect('virtual_classroom_customize', classroom_id=classroom.id)
     else:
-        initial = {}
-        if course:
-            initial['course'] = course
-        form = VirtualClassroomForm(user=request.user, initial=initial)
+        form = VirtualClassroomForm(user=request.user)
     
     return render(request, 'virtual_classroom/create.html', {
-        'form': form,
-        'course': course
+        'form': form
     })
 
 @login_required
@@ -4696,7 +4690,7 @@ def virtual_classroom_customize(request, classroom_id):
     """View to customize a virtual classroom."""
     classroom = get_object_or_404(VirtualClassroom, id=classroom_id, teacher=request.user)
     
-    # Get or create the customization object
+    # Get or create customization settings
     customization, created = VirtualClassroomCustomization.objects.get_or_create(classroom=classroom)
     
     if request.method == 'POST':
@@ -4716,9 +4710,22 @@ def virtual_classroom_customize(request, classroom_id):
 @login_required
 def virtual_classroom_detail(request, classroom_id):
     """View to display a virtual classroom."""
-    classroom = get_object_or_404(VirtualClassroom, id=classroom_id, teacher=request.user)
+    classroom = get_object_or_404(VirtualClassroom, id=classroom_id)
+    
+    # Check if user is teacher or enrolled student
+    is_teacher = request.user == classroom.teacher
+    is_enrolled = False
+    if classroom.course:
+        is_enrolled = classroom.course.enrollments.filter(student=request.user, status="approved").exists()
+    
+    if not (is_teacher or is_enrolled):
+        messages.error(request, "You do not have access to this virtual classroom.")
+        return redirect("course_detail", slug=classroom.course.slug if classroom.course else "course_search")
     
     if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        if not is_teacher:  # Only teachers can customize
+            return JsonResponse({'status': 'error', 'message': 'Only teachers can customize the classroom'}, status=403)
+            
         try:
             data = json.loads(request.body)
             customization = classroom.customization_settings
@@ -4746,7 +4753,9 @@ def virtual_classroom_detail(request, classroom_id):
     
     return render(request, 'virtual_classroom/index.html', {
         'classroom': classroom,
-        'customization': classroom.customization_settings
+        'customization': classroom.customization_settings,
+        'is_teacher': is_teacher,
+        'is_enrolled': is_enrolled
     })
 
 @login_required
