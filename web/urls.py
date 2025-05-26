@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import include, path
 
-from . import admin_views, peer_challenge_views, quiz_views, views, views_avatar, views_course_invites
+from . import admin_views, peer_challenge_views, quiz_views, views, views_avatar
 from .secure_messaging import (
     compose_message,
     download_message,
@@ -106,7 +106,7 @@ urlpatterns += i18n_patterns(
     path("courses/<slug:slug>/add-session/", views.add_session, name="add_session"),
     path("courses/<slug:slug>/confirm-rolled-sessions/", views.confirm_rolled_sessions, name="confirm_rolled_sessions"),
     path("courses/<slug:slug>/message-students/", views.message_enrolled_students, name="message_students"),
-    path("courses/<slug:slug>/add-student/", views_course_invites.add_student_to_course, name="add_student_to_course"),
+    path("courses/<slug:slug>/add-student/", views.add_student_to_course, name="add_student_to_course"),
     path(
         "courses/<slug:course_slug>/manage-student/<int:student_id>/",
         views.student_management,
