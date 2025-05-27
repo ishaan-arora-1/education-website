@@ -123,6 +123,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "captcha",
     "markdownx",
+    "channels",
     "web",
     "web.virtual_lab.apps.VirtualLabConfig",
 ]
@@ -395,3 +396,10 @@ USE_X_FORWARDED_HOST = True
 
 # GitHub API Token for fetching contributor data
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
+
+# Channel Layers Configuration
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
