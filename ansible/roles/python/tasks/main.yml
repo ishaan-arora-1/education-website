@@ -1,0 +1,54 @@
+---
+- name: Add deadsnakes PPA for Python versions
+  apt_repository:
+    repo: ppa:deadsnakes/ppa
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install Python and development packages
+  apt:
+    name: "{{ system_packages | select('match', '^python.*') | list }}"
+    state: present
+    update_cache: yes
+  become: yes
+  tags: python
+
+- name: Create virtual environment with Python 3.11
+  command: "{{ python_executable }} -m venv {{ venv_path }}"
+  args:
+    creates: "{{ venv_path }}/bin/activate"
+  tags: python
+
+- name: Upgrade pip in virtual environment
+  pip:
+    name: pip
+    state: latest
+    virtualenv: "{{ venv_path }}"
+    virtualenv_command: "{{ python_executable }} -m venv"
+    extra_args: "--break-system-packages"
+  tags: python
+
+- name: Install requirements from requirements.txt
+  pip:
+    requirements: "{{ project_path }}/requirements.txt"
+    virtualenv: "{{ venv_path }}"
+    virtualenv_command: "{{ python_executable }} -m venv"
+    extra_args: "--break-system-packages"
+  tags: python
+
+- name: Install additional Python packages
+  pip:
+    name: "{{ additional_python_packages }}"
+    virtualenv: "{{ venv_path }}"
+    virtualenv_command: "{{ python_executable }} -m venv"
+    extra_args: "--break-system-packages"
+  tags: python
+
+- name: Set virtual environment ownership
+  file:
+    path: "{{ venv_path }}"
+    owner: "{{ project_user }}"
+    group: "{{ project_user }}"
+    recurse: yes
+  become: yes
+  tags: python 

@@ -1,0 +1,62 @@
+---
+- name: Deploy Education Website
+  hosts: all
+  become: yes
+  gather_facts: yes
+  
+  pre_tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+      tags: always
+
+  roles:
+    - role: common
+      tags: ['common', 'setup']
+    
+    - role: security
+      tags: ['security', 'firewall']
+    
+    - role: postgresql
+      tags: ['postgresql', 'database']
+    
+    - role: python
+      tags: ['python', 'environment']
+    
+    - role: django
+      tags: ['django', 'application']
+    
+    - role: nginx
+      tags: ['nginx', 'webserver']
+    
+    - role: ssl
+      tags: ['ssl', 'certificates']
+      when: enable_ssl | default(true)
+    
+    - role: systemd
+      tags: ['systemd', 'service']
+
+  post_tasks:
+    - name: Ensure all services are running
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - nginx
+        - postgresql
+        - "{{ project_name }}"
+      tags: always
+      ignore_errors: "{{ ansible_check_mode }}"
+
+    - name: Display deployment summary
+      debug:
+        msg: |
+          Deployment completed successfully!
+          Application: {{ project_name }}
+          Server: {{ inventory_hostname }}
+          Domain: {{ domain_name | default('Not configured') }}
+          SSL: {{ 'Enabled' if enable_ssl | default(true) else 'Disabled' }}
+      tags: always 

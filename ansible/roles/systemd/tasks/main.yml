@@ -1,0 +1,43 @@
+---
+- name: Create systemd service file for the application
+  template:
+    src: systemd_service.j2
+    dest: "/etc/systemd/system/{{ project_name }}.service"
+    mode: '0644'
+  notify:
+    - reload systemd
+    - restart application
+
+- name: Create systemd socket file for the application (optional)
+  template:
+    src: systemd_socket.j2
+    dest: "/etc/systemd/system/{{ project_name }}.socket"
+    mode: '0644'
+  when: use_systemd_socket | default(false) | bool
+  notify:
+    - reload systemd
+    - restart application
+
+- name: Start and enable application service
+  systemd:
+    name: "{{ project_name }}"
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Create application status check script
+  template:
+    src: check_status.sh.j2
+    dest: "{{ project_path }}/scripts/check_status.sh"
+    mode: '0755'
+    owner: "{{ project_user }}"
+    group: "{{ project_user }}"
+
+- name: Create application restart script
+  template:
+    src: restart_app.sh.j2
+    dest: "{{ project_path }}/scripts/restart_app.sh"
+    mode: '0755'
+    owner: "{{ project_user }}"
+    group: "{{ project_user }}" 

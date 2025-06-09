@@ -1,0 +1,22 @@
+[Unit]
+Description={{ systemd_service_description }}
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=exec
+User={{ project_user }}
+Group={{ project_user }}
+WorkingDirectory={{ project_path }}
+Environment="PATH={{ venv_path }}/bin"
+Environment="DJANGO_SETTINGS_MODULE={{ django_settings_module }}"
+ExecStart={{ venv_path }}/bin/gunicorn web.asgi:application -w {{ gunicorn_workers }} -k {{ gunicorn_worker_class }} -b {{ gunicorn_bind }}
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target 

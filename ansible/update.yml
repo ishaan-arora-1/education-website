@@ -1,0 +1,69 @@
+---
+- name: Update Education Website Application
+  hosts: all
+  become: yes
+  gather_facts: no
+  
+  tasks:
+    - name: Pull latest code from repository
+      git:
+        repo: "{{ git_repo | default('https://github.com/AlphaOneLabs/education-website.git') }}"
+        dest: "{{ project_path }}"
+        version: "{{ git_branch | default('main') }}"
+        force: yes
+      become_user: "{{ project_user }}"
+      
+    - name: Install/update Python requirements
+      pip:
+        requirements: "{{ project_path }}/requirements.txt"
+        virtualenv: "{{ project_path }}/venv"
+      become_user: "{{ project_user }}"
+      
+    - name: Run Django migrations
+      django_manage:
+        command: migrate
+        app_path: "{{ project_path }}"
+        virtualenv: "{{ project_path }}/venv"
+        settings: "{{ django_settings_module }}"
+      become_user: "{{ project_user }}"
+      environment:
+        DJANGO_SETTINGS_MODULE: "{{ django_settings_module }}"
+        
+    - name: Collect static files
+      django_manage:
+        command: collectstatic
+        app_path: "{{ project_path }}"
+        virtualenv: "{{ project_path }}/venv"
+        settings: "{{ django_settings_module }}"
+      become_user: "{{ project_user }}"
+      environment:
+        DJANGO_SETTINGS_MODULE: "{{ django_settings_module }}"
+        
+    - name: Restart application service
+      systemd:
+        name: "{{ project_name }}"
+        state: restarted
+        
+    - name: Wait for application to start
+      wait_for:
+        port: "{{ app_port }}"
+        host: "127.0.0.1"
+        delay: 5
+        timeout: 60
+        
+    - name: Verify application is running
+      uri:
+        url: "http://127.0.0.1:{{ app_port }}"
+        method: GET
+        status_code: 200
+      delegate_to: localhost
+      
+    - name: Send update notification
+      uri:
+        url: "{{ slack_webhook_url }}"
+        method: POST
+        body_format: json
+        body:
+          text: "✅ Application updated successfully on {{ inventory_hostname }} ({{ environment }})"
+      delegate_to: localhost
+      when: slack_webhook_url is defined and slack_webhook_url != "" 

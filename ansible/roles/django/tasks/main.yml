@@ -1,0 +1,110 @@
+---
+- name: Ensure git is available
+  command: which git
+  register: git_check
+  ignore_errors: yes
+  changed_when: false
+
+- name: Clone or update project repository
+  git:
+    repo: "{{ git_repo | default('https://github.com/AlphaOneLabs/education-website.git') }}"
+    dest: "{{ project_path }}"
+    version: "{{ git_branch | default('main') }}"
+    force: yes
+  become_user: "{{ project_user }}"
+  notify: restart application
+  ignore_errors: "{{ ansible_check_mode }}"
+  when: git_check.rc == 0 or not ansible_check_mode
+
+- name: Install Python requirements
+  pip:
+    requirements: "{{ project_path }}/requirements.txt"
+    virtualenv: "{{ project_path }}/venv"
+  become_user: "{{ project_user }}"
+  notify: restart application
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Create Django environment file
+  template:
+    src: django_env.j2
+    dest: "{{ project_path }}/.env"
+    mode: '0600'
+    owner: "{{ project_user }}"
+    group: "{{ project_user }}"
+  notify: restart application
+
+- name: Run Django migrations
+  django_manage:
+    command: migrate
+    app_path: "{{ project_path }}"
+    virtualenv: "{{ project_path }}/venv"
+    settings: "{{ django_settings_module }}"
+  become_user: "{{ project_user }}"
+  environment:
+    DJANGO_SETTINGS_MODULE: "{{ django_settings_module }}"
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Collect Django static files
+  django_manage:
+    command: collectstatic
+    app_path: "{{ project_path }}"
+    virtualenv: "{{ project_path }}/venv"
+    settings: "{{ django_settings_module }}"
+  become_user: "{{ project_user }}"
+  environment:
+    DJANGO_SETTINGS_MODULE: "{{ django_settings_module }}"
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Create Django superuser (only in development)
+  django_manage:
+    command: "shell -c \"from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', 'adminpassword')\""
+    app_path: "{{ project_path }}"
+    virtualenv: "{{ project_path }}/venv"
+    settings: "{{ django_settings_module }}"
+  become_user: "{{ project_user }}"
+  when: environment == "development"
+  environment:
+    DJANGO_SETTINGS_MODULE: "{{ django_settings_module }}"
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Create test data (only in development)
+  django_manage:
+    command: create_test_data
+    app_path: "{{ project_path }}"
+    virtualenv: "{{ project_path }}/venv"
+    settings: "{{ django_settings_module }}"
+  become_user: "{{ project_user }}"
+  when: environment == "development"
+  environment:
+    DJANGO_SETTINGS_MODULE: "{{ django_settings_module }}"
+  ignore_errors: yes
+
+- name: Set up cron jobs for Django management commands
+  cron:
+    name: "{{ item.name }}"
+    minute: "{{ item.minute }}"
+    hour: "{{ item.hour }}"
+    day: "{{ item.day | default('*') }}"
+    weekday: "{{ item.weekday | default('*') }}"
+    job: "cd {{ project_path }} && {{ project_path }}/venv/bin/python manage.py {{ item.command }} >> {{ project_path }}/logs/cron.log 2>&1"
+    user: "{{ project_user }}"
+  loop:
+    - { name: "Send session reminders", minute: "0", hour: "*", command: "send_session_reminders" }
+    - { name: "Send weekly progress updates", minute: "0", hour: "8", weekday: "1", command: "send_weekly_updates" }
+    - { name: "Send assignment reminders", minute: "0", hour: "8", command: "send_assignment_reminders" }
+
+- name: Create webhook update script
+  template:
+    src: webhook_update.sh.j2
+    dest: "/home/{{ project_user }}/webhooks/update.sh"
+    mode: '0755'
+    owner: "{{ project_user }}"
+    group: "{{ project_user }}"
+
+- name: Set proper permissions for project directory
+  file:
+    path: "{{ project_path }}"
+    owner: "{{ project_user }}"
+    group: "{{ project_user }}"
+    recurse: yes
+    mode: 'u=rwX,g=rX,o=rX' 
