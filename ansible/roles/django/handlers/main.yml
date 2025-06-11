@@ -1,6 +1,0 @@
----
-- name: restart application
-  systemd:
-    name: "{{ project_name }}"
-    state: restarted
-    daemon_reload: yes 

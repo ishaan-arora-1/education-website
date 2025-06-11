@@ -32,21 +32,14 @@ nginx_client_max_body_size: "100M"
 nginx_worker_processes: "auto"
 nginx_worker_connections: 1024
 
-# SSL Configuration (conditional based on enable_ssl)
+# SSL Configuration
 ssl_email: "admin@{{ domain_name | default('example.com') }}"
 ssl_cert_path: "/etc/letsencrypt/live/{{ domain_name }}/fullchain.pem"
 ssl_key_path: "/etc/letsencrypt/live/{{ domain_name }}/privkey.pem"
 
 # Security Configuration
-ufw_rules:
-  - { rule: "allow", port: "ssh" }
-  - { rule: "allow", port: "80" }
-  - { rule: "allow", port: "443" }
-
-fail2ban_services:
-  - sshd
-  - nginx-http-auth
-  - nginx-limit-req
+enable_firewall: true
+enable_ssl: false
 
 # Backup Configuration
 backup_retention_days: 7
@@ -69,7 +62,6 @@ system_packages:
   - python3-dev
   - libpq-dev
   - build-essential
-  - sshpass
   - curl
   - wget
   - htop
@@ -81,18 +73,15 @@ additional_python_packages:
   - gunicorn
   - psycopg2-binary
 
-# Webhook Configuration
-webhook_path: "/home/{{ project_user }}/webhooks"
-webhook_script: "{{ webhook_path }}/update.sh"
-
 # Service Configuration
 systemd_service_name: "{{ project_name }}"
 systemd_service_description: "{{ project_name }} website"
 
-# Monitoring and Logging
-log_path: "/var/log/{{ project_name }}"
-log_level: "INFO"
-
-# Environment Variables Template
+# Environment Variables
 django_settings_module: "web.settings"
-allowed_hosts: "{{ domain_name | default('localhost') }},{{ ansible_default_ipv4.address | default('127.0.0.1') }}" 
+timezone: "UTC"
+
+# Encrypted Variables (reference vault.yml)
+db_password: "{{ vault_db_password }}"
+secret_key: "{{ vault_secret_key }}"
+domain_name: "{{ vault_domain_name }}"
