@@ -4,7 +4,7 @@
   become: yes
   vars_files:
     - secrets.yml
-  
+
   tasks:
     # ===========================================
     # 1. SYSTEM SETUP
@@ -19,18 +19,21 @@
         name:
           - python3.11
           - python3.11-venv
+          - python3.11-dev
           - python3-pip
+          - python3-psycopg2
           - nginx
           - git
           - postgresql
           - postgresql-contrib
-          - python3-dev
           - libpq-dev
           - build-essential
           - redis-server
           - supervisor
           - ufw
           - fail2ban
+          - curl
+          - wget
         state: present
 
     - name: Create project user
@@ -39,6 +42,8 @@
         shell: /bin/bash
         home: "/home/{{ project_user }}"
         create_home: yes
+        groups: sudo
+        append: yes
 
     - name: Create project directory
       file:
@@ -70,10 +75,6 @@
         name: postgresql
         enabled: yes
         state: started
-
-    - name: Install psycopg2
-      pip:
-        name: psycopg2-binary
 
     - name: Create database user
       postgresql_user:
@@ -135,7 +136,7 @@
 
     - name: Install production packages
       pip:
-        name: [uvicorn, gunicorn, psycopg2-binary, redis, channels, channels-redis]
+        name: [uvicorn, gunicorn, psycopg2-binary, redis, channels, channels-redis, django-environ]
         virtualenv: "{{ project_dir }}/venv"
       become_user: "{{ project_user }}"
 
@@ -143,13 +144,30 @@
       copy:
         content: |
           DEBUG=False
+          ENVIRONMENT=production
           SECRET_KEY={{ django_secret_key }}
           DATABASE_URL=postgresql://{{ db_user }}:{{ database_password }}@localhost:5432/{{ db_name }}
           DJANGO_ALLOWED_HOSTS={{ ansible_host }},localhost,127.0.0.1
           REDIS_URL=redis://:{{ redis_password }}@{{ redis_host }}:{{ redis_port }}/0
           STATIC_ROOT={{ project_dir }}/staticfiles
           MEDIA_ROOT={{ project_dir }}/media
-          ENVIRONMENT=production
+          EMAIL_FROM={{ email_from }}
+          SENDGRID_API_KEY={{ sendgrid_api_key }}
+          SENDGRID_PASSWORD={{ sendgrid_password }}
+          STRIPE_PUBLISHABLE_KEY={{ stripe_publishable_key }}
+          STRIPE_SECRET_KEY={{ stripe_secret_key }}
+          STRIPE_WEBHOOK_SECRET={{ stripe_webhook_secret }}
+          ADMIN_URL={{ admin_url }}
+          MESSAGE_ENCRYPTION_KEY={{ message_encryption_key }}
+          SLACK_WEBHOOK_URL={{ slack_webhook_url }}
+          TWITTER_API_KEY={{ twitter_api_key }}
+          TWITTER_API_SECRET_KEY={{ twitter_api_secret_key }}
+          TWITTER_ACCESS_TOKEN={{ twitter_access_token }}
+          TWITTER_ACCESS_TOKEN_SECRET={{ twitter_access_token_secret }}
+          GS_BUCKET_NAME={{ gs_bucket_name }}
+          GS_PROJECT_ID={{ gs_project_id }}
+          SERVICE_ACCOUNT_FILE={{ service_account_file }}
+          GITHUB_TOKEN={{ github_token }}
         dest: "{{ project_dir }}/.env"
         owner: "{{ project_user }}"
         group: "{{ project_user }}"
@@ -192,23 +210,23 @@
           upstream django_app {
               server 127.0.0.1:{{ app_port }};
           }
-          
+
           server {
               listen 80;
               server_name {{ ansible_host }};
-              
+
               client_max_body_size 50M;
-          
+
               location /static/ {
                   alias {{ project_dir }}/staticfiles/;
                   expires 30d;
               }
-          
+
               location /media/ {
                   alias {{ project_dir }}/media/;
                   expires 7d;
               }
-          
+
               location /ws/ {
                   proxy_pass http://django_app;
                   proxy_http_version 1.1;
@@ -219,7 +237,7 @@
                   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                   proxy_redirect off;
               }
-          
+
               location / {
                   proxy_pass http://django_app;
                   proxy_set_header Host $host;
@@ -258,7 +276,7 @@
           autorestart=true
           redirect_stderr=true
           stdout_logfile=/var/log/supervisor/{{ project_name }}-django.log
-          
+
           [program:{{ project_name }}-channels]
           command={{ project_dir }}/venv/bin/python manage.py runworker
           directory={{ project_dir }}
@@ -275,6 +293,11 @@
         name: supervisor
         enabled: yes
         state: started
+
+    - name: Reload supervisor configuration
+      supervisorctl:
+        name: all
+        state: reloaded
 
     - name: Start Django services
       supervisorctl:
@@ -318,4 +341,4 @@
     - name: restart supervisor
       systemd:
         name: supervisor
-        state: restarted 
+        state: restarted
