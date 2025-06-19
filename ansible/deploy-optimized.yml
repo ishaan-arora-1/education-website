@@ -1,0 +1,478 @@
+---
+- name: Deploy Django Education Website with Channels (Optimized)
+  hosts: all
+  become: yes
+  gather_facts: no  # Disable fact gathering for speed
+  vars_files:
+    - secrets.yml
+  vars:
+    # Performance optimizations
+    ansible_ssh_pipelining: true
+    ansible_ssh_common_args: '-o ControlMaster=auto -o ControlPersist=60s -o ControlPath=/tmp/ansible-ssh-%h-%p-%r'
+
+  tasks:
+    # ===========================================
+    # 0. MINIMAL FACT GATHERING
+    # ===========================================
+    - name: Gather minimal facts
+      setup:
+        filter: ansible_distribution*
+      tags: [always]
+
+    # ===========================================
+    # 1. OPTIMIZED SYSTEM SETUP
+    # ===========================================
+    - name: Update package cache (with timeout)
+      apt:
+        update_cache: yes
+        cache_valid_time: 86400  # Cache valid for 24 hours
+        force_apt_get: yes  # Use apt-get instead of apt for better stability
+      register: apt_update
+      async: 300  # Allow up to 5 minutes
+      poll: 15    # Check every 15 seconds
+
+    - name: Install essential packages in batches
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        # Core runtime packages (batch 1)
+        - ['python3.11', 'python3.11-venv', 'python3.11-dev', 'python3-pip']
+        # Database and cache (batch 2)  
+        - ['postgresql', 'postgresql-contrib', 'libpq-dev', 'redis-server']
+        # Web server and process management (batch 3)
+        - ['nginx', 'supervisor']
+        # Development tools (batch 4)
+        - ['git', 'build-essential', 'curl', 'wget']
+        # Security tools (batch 5)
+        - ['ufw', 'fail2ban', 'python3-psycopg2']
+      async: 180
+      poll: 0
+      register: package_install
+      tags: [packages]
+
+    # Wait for package installation to complete
+    - name: Wait for package installation
+      async_status:
+        jid: "{{ item.ansible_job_id }}"
+      register: job_result
+      until: job_result.finished
+      retries: 30
+      delay: 5
+      loop: "{{ package_install.results }}"
+
+    - name: Wait for apt update
+      async_status:
+        jid: "{{ apt_update.ansible_job_id }}"
+      register: apt_result
+      until: apt_result.finished
+      retries: 30
+      delay: 5
+
+    - name: Create project user
+      user:
+        name: "{{ project_user }}"
+        shell: /bin/bash
+        home: "/home/{{ project_user }}"
+        create_home: yes
+        groups: sudo
+        append: yes
+
+    - name: Create project directory
+      file:
+        path: "{{ project_dir }}"
+        state: directory
+        owner: "{{ project_user }}"
+        group: "{{ project_user }}"
+        mode: '0755'
+
+    # ===========================================
+    # 2. PARALLEL SERVICE SETUP
+    # ===========================================
+    - name: Configure and start services in parallel
+      block:
+        # PostgreSQL setup
+        - name: Start PostgreSQL
+          systemd:
+            name: postgresql
+            enabled: yes
+            state: started
+          async: 60
+          poll: 0
+          register: postgres_start
+
+        # Redis setup
+        - name: Configure Redis
+          lineinfile:
+            path: /etc/redis/redis.conf
+            regexp: "{{ item.regexp }}"
+            line: "{{ item.line }}"
+          loop:
+            - { regexp: "^bind", line: "bind 127.0.0.1" }
+            - { regexp: "^# requirepass", line: "requirepass {{ redis_password }}" }
+            - { regexp: "^protected-mode", line: "protected-mode no" }
+          async: 30
+          poll: 0
+          register: redis_config
+
+        - name: Start Redis
+          systemd:
+            name: redis-server
+            enabled: yes
+            state: started
+          async: 60
+          poll: 0
+          register: redis_start
+
+        # UFW firewall setup
+        - name: Configure UFW firewall
+          ufw:
+            rule: allow
+            port: "{{ item }}"
+          loop: [22, 80, 443]
+          async: 30
+          poll: 0
+          register: ufw_config
+
+        - name: Enable UFW firewall
+          ufw:
+            state: enabled
+            policy: deny
+          async: 30
+          poll: 0
+          register: ufw_enable
+
+    # Wait for parallel operations
+    - name: Wait for PostgreSQL
+      async_status:
+        jid: "{{ postgres_start.ansible_job_id }}"
+      register: postgres_result
+      until: postgres_result.finished
+      retries: 10
+      delay: 3
+
+    - name: Wait for Redis configuration
+      async_status:
+        jid: "{{ redis_config.ansible_job_id }}"
+      register: redis_config_result
+      until: redis_config_result.finished
+      retries: 10
+      delay: 3
+
+    - name: Wait for Redis start
+      async_status:
+        jid: "{{ redis_start.ansible_job_id }}"
+      register: redis_result
+      until: redis_result.finished
+      retries: 10
+      delay: 3
+
+    # ===========================================
+    # 3. DATABASE SETUP
+    # ===========================================
+    - name: Create database user
+      postgresql_user:
+        name: "{{ db_user }}"
+        password: "{{ database_password }}"
+        state: present
+      become_user: postgres
+
+    - name: Create database
+      postgresql_db:
+        name: "{{ db_name }}"
+        owner: "{{ db_user }}"
+        state: present
+      become_user: postgres
+
+    # ===========================================
+    # 4. OPTIMIZED DJANGO APPLICATION SETUP
+    # ===========================================
+    - name: Clone Django project with single branch
+      git:
+        repo: https://github.com/AlphaOneLabs/education-website.git
+        dest: "{{ project_dir }}"
+        force: yes
+        depth: 1  # Shallow clone for speed
+        single_branch: yes
+      become_user: "{{ project_user }}"
+      async: 120
+      poll: 0
+      register: git_clone
+
+    - name: Create virtual environment and upgrade pip
+      pip:
+        virtualenv: "{{ project_dir }}/venv"
+        virtualenv_python: "python{{ python_version }}"
+        name: [pip, setuptools, wheel]
+        state: latest
+      become_user: "{{ project_user }}"
+      async: 120
+      poll: 0
+      register: venv_create
+
+    # Wait for git clone
+    - name: Wait for git clone
+      async_status:
+        jid: "{{ git_clone.ansible_job_id }}"
+      register: git_result
+      until: git_result.finished
+      retries: 20
+      delay: 3
+
+    # Wait for venv creation
+    - name: Wait for virtual environment
+      async_status:
+        jid: "{{ venv_create.ansible_job_id }}"
+      register: venv_result
+      until: venv_result.finished
+      retries: 20
+      delay: 3
+
+    - name: Install Django dependencies with caching
+      pip:
+        requirements: "{{ project_dir }}/requirements.txt"
+        virtualenv: "{{ project_dir }}/venv"
+        extra_args: "--cache-dir /tmp/pip-cache --no-deps"
+      become_user: "{{ project_user }}"
+      async: 300
+      poll: 0
+      register: requirements_install
+
+    - name: Install production packages
+      pip:
+        name: [uvicorn, gunicorn, psycopg2-binary, redis, channels, channels-redis, django-environ]
+        virtualenv: "{{ project_dir }}/venv"
+        extra_args: "--cache-dir /tmp/pip-cache"
+      become_user: "{{ project_user }}"
+      async: 180
+      poll: 0
+      register: prod_packages
+
+    # Create directories and config while packages install
+    - name: Create static and media directories
+      file:
+        path: "{{ project_dir }}/{{ item }}"
+        state: directory
+        owner: "{{ project_user }}"
+        group: "{{ project_user }}"
+        mode: '0755'
+      loop: [staticfiles, media]
+
+    - name: Create Django .env file
+      copy:
+        content: |
+          DEBUG=False
+          ENVIRONMENT=production
+          SECRET_KEY={{ django_secret_key }}
+          DATABASE_URL=postgresql://{{ db_user }}:{{ database_password }}@localhost:5432/{{ db_name }}
+          DJANGO_ALLOWED_HOSTS={{ ansible_host }},localhost,127.0.0.1
+          REDIS_URL=redis://:{{ redis_password }}@{{ redis_host }}:{{ redis_port }}/0
+          STATIC_ROOT={{ project_dir }}/staticfiles
+          MEDIA_ROOT={{ project_dir }}/media
+          EMAIL_FROM={{ email_from }}
+          SENDGRID_API_KEY={{ sendgrid_api_key }}
+          SENDGRID_PASSWORD={{ sendgrid_password }}
+          STRIPE_PUBLISHABLE_KEY={{ stripe_publishable_key }}
+          STRIPE_SECRET_KEY={{ stripe_secret_key }}
+          STRIPE_WEBHOOK_SECRET={{ stripe_webhook_secret }}
+          ADMIN_URL={{ admin_url }}
+          MESSAGE_ENCRYPTION_KEY={{ message_encryption_key }}
+          SLACK_WEBHOOK_URL={{ slack_webhook_url }}
+          TWITTER_API_KEY={{ twitter_api_key }}
+          TWITTER_API_SECRET_KEY={{ twitter_api_secret_key }}
+          TWITTER_ACCESS_TOKEN={{ twitter_access_token }}
+          TWITTER_ACCESS_TOKEN_SECRET={{ twitter_access_token_secret }}
+          GS_BUCKET_NAME={{ gs_bucket_name }}
+          GS_PROJECT_ID={{ gs_project_id }}
+          SERVICE_ACCOUNT_FILE={{ service_account_file }}
+          GITHUB_TOKEN={{ github_token }}
+        dest: "{{ project_dir }}/.env"
+        owner: "{{ project_user }}"
+        group: "{{ project_user }}"
+        mode: '0600'
+
+    # Wait for package installations
+    - name: Wait for requirements installation
+      async_status:
+        jid: "{{ requirements_install.ansible_job_id }}"
+      register: req_result
+      until: req_result.finished
+      retries: 30
+      delay: 5
+
+    - name: Wait for production packages
+      async_status:
+        jid: "{{ prod_packages.ansible_job_id }}"
+      register: prod_result
+      until: prod_result.finished
+      retries: 20
+      delay: 5
+
+    # Django operations
+    - name: Run Django migrations and collect static in parallel
+      block:
+        - name: Run Django migrations
+          django_manage:
+            command: migrate
+            app_path: "{{ project_dir }}"
+            virtualenv: "{{ project_dir }}/venv"
+          become_user: "{{ project_user }}"
+          async: 120
+          poll: 0
+          register: migrations
+
+        - name: Collect Django static files
+          django_manage:
+            command: collectstatic
+            app_path: "{{ project_dir }}"
+            virtualenv: "{{ project_dir }}/venv"
+          become_user: "{{ project_user }}"
+          async: 120
+          poll: 0
+          register: collectstatic
+
+    # ===========================================
+    # 5. NGINX SETUP
+    # ===========================================
+    - name: Remove default nginx site
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Create nginx configuration
+      copy:
+        content: |
+          upstream django_app {
+              server 127.0.0.1:{{ app_port }};
+          }
+
+          server {
+              listen 80;
+              server_name {{ ansible_host }};
+
+              client_max_body_size 50M;
+
+              location /static/ {
+                  alias {{ project_dir }}/staticfiles/;
+                  expires 30d;
+                  add_header Cache-Control "public, immutable";
+              }
+
+              location /media/ {
+                  alias {{ project_dir }}/media/;
+                  expires 7d;
+              }
+
+              location /ws/ {
+                  proxy_pass http://django_app;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection "upgrade";
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_redirect off;
+              }
+
+              location / {
+                  proxy_pass http://django_app;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_redirect off;
+              }
+          }
+        dest: "/etc/nginx/sites-available/{{ project_name }}"
+
+    - name: Enable nginx site
+      file:
+        src: "/etc/nginx/sites-available/{{ project_name }}"
+        dest: "/etc/nginx/sites-enabled/{{ project_name }}"
+        state: link
+
+    # Wait for Django operations
+    - name: Wait for migrations
+      async_status:
+        jid: "{{ migrations.ansible_job_id }}"
+      register: mig_result
+      until: mig_result.finished
+      retries: 20
+      delay: 3
+
+    - name: Wait for static collection
+      async_status:
+        jid: "{{ collectstatic.ansible_job_id }}"
+      register: static_result
+      until: static_result.finished
+      retries: 20
+      delay: 3
+
+    # ===========================================
+    # 6. SUPERVISOR SETUP
+    # ===========================================
+    - name: Create supervisor configuration for Django
+      copy:
+        content: |
+          [program:{{ project_name }}-django]
+          command={{ project_dir }}/venv/bin/gunicorn web.asgi:application -w 4 -k uvicorn.workers.UvicornWorker -b 127.0.0.1:{{ app_port }}
+          directory={{ project_dir }}
+          user={{ project_user }}
+          autostart=true
+          autorestart=true
+          redirect_stderr=true
+          stdout_logfile=/var/log/supervisor/{{ project_name }}-django.log
+
+          [program:{{ project_name }}-channels]
+          command={{ project_dir }}/venv/bin/python manage.py runworker
+          directory={{ project_dir }}
+          user={{ project_user }}
+          autostart=true
+          autorestart=true
+          redirect_stderr=true
+          stdout_logfile=/var/log/supervisor/{{ project_name }}-channels.log
+        dest: "/etc/supervisor/conf.d/{{ project_name }}.conf"
+
+    # Start all services
+    - name: Start and configure services
+      block:
+        - name: Start nginx
+          systemd:
+            name: nginx
+            enabled: yes
+            state: restarted
+
+        - name: Start supervisor
+          systemd:
+            name: supervisor
+            enabled: yes
+            state: restarted
+
+        - name: Reload supervisor configuration
+          supervisorctl:
+            name: all
+            state: reloaded
+
+        - name: Start Django services
+          supervisorctl:
+            name: "{{ item }}"
+            state: started
+          loop:
+            - "{{ project_name }}-django"
+            - "{{ project_name }}-channels"
+
+    # ===========================================
+    # 7. FINAL CHECKS
+    # ===========================================
+    - name: Wait for Django to start
+      wait_for:
+        port: "{{ app_port }}"
+        host: 127.0.0.1
+        timeout: 30
+
+    - name: Test application
+      uri:
+        url: "http://127.0.0.1:{{ app_port }}"
+        method: GET
+        status_code: 200
+      retries: 3
+      delay: 5 
