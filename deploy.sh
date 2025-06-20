@@ -38,4 +38,4 @@ fi
 echo "Starting deployment..."
 ansible-playbook site.yml -i inventory.yml
 
-echo "Deployment completed successfully!" 
+echo "Deployment completed successfully!"

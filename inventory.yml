@@ -6,12 +6,12 @@ all:
           ansible_host: "{{ lookup('env', 'VPS_IP') }}"
           ansible_user: "{{ lookup('env', 'VPS_USER') }}"
           ansible_password: "{{ lookup('env', 'VPS_PASSWORD') }}"
-          
+
           # Project Configuration
           project_name: "{{ lookup('env', 'PROJECT_NAME') | default('education-website') }}"
           domain_name: "{{ lookup('env', 'DOMAIN_NAME') | default('') }}"
           app_port: "{{ lookup('env', 'APP_PORT') | default('8000') }}"
-          
+
           # Django Configuration
           debug: "{{ lookup('env', 'DEBUG') | default('False') }}"
           django_debug: "{{ lookup('env', 'DJANGO_DEBUG') | default('False') }}"
@@ -19,29 +19,29 @@ all:
           secret_key: "{{ lookup('env', 'SECRET_KEY') }}"
           database_url: "{{ lookup('env', 'DATABASE_URL') | default('sqlite:///db.sqlite3') }}"
           admin_url: "{{ lookup('env', 'ADMIN_URL') | default('a-dmin-url123') }}"
-          
+
           # Email Configuration
           email_from: "{{ lookup('env', 'EMAIL_FROM') | default('admin@example.com') }}"
           sendgrid_api_key: "{{ lookup('env', 'SENDGRID_API_KEY') }}"
           sendgrid_password: "{{ lookup('env', 'SENDGRID_PASSWORD') }}"
-          
+
           # Monitoring
           slack_webhook_url: "{{ lookup('env', 'SLACK_WEBHOOK_URL') }}"
-          
+
           # Security
           message_encryption_key: "{{ lookup('env', 'MESSAGE_ENCRYPTION_KEY') }}"
           enable_https_redirect: "{{ lookup('env', 'ENABLE_HTTPS_REDIRECT') | default('True') }}"
-          
+
           # Stripe Configuration
           stripe_publishable_key: "{{ lookup('env', 'STRIPE_PUBLISHABLE_KEY') }}"
           stripe_secret_key: "{{ lookup('env', 'STRIPE_SECRET_KEY') }}"
           stripe_webhook_secret: "{{ lookup('env', 'STRIPE_WEBHOOK_SECRET') }}"
-          
+
           # Google Cloud Storage
           gs_bucket_name: "{{ lookup('env', 'GS_BUCKET_NAME') }}"
           gs_project_id: "{{ lookup('env', 'GS_PROJECT_ID') }}"
           service_account_file: "{{ lookup('env', 'SERVICE_ACCOUNT_FILE') }}"
-          
+
           # Twitter Configuration
           twitter_api_key: "{{ lookup('env', 'TWITTER_API_KEY') }}"
           twitter_api_secret_key: "{{ lookup('env', 'TWITTER_API_SECRET_KEY') }}"
@@ -49,4 +49,4 @@ all:
           twitter_access_token_secret: "{{ lookup('env', 'TWITTER_ACCESS_TOKEN_SECRET') }}"
           db_name: "{{ lookup('env', 'DB_NAME') | default(project_name | replace('-', '_')) }}"
           db_user: "{{ lookup('env', 'DB_USER') | default(ansible_user) }}"
-          db_password: "{{ lookup('env', 'DB_PASSWORD') }}" 
+          db_password: "{{ lookup('env', 'DB_PASSWORD') }}"

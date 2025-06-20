@@ -2,7 +2,7 @@
 - name: Deploy Education Website
   hosts: webservers
   become: yes
-  
+
   pre_tasks:
     - name: Update apt cache
       apt:
@@ -47,4 +47,4 @@
       when: domain_name != ""
 
     - name: Setup systemd service
-      include_tasks: tasks/systemd.yml 
+      include_tasks: tasks/systemd.yml

@@ -7,4 +7,4 @@
       --non-interactive
       --agree-tos
       --email admin@{{ domain_name }}
-  when: domain_name != "" 
+  when: domain_name != ""

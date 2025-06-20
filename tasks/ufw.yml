@@ -18,4 +18,4 @@
 
 - name: Enable UFW
   ufw:
-    state: enabled 
+    state: enabled

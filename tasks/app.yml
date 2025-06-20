@@ -42,4 +42,4 @@
 - name: Collect static files
   command:
     cmd: "/home/{{ ansible_user }}/{{ project_name }}/venv/bin/python manage.py collectstatic --noinput"
-    chdir: "/home/{{ ansible_user }}/{{ project_name }}" 
+    chdir: "/home/{{ ansible_user }}/{{ project_name }}"
