@@ -1,0 +1,125 @@
+---
+- hosts: production
+  become: yes
+  vars:
+    project_name: "{{ lookup('env', 'PROJECT_NAME') | default('education-website', true) }}"
+    vps_user: "{{ lookup('env', 'VPS_USER') | default('root', true) }}"
+    db_name: "{{ lookup('env', 'DB_NAME') | default('education_website', true) }}"
+    db_user: "{{ lookup('env', 'DB_USER') | default('root', true) }}"
+    db_password: "{{ lookup('env', 'DB_PASSWORD') | default('change_me', true) }}"
+    secret_key: "{{ lookup('env', 'SECRET_KEY') | default('your-secret-key-here', true) }}"
+    debug: "{{ lookup('env', 'DEBUG') | default('False', true) }}"
+
+  tasks:
+    - name: Check if project directory exists
+      stat:
+        path: "/root/{{ project_name }}"
+      register: project_dir
+
+    - name: Display project directory status
+      debug:
+        msg: "Project directory exists: {{ project_dir.stat.exists }}"
+
+    - name: Check if virtual environment exists
+      stat:
+        path: "/root/{{ project_name }}/venv/bin/python"
+      register: venv_check
+      when: project_dir.stat.exists
+
+    - name: Display virtual environment status
+      debug:
+        msg: "Virtual environment exists: {{ venv_check.stat.exists if venv_check.stat is defined else 'N/A' }}"
+
+    - name: Test virtual environment activation and Django
+      shell: |
+        exec env -i /bin/bash --noprofile --norc -c '
+        cd /root/{{ project_name }}
+        source venv/bin/activate
+        echo "=== Python Info ==="
+        python --version
+        which python
+        which pip
+        echo "=== Checking django-environ specifically ==="
+        pip show django-environ || echo "django-environ not found"
+        echo "=== Pip List ==="
+        pip list
+        echo "=== Test Django Import ==="
+        python -c "import django; print(f'"'"'Django version: {django.get_version()}'"'"')" 2>&1 || echo "Django import failed"
+        echo "=== Test environ import ==="
+        python -c "import environ; print('"'"'environ imported successfully'"'"')" 2>&1 || echo "environ import failed"
+        '
+      register: django_test
+      ignore_errors: yes
+      when: project_dir.stat.exists and venv_check.stat.exists
+
+    - name: Check if Django is actually installed
+      shell: |
+        exec env -i /bin/bash --noprofile --norc -c '
+        cd /root/{{ project_name }}
+        source venv/bin/activate
+        pip show django || echo "Django package not found"
+        '
+      register: django_check
+      ignore_errors: yes
+      when: project_dir.stat.exists and venv_check.stat.exists
+
+    - name: Display Django package info
+      debug:
+        var: django_check.stdout_lines
+      when: django_check.stdout_lines is defined
+
+    - name: Try to reinstall missing packages
+      shell: |
+        exec env -i /bin/bash --noprofile --norc -c '
+        cd /root/{{ project_name }}
+        source venv/bin/activate
+        echo "=== Installing django-environ ==="
+        pip install django-environ
+        echo "=== Installing other requirements ==="
+        pip install -r requirements.txt
+        echo "=== Final verification ==="
+        pip show django django-environ
+        '
+      register: package_install
+      ignore_errors: yes
+      when: project_dir.stat.exists and venv_check.stat.exists
+
+    - name: Display package installation result
+      debug:
+        var: package_install.stdout_lines
+      when: package_install.stdout_lines is defined
+
+    - name: Test database connection
+      shell: |
+        cd /root/{{ project_name }}
+        source venv/bin/activate
+        export DJANGO_SETTINGS_MODULE=web.settings
+        python -c "
+        import os
+        os.environ['DB_NAME'] = '{{ db_name }}'
+        os.environ['DB_USER'] = '{{ db_user }}'
+        os.environ['DB_PASSWORD'] = '{{ db_password }}'
+        os.environ['DB_HOST'] = 'localhost'
+        os.environ['DB_PORT'] = '5432'
+        os.environ['SECRET_KEY'] = '{{ secret_key }}'
+        os.environ['DEBUG'] = '{{ debug }}'
+        os.environ['ENVIRONMENT'] = 'production'
+        from django.db import connection
+        connection.ensure_connection()
+        print('Database connection successful')
+        "
+      args:
+        executable: /bin/bash
+      register: db_test
+      ignore_errors: yes
+      when: project_dir.stat.exists and venv_check.stat.exists and not django_test.failed
+
+    - name: Display database test results
+      debug:
+        var: db_test.stdout_lines
+      when: db_test.stdout_lines is defined
+
+    - name: Display database test errors (if any)
+      debug:
+        var: db_test.stderr_lines
+      when: db_test.stderr_lines is defined and db_test.failed

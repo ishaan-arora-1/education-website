@@ -1,0 +1,140 @@
+---
+- hosts: production
+  become: yes
+  vars:
+    project_name: "{{ lookup('env', 'PROJECT_NAME') | default('education-website', true) }}"
+    vps_user: "{{ lookup('env', 'VPS_USER') | default('ubuntu', true) }}"
+    db_name: "{{ lookup('env', 'DB_NAME') | default('education_website', true) }}"
+    db_user: "{{ lookup('env', 'DB_USER') | default('ubuntu', true) }}"
+
+  tasks:
+    - name: Stop education-website service
+      systemd:
+        name: "{{ project_name }}"
+        state: stopped
+
+    - name: Drop and recreate database
+      postgresql_db:
+        name: "{{ db_name }}"
+        state: absent
+      become_user: postgres
+      ignore_errors: yes
+
+    - name: Create fresh database
+      postgresql_db:
+        name: "{{ db_name }}"
+        owner: "{{ db_user }}"
+        state: present
+      become_user: postgres
+
+    - name: Grant all privileges to user
+      postgresql_privs:
+        db: "{{ db_name }}"
+        privs: ALL
+        type: database
+        role: "{{ db_user }}"
+      become_user: postgres
+
+    - name: Remove any existing migration files from production
+      find:
+        paths: "/root/{{ project_name }}"
+        patterns: "*/migrations/0*.py"
+        recurse: yes
+      register: migration_files
+      become_user: "{{ vps_user }}"
+
+    - name: Delete migration files
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ migration_files.files }}"
+      become_user: "{{ vps_user }}"
+
+    - name: Make fresh migrations
+      shell: |
+        source venv/bin/activate
+        python manage.py makemigrations
+      args:
+        chdir: "/root/{{ project_name }}"
+        executable: /bin/bash
+      become_user: "{{ vps_user }}"
+      register: makemigrations_result
+
+    - name: Display makemigrations results
+      debug:
+        var: makemigrations_result.stdout_lines
+
+    - name: Run Django migrations
+      shell: |
+        source venv/bin/activate
+        python manage.py migrate
+      args:
+        chdir: "/root/{{ project_name }}"
+        executable: /bin/bash
+      become_user: "{{ vps_user }}"
+      register: migrate_result
+
+    - name: Display migration results
+      debug:
+        var: migrate_result.stdout_lines
+
+    - name: Create superuser
+      shell: |
+        source venv/bin/activate
+        python manage.py shell -c "
+        from django.contrib.auth import get_user_model;
+        User = get_user_model();
+        if not User.objects.filter(username='admin').exists():
+            User.objects.create_superuser('admin', 'admin@{{ project_name }}.com', 'admin123');
+            print('Superuser created')
+        else:
+            print('Superuser already exists')
+        "
+      args:
+        chdir: "/root/{{ project_name }}"
+        executable: /bin/bash
+      become_user: "{{ vps_user }}"
+      register: superuser_result
+      ignore_errors: yes
+
+    - name: Display superuser creation result
+      debug:
+        var: superuser_result.stdout_lines
+
+    - name: Check migration status
+      shell: |
+        source venv/bin/activate
+        python manage.py showmigrations
+      args:
+        chdir: "/root/{{ project_name }}"
+        executable: /bin/bash
+      become_user: "{{ vps_user }}"
+      register: showmigrations_result
+
+    - name: Display migration status
+      debug:
+        var: showmigrations_result.stdout_lines
+
+    - name: Collect static files
+      shell: |
+        source venv/bin/activate
+        python manage.py collectstatic --noinput
+      args:
+        chdir: "/root/{{ project_name }}"
+        executable: /bin/bash
+      become_user: "{{ vps_user }}"
+
+    - name: Start education-website service
+      systemd:
+        name: "{{ project_name }}"
+        state: started
+        daemon_reload: yes
+
+    - name: Check service status
+      command: "systemctl status {{ project_name }} --no-pager -l"
+      register: service_status
+      ignore_errors: yes
+
+    - name: Display service status
+      debug:
+        var: service_status.stdout_lines

@@ -1,0 +1,80 @@
+---
+- hosts: production
+  become: yes
+  vars:
+    project_name: "{{ lookup('env', 'PROJECT_NAME') | default('education-website', true) }}"
+    vps_user: "{{ lookup('env', 'VPS_USER') | default('ubuntu', true) }}"
+
+  tasks:
+    - name: Pull latest code from repository
+      git:
+        repo: "https://github.com/AlphaOneLabs/education-website.git"
+        dest: "/root/{{ project_name }}"
+        version: main
+        update: yes
+        force: yes
+      become_user: "{{ vps_user }}"
+
+    - name: Install/update Python dependencies
+      pip:
+        requirements: "/root/{{ project_name }}/requirements.txt"
+        virtualenv: "/root/{{ project_name }}/venv"
+        virtualenv_python: python3.11
+      become_user: "{{ vps_user }}"
+
+    - name: Run Django migrations
+      shell: |
+        source venv/bin/activate
+        python manage.py migrate
+      args:
+        chdir: "/root/{{ project_name }}"
+        executable: /bin/bash
+      become_user: "{{ vps_user }}"
+      register: migrate_result
+
+    - name: Display migration results
+      debug:
+        var: migrate_result.stdout_lines
+
+    - name: Run Django migrations with verbose output
+      shell: |
+        source venv/bin/activate
+        python manage.py migrate --verbosity=2
+      args:
+        chdir: "/root/{{ project_name }}"
+        executable: /bin/bash
+      become_user: "{{ vps_user }}"
+      register: migrate_verbose_result
+
+    - name: Display verbose migration results
+      debug:
+        var: migrate_verbose_result.stdout_lines
+
+    - name: Check migration status
+      shell: |
+        source venv/bin/activate
+        python manage.py showmigrations
+      args:
+        chdir: "/root/{{ project_name }}"
+        executable: /bin/bash
+      become_user: "{{ vps_user }}"
+      register: showmigrations_result
+
+    - name: Display migration status
+      debug:
+        var: showmigrations_result.stdout_lines
+
+    - name: Collect static files
+      shell: |
+        source venv/bin/activate
+        python manage.py collectstatic --noinput
+      args:
+        chdir: "/root/{{ project_name }}"
+        executable: /bin/bash
+      become_user: "{{ vps_user }}"
+
+    - name: Restart education-website service
+      systemd:
+        name: "{{ project_name }}"
+        state: restarted
+        daemon_reload: yes
