@@ -1,0 +1,10 @@
+---
+- name: Install SSL certificate
+  command:
+    cmd: >
+      certbot --nginx
+      -d {{ domain_name }}
+      --non-interactive
+      --agree-tos
+      --email admin@{{ domain_name }}
+  when: domain_name != "" 

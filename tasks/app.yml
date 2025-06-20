@@ -1,0 +1,45 @@
+---
+- name: Clone/pull repository
+  git:
+    repo: https://github.com/AlphaOneLabs/education-website.git
+    dest: "/home/{{ ansible_user }}/{{ project_name }}"
+    force: yes
+
+- name: Create environment file
+  template:
+    src: env.j2
+    dest: "/home/{{ ansible_user }}/{{ project_name }}/.env"
+    mode: '0600'
+
+- name: Create Python virtual environment
+  command:
+    cmd: python3.11 -m venv venv
+    chdir: "/home/{{ ansible_user }}/{{ project_name }}"
+    creates: "/home/{{ ansible_user }}/{{ project_name }}/venv"
+
+- name: Install Python packages
+  pip:
+    requirements: "/home/{{ ansible_user }}/{{ project_name }}/requirements.txt"
+    virtualenv: "/home/{{ ansible_user }}/{{ project_name }}/venv"
+    state: present
+    extra_args: --break-system-packages
+
+- name: Install additional Python packages
+  pip:
+    name:
+      - uvicorn
+      - gunicorn
+      - psycopg2-binary
+    virtualenv: "/home/{{ ansible_user }}/{{ project_name }}/venv"
+    state: present
+    extra_args: --break-system-packages
+
+- name: Run Django migrations
+  command:
+    cmd: "/home/{{ ansible_user }}/{{ project_name }}/venv/bin/python manage.py migrate"
+    chdir: "/home/{{ ansible_user }}/{{ project_name }}"
+
+- name: Collect static files
+  command:
+    cmd: "/home/{{ ansible_user }}/{{ project_name }}/venv/bin/python manage.py collectstatic --noinput"
+    chdir: "/home/{{ ansible_user }}/{{ project_name }}" 

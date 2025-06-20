@@ -1,0 +1,50 @@
+---
+- name: Deploy Education Website
+  hosts: webservers
+  become: yes
+  
+  pre_tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+  tasks:
+    - name: Install system dependencies
+      apt:
+        name:
+          - python3.11
+          - python3.11-venv
+          - python3-pip
+          - python3-full
+          - nginx
+          - git
+          - certbot
+          - python3-certbot-nginx
+          - ufw
+          - fail2ban
+          - postgresql
+          - postgresql-contrib
+          - python3-dev
+          - libpq-dev
+          - build-essential
+        state: present
+
+    - name: Setup UFW
+      include_tasks: tasks/ufw.yml
+
+    - name: Setup PostgreSQL
+      include_tasks: tasks/postgresql.yml
+
+    - name: Setup Application
+      include_tasks: tasks/app.yml
+
+    - name: Setup Nginx
+      include_tasks: tasks/nginx.yml
+
+    - name: Setup SSL
+      include_tasks: tasks/ssl.yml
+      when: domain_name != ""
+
+    - name: Setup systemd service
+      include_tasks: tasks/systemd.yml 

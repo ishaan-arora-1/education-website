@@ -1,0 +1,25 @@
+---
+- name: Remove default nginx site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Create nginx site configuration
+  template:
+    src: nginx.conf.j2
+    dest: "/etc/nginx/sites-available/{{ project_name }}"
+    mode: '0644'
+
+- name: Enable nginx site
+  file:
+    src: "/etc/nginx/sites-available/{{ project_name }}"
+    dest: "/etc/nginx/sites-enabled/{{ project_name }}"
+    state: link
+
+- name: Test nginx configuration
+  command: nginx -t
+
+- name: Restart nginx
+  service:
+    name: nginx
+    state: restarted 
