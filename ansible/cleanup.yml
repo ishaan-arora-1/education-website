@@ -1,0 +1,74 @@
+---
+- hosts: production
+  become: yes
+  tasks:
+    - name: Stop any running education-website service
+      systemd:
+        name: education-website
+        state: stopped
+        enabled: no
+      ignore_errors: yes
+
+    - name: Remove project directory
+      file:
+        path: "/root/{{ project_name | default('education-website') }}"
+        state: absent
+
+    - name: Remove systemd service file
+      file:
+        path: "/etc/systemd/system/education-website.service"
+        state: absent
+
+    - name: Remove .env files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "/root/.env"
+        - "/root/education-website/.env"
+
+    - name: Remove nginx configuration
+      file:
+        path: /etc/nginx/nginx.conf
+        state: absent
+      ignore_errors: yes
+
+    - name: Restore default nginx config
+      copy:
+        src: /etc/nginx/nginx.conf.dpkg-old
+        dest: /etc/nginx/nginx.conf
+        remote_src: yes
+      ignore_errors: yes
+
+    - name: Drop PostgreSQL database
+      postgresql_db:
+        name: "{{ db_name | default('education_website') }}"
+        state: absent
+      become_user: postgres
+      ignore_errors: yes
+
+    - name: Drop PostgreSQL user
+      postgresql_user:
+        name: "{{ db_user | default('root') }}"
+        state: absent
+      become_user: postgres
+      ignore_errors: yes
+
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
+
+    - name: Restart nginx
+      systemd:
+        name: nginx
+        state: restarted
+      ignore_errors: yes
+
+    - name: Clean up any Python cache
+      shell: |
+        find /root -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+        find /root -name "*.pyc" -delete 2>/dev/null || true
+
+    - name: Display cleanup completion
+      debug:
+        msg: "✅ VPS cleaned up and ready for fresh deployment!" 

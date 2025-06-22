@@ -1,310 +1,175 @@
 ---
-- hosts: production
-  become: yes
+- name: 0️⃣  Bootstrap OS
+  hosts: production
+  gather_facts: false
   vars:
-    project_name: "{{ lookup('env', 'PROJECT_NAME') | default('education-website', true) }}"
-    domain_name: "{{ lookup('env', 'DOMAIN_NAME') | default('', true) }}"
-    app_port: "{{ lookup('env', 'APP_PORT') | default('8000', true) }}"
-    vps_user: "{{ lookup('env', 'VPS_USER') | default('root', true) }}"
-    db_name: "{{ lookup('env', 'DB_NAME') | default('education_website', true) }}"
-    db_user: "{{ lookup('env', 'DB_USER') | default('root', true) }}"
-    db_password: "{{ lookup('env', 'DB_PASSWORD') | default('change_me', true) }}"
-    secret_key: "{{ lookup('env', 'SECRET_KEY') | default('your-secret-key-here', true) }}"
-    debug: "{{ lookup('env', 'DEBUG') | default('False', true) }}"
-    stripe_secret_key: "{{ lookup('env', 'STRIPE_SECRET_KEY') | default('', true) }}"
-    stripe_publishable_key: "{{ lookup('env', 'STRIPE_PUBLISHABLE_KEY') | default('', true) }}"
-    stripe_webhook_secret: "{{ lookup('env', 'STRIPE_WEBHOOK_SECRET') | default('', true) }}"
-    stripe_connect_webhook_secret: "{{ lookup('env', 'STRIPE_CONNECT_WEBHOOK_SECRET') | default('', true) }}"
-    sendgrid_api_key: "{{ lookup('env', 'SENDGRID_API_KEY') | default('', true) }}"
-    sendgrid_password: "{{ lookup('env', 'SENDGRID_PASSWORD') | default('', true) }}"
-    email_from: "{{ lookup('env', 'EMAIL_FROM') | default('', true) }}"
-    slack_webhook_url: "{{ lookup('env', 'SLACK_WEBHOOK_URL') | default('', true) }}"
-    message_encryption_key: "{{ lookup('env', 'MESSAGE_ENCRYPTION_KEY') | default('', true) }}"
-    admin_url: "{{ lookup('env', 'ADMIN_URL') | default('', true) }}"
-    gs_bucket_name: "{{ lookup('env', 'GS_BUCKET_NAME') | default('', true) }}"
-    gs_project_id: "{{ lookup('env', 'GS_PROJECT_ID') | default('', true) }}"
-    service_account_file: "{{ lookup('env', 'SERVICE_ACCOUNT_FILE') | default('', true) }}"
-    django_debug: "{{ lookup('env', 'DJANGO_DEBUG') | default('', true) }}"
-    enable_https_redirect: "{{ lookup('env', 'ENABLE_HTTPS_REDIRECT') | default('True', true) }}"
+    pkgs:
+      - python3.11
+      - python3.11-venv
+      - python3-pip
+      - git
+      - nginx
+      - postgresql
+      - postgresql-contrib
+      - libpq-dev
 
   tasks:
-    - name: Update apt cache
+    - name: Install base packages (non-interactive, synchronous)
       apt:
+        name: "{{ pkgs }}"
+        state: present
         update_cache: yes
         cache_valid_time: 3600
+      environment: {DEBIAN_FRONTEND: noninteractive}
 
-    - name: Install system dependencies
-      apt:
-        name:
-          - python3.11
-          - python3.11-venv
-          - python3-pip
-          - python3-full
-          - git
-          - postgresql
-          - postgresql-contrib
-          - python3-dev
-          - libpq-dev
-          - build-essential
-          - certbot
-          - python3-certbot-nginx
-          - nginx
-          - ufw
-          - fail2ban
-          - sshpass
+    - name: Reboot and wait
+      reboot:
+        reboot_timeout: 900
+      register: rebooted
+
+    - name: Wait for SSH
+      wait_for_connection:
+        delay: 10
+        timeout: 300
+      when: rebooted is changed
+
+    - name: Create 2 GB swapfile if not present
+      shell: |
+        set -e
+        if ! swapon --show | grep -q '^/swapfile'; then
+          fallocate -l 2G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=2048
+          chmod 600 /swapfile
+          mkswap /swapfile
+          swapon /swapfile
+        fi
+      args:
+        creates: /swapfile
+
+    - name: Persist swapfile in /etc/fstab
+      lineinfile:
+        path: /etc/fstab
+        line: "/swapfile none swap sw 0 0"
         state: present
 
-    - name: Copy .env file to server
-      copy:
-        src: ../.env
-        dest: "/root/.env"
-        owner: root
-        group: root
-        mode: '0600'
-      when: lookup('file', '../.env', errors='ignore')
+- name: 1️⃣  Deploy application
+  hosts: production
+  gather_facts: false
+  vars:
+    project_root: /root/education-website
 
-    - name: Clone the education-website repository
+  tasks:
+    - name: Read .env file into list
+      set_fact:
+        env_lines: "{{ lookup('ansible.builtin.file', '../.env').splitlines() }}"
+
+    - name: Init empty env_vars dict
+      set_fact:
+        env_vars: {}
+
+    - name: Build env_vars dict line-by-line
+      set_fact:
+        env_vars: "{{ env_vars | combine({ key: val }) }}"
+      vars:
+        clean: "{{ item.split('#',1)[0] | trim }}"
+        key: "{{ clean.split('=',1)[0] | trim }}"
+        val: "{{ (clean.split('=',1)[1] | trim) if ('=' in clean) else '' }}"
+      loop: "{{ env_lines }}"
+      when: clean != '' and not clean.startswith('#')
+      loop_control:
+        label: "{{ key }}"
+
+    - name: Promote env_vars to play vars
+      set_fact: "{{ env_vars }}"
+
+    - name: Map essential env vars to lowercase variables expected by templates
+      set_fact:
+        secret_key: "{{ env_vars.SECRET_KEY | default('change_me') }}"
+        debug: "{{ env_vars.DEBUG | default('False') }}"
+        stripe_secret_key: "{{ env_vars.STRIPE_SECRET_KEY | default('') }}"
+        stripe_publishable_key: "{{ env_vars.STRIPE_PUBLISHABLE_KEY | default('') }}"
+        stripe_webhook_secret: "{{ env_vars.STRIPE_WEBHOOK_SECRET | default('') }}"
+        stripe_connect_webhook_secret: "{{ env_vars.STRIPE_CONNECT_WEBHOOK_SECRET | default('') }}"
+        sendgrid_api_key: "{{ env_vars.SENDGRID_API_KEY | default('') }}"
+        sendgrid_password: "{{ env_vars.SENDGRID_PASSWORD | default('') }}"
+        email_from: "{{ env_vars.EMAIL_FROM | default('') }}"
+        slack_webhook_url: "{{ env_vars.SLACK_WEBHOOK_URL | default('') }}"
+        message_encryption_key: "{{ env_vars.MESSAGE_ENCRYPTION_KEY | default('') }}"
+        admin_url: "{{ env_vars.ADMIN_URL | default('') }}"
+        gs_bucket_name: "{{ env_vars.GS_BUCKET_NAME | default('') }}"
+        gs_project_id: "{{ env_vars.GS_PROJECT_ID | default('') }}"
+        service_account_file: "{{ env_vars.SERVICE_ACCOUNT_FILE | default('') }}"
+        django_debug: "{{ env_vars.DJANGO_DEBUG | default('') }}"
+        enable_https_redirect: "{{ env_vars.ENABLE_HTTPS_REDIRECT | default('True') }}"
+        domain_name: "{{ env_vars.DOMAIN_NAME | default('') }}"
+        app_port: "{{ env_vars.APP_PORT | default('8000') }}"
+        vps_user: "{{ env_vars.VPS_USER | default('root') }}"
+        db_name: "{{ env_vars.DB_NAME | default('education_website') }}"
+        db_user: "{{ env_vars.DB_USER | default('root') }}"
+        db_password: "{{ env_vars.DB_PASSWORD | default('change_me') }}"
+        project_name: "{{ env_vars.PROJECT_NAME | default('education-website') }}"
+
+    - name: Clone code
       git:
-        repo: "https://github.com/AlphaOneLabs/education-website.git"
-        dest: "/root/{{ project_name }}"
+        repo: https://github.com/AlphaOneLabs/education-website.git
+        dest: "{{ project_root }}"
         version: main
-        update: yes
         force: yes
-        accept_hostkey: yes
-      notify: restart education-website
 
-    - name: Create Python virtual environment and upgrade pip
+    - name: Create venv + install deps
       shell: |
-        rm -rf venv
-        python3.11 -m venv venv --clear
+        python3.11 -m venv venv
         source venv/bin/activate
-        python -m pip install --upgrade pip setuptools wheel
+        pip install --upgrade pip wheel
+        pip install -r requirements.txt uvicorn gunicorn psycopg2-binary
       args:
-        chdir: "/root/{{ project_name }}"
+        chdir: "{{ project_root }}"
         executable: /bin/bash
 
-    - name: Install Python dependencies
-      shell: |
-        exec env -i /bin/bash --noprofile --norc -c '
-        cd /root/{{ project_name }}
-        source venv/bin/activate
-        pip install -r requirements.txt
-        pip install uvicorn gunicorn psycopg2-binary
-        '
-      register: pip_install_result
-      failed_when: pip_install_result.rc != 0
-
-    - name: Start and enable PostgreSQL service
-      systemd:
-        name: postgresql
-        state: started
-        enabled: yes
-
-    - name: Create PostgreSQL database
-      postgresql_db:
-        name: "{{ db_name }}"
-        state: present
-      become_user: postgres
-
-    - name: Create PostgreSQL user
-      postgresql_user:
-        name: "{{ db_user }}"
-        password: "{{ db_password }}"
-        db: "{{ db_name }}"
-        priv: ALL
-        state: present
-      become_user: postgres
-
-    - name: Find PostgreSQL version
-      shell: "ls /etc/postgresql/ | head -1"
-      register: pg_version
-      changed_when: false
-
-    - name: Configure PostgreSQL to allow local connections
-      lineinfile:
-        path: "/etc/postgresql/{{ pg_version.stdout }}/main/pg_hba.conf"
-        regexp: '^local\s+all\s+all\s+peer$'
-        line: 'local   all             all                                     md5'
-        backup: yes
-      notify: restart postgresql
-
-    - name: Ensure PostgreSQL is listening on localhost
-      lineinfile:
-        path: "/etc/postgresql/{{ pg_version.stdout }}/main/postgresql.conf"
-        regexp: "^#?listen_addresses"
-        line: "listen_addresses = 'localhost'"
-        backup: yes
-      notify: restart postgresql
-
-    - name: Create .env file for Django
+    - name: Generate .env for server
       template:
-        src: env.j2
-        dest: "/root/{{ project_name }}/.env"
-        owner: root
-        group: root
+        src: env.j2          # unchanged template
+        dest: "{{ project_root }}/.env"
         mode: '0600'
 
-    - name: Remove SQLite database file if it exists
-      file:
-        path: "/root/{{ project_name }}/db.sqlite3"
-        state: absent
-      ignore_errors: yes
-
-    - name: Run Django migrations and collect static files
+    - name: Django migrate + collectstatic
       shell: |
-        exec env -i /bin/bash --noprofile --norc -c '
-        export DB_NAME="{{ db_name }}"
-        export DB_USER="{{ db_user }}"
-        export DB_PASSWORD="{{ db_password }}"
-        export DB_HOST="localhost"
-        export DB_PORT="5432"
-        export SECRET_KEY="{{ secret_key }}"
-        export DEBUG="{{ debug }}"
-        export ENVIRONMENT="production"
-        export STATIC_ROOT="/root/{{ project_name }}/staticfiles"
-        export DJANGO_SETTINGS_MODULE="web.settings"
-        cd /root/{{ project_name }}
+        set -e
         source venv/bin/activate
-        rm -f db.sqlite3
-        mkdir -p staticfiles
-        python manage.py migrate
+        export DJANGO_SETTINGS_MODULE=web.settings
+        python manage.py migrate --noinput
         python manage.py collectstatic --noinput
-        '
-      register: django_result
-      failed_when: django_result.rc != 0
+      args:
+        chdir: "{{ project_root }}"
+        executable: /bin/bash
 
-    - name: Setup firewall - deny incoming by default
-      ufw:
-        direction: incoming
-        policy: deny
+- name: 2️⃣  Harden & run
+  hosts: production
+  gather_facts: false
+  tasks:
+    - name: Configure nginx
+      template:
+        src: nginx-http.conf.j2
+        dest: /etc/nginx/nginx.conf
+      notify: restart nginx
 
-    - name: Setup firewall - allow outgoing by default
-      ufw:
-        direction: outgoing
-        policy: allow
+    - name: Copy systemd service
+      template:
+        src: education-website.service.j2
+        dest: /etc/systemd/system/education-website.service
+      notify: restart app
 
-    - name: Allow SSH through firewall
-      ufw:
-        rule: allow
-        name: OpenSSH
-
-    - name: Allow HTTP through firewall
-      ufw:
-        rule: allow
-        port: 80
-        proto: tcp
-
-    - name: Allow HTTPS through firewall
+    - name: Allow ports
       ufw:
         rule: allow
-        port: 443
-        proto: tcp
+        port: "{{ item }}"
+      loop: [22, 80, 443]
 
-    - name: Enable firewall
+    - name: Enable firewall (now that everything is ready)
       ufw:
         state: enabled
 
-    - name: Setup fail2ban
-      copy:
-        src: /etc/fail2ban/jail.conf
-        dest: /etc/fail2ban/jail.local
-        remote_src: yes
-      notify: restart fail2ban
-
-    - name: Enable and start fail2ban
-      systemd:
-        name: fail2ban
-        enabled: yes
-        state: started
-
-    - name: Create /var/www/html for certbot challenge
-      file:
-        path: /var/www/html
-        state: directory
-        mode: '0755'
-
-    - name: Configure Nginx for HTTP only (initial setup)
-      template:
-        src: nginx-http.conf.j2
-        dest: /etc/nginx/nginx.conf
-      notify: restart nginx
-      when: domain_name != ""
-
-    - name: Remove default Nginx site
-      file:
-        path: /etc/nginx/sites-enabled/default
-        state: absent
-      notify: restart nginx
-
-    - name: Flush handlers to restart services
-      meta: flush_handlers
-
-    - name: Obtain Let's Encrypt SSL certificate
-      command: "certbot certonly --webroot -w /var/www/html --agree-tos -d {{ domain_name }} --email admin@{{ domain_name }} --non-interactive"
-      args:
-        creates: "/etc/letsencrypt/live/{{ domain_name }}/fullchain.pem"
-      when: domain_name != "" and enable_https_redirect == "True"
-
-    - name: Configure Nginx for HTTPS
-      template:
-        src: nginx.conf.j2
-        dest: /etc/nginx/nginx.conf
-      notify: restart nginx
-      when: domain_name != "" and enable_https_redirect == "True"
-
-    - name: Configure Nginx for HTTP only
-      template:
-        src: nginx-http.conf.j2
-        dest: /etc/nginx/nginx.conf
-      notify: restart nginx
-      when: domain_name != "" and enable_https_redirect != "True"
-
-    - name: Template systemd service file
-      template:
-        src: education-website.service.j2
-        dest: "/etc/systemd/system/{{ project_name }}.service"
-      notify: restart education-website
-
-    - name: Enable and start education-website service
-      systemd:
-        name: "{{ project_name }}"
-        enabled: yes
-        state: started
-        daemon_reload: yes
-
-    - name: Setup Git webhook directory
-      file:
-        path: "/root/webhooks"
-        state: directory
-        owner: root
-        group: root
-        mode: '0755'
-
-    - name: Create Git webhook update script
-      template:
-        src: update.sh.j2
-        dest: "/root/webhooks/update.sh"
-        owner: root
-        group: root
-        mode: '0755'
-
   handlers:
     - name: restart nginx
-      service:
-        name: nginx
-        state: restarted
-
-    - name: restart education-website
-      service:
-        name: "{{ project_name }}"
-        state: restarted
-
-    - name: restart postgresql
-      service:
-        name: postgresql
-        state: restarted
-
-    - name: restart fail2ban
-      service:
-        name: fail2ban
-        state: restarted
+      service: {name: nginx, state: restarted, enabled: yes}
+    - name: restart app
+      service: {name: education-website, state: restarted, enabled: yes}
