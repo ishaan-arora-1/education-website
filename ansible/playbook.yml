@@ -56,6 +56,8 @@
   gather_facts: false
   vars:
     project_root: /root/education-website
+    git_repo: "https://github.com/AlphaOneLabs/education-website.git"
+    git_branch: "main"
 
   tasks:
     - name: Read .env file into list
@@ -107,12 +109,14 @@
         db_user: "{{ env_vars.DB_USER | default('root') }}"
         db_password: "{{ env_vars.DB_PASSWORD | default('change_me') }}"
         project_name: "{{ env_vars.PROJECT_NAME | default('education-website') }}"
+        git_repo: "{{ env_vars.GIT_REPO | default(git_repo) }}"
+        git_branch: "{{ env_vars.GIT_BRANCH | default(git_branch) }}"
 
     - name: Clone code
       git:
-        repo: https://github.com/AlphaOneLabs/education-website.git
+        repo: "{{ git_repo }}"
         dest: "{{ project_root }}"
-        version: main
+        version: "{{ git_branch }}"
         force: yes
 
     - name: Create venv + install deps
