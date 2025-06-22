@@ -31,7 +31,7 @@ http {
 
     {% if enable_https_redirect == "True" and domain_name %}
     server {
-        listen 80;
+        listen 80 default_server;
         server_name {{ domain_name }}{% if domain_name and not domain_name.startswith('www.') %} www.{{ domain_name }}{% endif %};
 
         # This block is for certbot http-01 challenge
@@ -103,7 +103,7 @@ http {
     }
     {% else %}
     server {
-        listen 80;
+        listen 80 default_server;
         {% if domain_name %}
         server_name {{ domain_name }}{% if domain_name and not domain_name.startswith('www.') %} www.{{ domain_name }}{% endif %};
         {% else %}
