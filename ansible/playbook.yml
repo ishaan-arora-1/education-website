@@ -111,6 +111,7 @@
         project_name: "{{ env_vars.PROJECT_NAME | default('education-website') }}"
         git_repo: "{{ env_vars.GIT_REPO | default(git_repo) }}"
         git_branch: "{{ env_vars.GIT_BRANCH | default(git_branch) }}"
+        allowed_hosts: "{{ env_vars.ALLOWED_HOSTS | default('localhost,127.0.0.1') }}"
 
     - name: Clone code
       git:

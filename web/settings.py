@@ -74,7 +74,7 @@ if not DEBUG:
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
 ALLOWED_HOSTS = [
-    "45.76.4.171",
+    "108.61.87.176",
     "alphaonelabs99282llkb.pythonanywhere.com",
     "0.0.0.0",
     "127.0.0.1",
