@@ -35,11 +35,11 @@ http {
         }
 
         location /static/ {
-            alias /root/{{ project_name }}/staticfiles/;
+            alias /home/{{ vps_user }}/{{ project_name }}/staticfiles/;
         }
 
         location /media/ {
-            alias /root/{{ project_name }}/media/;
+            alias /home/{{ vps_user }}/{{ project_name }}/media/;
         }
 
         location / {

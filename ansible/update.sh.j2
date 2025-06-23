@@ -1,5 +1,5 @@
 #!/bin/bash
-cd /root/{{ project_name }}
+cd /home/{{ vps_user }}/{{ project_name }}
 git pull
 source venv/bin/activate
 pip install -r requirements.txt
