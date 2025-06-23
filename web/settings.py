@@ -92,6 +92,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://www.alphaonelabs.com",
     "http://127.0.0.1:8000",
     "http://localhost:8000",
+    "http://108.61.87.176:8000",
 ]
 
 # Error handling
