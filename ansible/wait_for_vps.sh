@@ -1,9 +1,14 @@
 #!/bin/bash
 
-VPS_IP="45.76.4.171"
+VPS_IP="${VPS_IP:-}"
 VPS_USER="root"
 MAX_ATTEMPTS=20
 WAIT_TIME=30
+
+if [ -z "$VPS_IP" ]; then
+  echo "Usage: VPS_IP=<server_ip> ./wait_for_vps.sh" >&2
+  exit 1
+fi
 
 echo "🔍 Waiting for VPS $VPS_IP to come back online..."
 echo "⏰ Will check every $WAIT_TIME seconds for up to $(($MAX_ATTEMPTS * $WAIT_TIME / 60)) minutes"

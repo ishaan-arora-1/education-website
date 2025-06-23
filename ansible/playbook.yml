@@ -1,6 +1,6 @@
 ---
 - name: 0️⃣  Bootstrap OS
-  hosts: production
+  hosts: all
   gather_facts: false
   vars:
     pkgs:
@@ -52,7 +52,7 @@
         state: present
 
 - name: 1️⃣  Deploy application
-  hosts: production
+  hosts: all
   gather_facts: false
   vars:
     project_root: /root/education-website
@@ -147,7 +147,7 @@
         executable: /bin/bash
 
 - name: 2️⃣  Harden & run
-  hosts: production
+  hosts: all
   gather_facts: false
   tasks:
     - name: Configure nginx
