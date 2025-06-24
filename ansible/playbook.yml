@@ -35,10 +35,16 @@
       when: rebooted is changed
 
     - name: Create 2 GB swapfile if not present
-      community.general.swapfile:
-        path: /swapfile
-        size: 2048  # size in MB (2 GB)
-        state: present
+      shell: |
+        set -e
+        if ! swapon --show | grep -q '^/swapfile'; then
+          fallocate -l 2G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=2048
+          chmod 600 /swapfile
+          mkswap /swapfile
+          swapon /swapfile
+        fi
+      args:
+        creates: /swapfile
 
     - name: Persist swapfile in /etc/fstab
       lineinfile:
