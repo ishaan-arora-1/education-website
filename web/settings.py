@@ -73,27 +73,22 @@ if not DEBUG:
     SECURE_SSL_HOST = "alphaonelabs.com"
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
-ALLOWED_HOSTS = [
-    "108.61.87.176",
-    "alphaonelabs99282llkb.pythonanywhere.com",
-    "0.0.0.0",
-    "127.0.0.1",
-    "localhost",
-    "alphaonelabs.com",
-    ".alphaonelabs.com",
-]
+ALLOWED_HOSTS = env.list(
+    "ALLOWED_HOSTS",
+    default=["localhost", "127.0.0.1"],
+)
+
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=[
+        "https://alphaonelabs.com",
+        "https://www.alphaonelabs.com",
+    ],
+)
 
 # Timezone settings
 TIME_ZONE = "America/New_York"
 USE_TZ = True
-
-CSRF_TRUSTED_ORIGINS = [
-    "https://alphaonelabs.com",
-    "https://www.alphaonelabs.com",
-    "http://127.0.0.1:8000",
-    "http://localhost:8000",
-    "http://108.61.87.176:8000",
-]
 
 # Error handling
 handler404 = "web.views.custom_404"
