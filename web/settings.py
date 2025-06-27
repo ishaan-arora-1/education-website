@@ -77,11 +77,12 @@ if not DEBUG:
 ALLOWED_HOSTS = env.list(
     "ALLOWED_HOSTS",
     default=[
-        "alphaonelabs.com",
-        "www.alphaonelabs.com",
-        "108.61.87.176",
-        "localhost",
+        "alphaonelabs99282llkb.pythonanywhere.com",
+        "0.0.0.0",
         "127.0.0.1",
+        "localhost",
+        "alphaonelabs.com",
+        ".alphaonelabs.com",
     ],
 )
 
@@ -91,7 +92,8 @@ CSRF_TRUSTED_ORIGINS = env.list(
     default=[
         "https://alphaonelabs.com",
         "https://www.alphaonelabs.com",
-        "http://108.61.87.176",
+        "http://127.0.0.1:8000",
+        "http://localhost:8000",
     ],
 )
 
