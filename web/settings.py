@@ -73,16 +73,25 @@ if not DEBUG:
     SECURE_SSL_HOST = "alphaonelabs.com"
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
+# Allow hosts list can be overridden via .env (comma-separated) while providing a strong default.
 ALLOWED_HOSTS = env.list(
     "ALLOWED_HOSTS",
-    default=["localhost", "127.0.0.1"],
+    default=[
+        "alphaonelabs.com",
+        "www.alphaonelabs.com",
+        "108.61.87.176",
+        "localhost",
+        "127.0.0.1",
+    ],
 )
 
+# CSRF trusted origins can also be overridden through .env (comma-separated).
 CSRF_TRUSTED_ORIGINS = env.list(
     "CSRF_TRUSTED_ORIGINS",
     default=[
         "https://alphaonelabs.com",
         "https://www.alphaonelabs.com",
+        "http://108.61.87.176",
     ],
 )
 
