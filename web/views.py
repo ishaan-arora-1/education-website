@@ -12,7 +12,7 @@ import string
 import subprocess
 import time
 from collections import Counter, defaultdict
-from datetime import timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 from urllib.parse import urlparse
 
@@ -3905,24 +3905,57 @@ class GoodsDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return self.request.user == self.get_object().storefront.teacher
 
 
-def add_goods_to_cart(request, pk):
-    """Add a product (goods) to the cart."""
-    product = get_object_or_404(Goods, pk=pk)
+def teacher_update_attendance(request, classroom_id):
+    """Update student attendance for a given classroom."""
+    classroom = get_object_or_404(VirtualClassroom, id=classroom_id)
 
-    # Prevent adding out-of-stock items
-    if product.stock is None or product.stock <= 0:
-        messages.error(request, f"{product.name} is out of stock and cannot be added to cart.")
-        return redirect("goods_detail", pk=pk)  # Redirect back to product page
+    # Check if the user is a teacher of this classroom
+    if not classroom.teacher == request.user:
+        return JsonResponse({"error": "You are not authorized to update attendance for this classroom."}, status=403)
 
-    cart = get_or_create_cart(request)
-    cart_item, created = CartItem.objects.get_or_create(cart=cart, goods=product, defaults={"session": None})
+    # Get the session for the classroom
+    session = classroom.session
 
-    if created:
-        messages.success(request, f"{product.name} added to cart.")
+    # Check if the session is linked to a course
+    if session and session.course:
+        # Get all enrolled students for the course
+        enrolled_students = session.course.enrolled_students.all()
     else:
-        messages.info(request, f"{product.name} is already in your cart.")
+        # If no course is linked, consider all users in the classroom as enrolled
+        enrolled_students = classroom.users.exclude(id=classroom.teacher.id)
 
-    return redirect("cart_view")
+    # Get the current date
+    current_date = timezone.now().date()
+
+    # Get the student ID from the request
+    student_id = request.POST.get("student_id")
+
+    # Check if the student is enrolled
+    if student_id not in [str(student.id) for student in enrolled_students]:
+        return JsonResponse({"error": "You are not enrolled in this classroom."}, status=400)
+
+    # Get the student object
+    student = get_object_or_404(User, id=student_id)
+
+    # Check if the student has already marked attendance today
+    if SessionAttendance.objects.filter(session=session, student=student, date=current_date).exists():
+        return JsonResponse({"error": "You have already marked attendance today."}, status=400)
+
+    # Create a new attendance record
+    attendance = SessionAttendance(session=session, student=student, date=current_date)
+    attendance.save()
+
+    # Get the updated attendance list for the classroom
+    attendance_list = SessionAttendance.objects.filter(session=session, date=current_date).values_list("student__id", flat=True)
+
+    # Prepare the response data
+    data = {
+        "success": True,
+        "message": "Attendance marked successfully.",
+        "attendance_list": list(attendance_list),
+    }
+
+    return JsonResponse(data)
 
 
 class GoodsListingView(ListView):
@@ -4815,50 +4848,6 @@ def classroom_blackboard(request, classroom_id):
 
 
 @login_required
-def classroom_library(request, classroom_id):
-    """View for the classroom library/bookshelf interaction."""
-    classroom = get_object_or_404(VirtualClassroom, id=classroom_id)
-
-    # Check if user is teacher or enrolled student
-    is_teacher = request.user == classroom.teacher
-    is_enrolled = False
-    if classroom.course:
-        is_enrolled = classroom.course.enrollments.filter(student=request.user, status="approved").exists()
-
-    if not (is_teacher or is_enrolled):
-        messages.error(request, "You do not have access to this virtual classroom.")
-        return redirect("virtual_classroom_list")
-
-    return render(
-        request,
-        "virtual_classroom/library.html",
-        {"classroom": classroom, "is_teacher": is_teacher, "is_enrolled": is_enrolled},
-    )
-
-
-@login_required
-def classroom_teacher_resources(request, classroom_id):
-    """View for the teacher's desk resources."""
-    classroom = get_object_or_404(VirtualClassroom, id=classroom_id)
-
-    # Check if user is teacher or enrolled student
-    is_teacher = request.user == classroom.teacher
-    is_enrolled = False
-    if classroom.course:
-        is_enrolled = classroom.course.enrollments.filter(student=request.user, status="approved").exists()
-
-    if not (is_teacher or is_enrolled):
-        messages.error(request, "You do not have access to this virtual classroom.")
-        return redirect("virtual_classroom_list")
-
-    return render(
-        request,
-        "virtual_classroom/teacher_resources.html",
-        {"classroom": classroom, "is_teacher": is_teacher, "is_enrolled": is_enrolled},
-    )
-
-
-@login_required
 def classroom_student_desk(request, classroom_id, seat_id):
     """View for individual student desk interaction."""
     classroom = get_object_or_404(VirtualClassroom, id=classroom_id)
@@ -4878,6 +4867,183 @@ def classroom_student_desk(request, classroom_id, seat_id):
         "virtual_classroom/student_desk.html",
         {"classroom": classroom, "seat_id": seat_id, "is_teacher": is_teacher, "is_enrolled": is_enrolled},
     )
+
+
+@login_required
+@require_POST
+def reset_attendance(request, classroom_id):
+    """Reset today's attendance for a classroom."""
+    try:
+        classroom = get_object_or_404(VirtualClassroom, id=classroom_id)
+
+        # Check if user is the teacher
+        if request.user != classroom.teacher:
+            messages.error(request, "Only the teacher can reset attendance.")
+            return redirect("classroom_attendance", classroom_id=classroom_id)
+
+        # Get today's session and delete all attendance records
+        today = timezone.now().date()
+        today_start = timezone.make_aware(datetime.combine(today, datetime.min.time()))
+        today_end = timezone.make_aware(datetime.combine(today, datetime.max.time()))
+
+        if classroom.course:
+            # For classrooms with courses, find and delete attendance for today's session
+            session = Session.objects.filter(
+                course=classroom.course, start_time__range=(today_start, today_end)
+            ).first()
+
+            if session:
+                SessionAttendance.objects.filter(session=session).delete()
+        else:
+            # For classrooms without courses, find and delete standalone session attendance
+            session = Session.objects.filter(
+                title=f"Class on {today.strftime('%Y-%m-%d')}", start_time__range=(today_start, today_end)
+            ).first()
+
+            if session:
+                SessionAttendance.objects.filter(session=session).delete()
+
+        messages.success(request, "Today's attendance has been reset.")
+        return redirect("classroom_attendance", classroom_id=classroom_id)
+
+    except Exception:
+        messages.error(request, "An error occurred while resetting attendance.")
+        return redirect("classroom_attendance", classroom_id=classroom_id)
+
+
+@login_required
+def classroom_attendance(request, classroom_id):
+    """View for managing classroom attendance."""
+    classroom = get_object_or_404(VirtualClassroom, id=classroom_id)
+
+    # Check if user is teacher or enrolled student
+    is_teacher = request.user == classroom.teacher
+    is_enrolled = False
+
+    # Get all enrolled students
+    enrolled_students = []
+    if classroom.course:
+        is_enrolled = classroom.course.enrollments.filter(student=request.user, status="approved").exists()
+        enrolled_students = (
+            User.objects.filter(enrollments__course=classroom.course, enrollments__status="approved")
+            .select_related("profile")
+            .order_by("first_name", "last_name")
+            .distinct()
+        )
+    else:
+        # For classrooms without a course, everyone is "enrolled"
+        is_enrolled = True
+        enrolled_students = (
+            User.objects.filter(virtualclassroom=classroom)
+            .exclude(id=classroom.teacher.id)
+            .select_related("profile")
+            .order_by("first_name", "last_name")
+        )
+
+    if not (is_teacher or is_enrolled):
+        messages.error(request, "You do not have access to this virtual classroom.")
+        return redirect("virtual_classroom_list")
+
+    # Get today's attendance records
+    today = timezone.now().date()
+    today_start = timezone.make_aware(datetime.combine(today, datetime.min.time()))
+    today_end = timezone.make_aware(datetime.combine(today, datetime.max.time()))
+
+    # Get today's session
+    if classroom.course:
+        session = Session.objects.filter(course=classroom.course, start_time__range=(today_start, today_end)).first()
+    else:
+        session = Session.objects.filter(
+            title=f"Class on {today.strftime('%Y-%m-%d')}", start_time__range=(today_start, today_end)
+        ).first()
+
+    # Get attendance records for today's session
+    attendance_records = (
+        SessionAttendance.objects.filter(session=session, status="present").select_related("student") if session else []
+    )
+
+    present_students = [record.student for record in attendance_records]
+
+    context = {
+        "classroom": classroom,
+        "is_teacher": is_teacher,
+        "is_enrolled": is_enrolled,
+        "enrolled_students": enrolled_students,
+        "present_students": present_students,
+        "teacher": classroom.teacher,
+    }
+
+    return render(request, "virtual_classroom/attendance.html", context)
+
+
+@login_required
+def update_student_attendance(request, classroom_id):
+    """View to update student attendance."""
+    classroom = get_object_or_404(VirtualClassroom, id=classroom_id)
+
+    # Check if user is teacher or enrolled student
+    is_teacher = request.user == classroom.teacher
+    is_enrolled = False
+    if classroom.course:
+        is_enrolled = classroom.course.enrollments.filter(student=request.user, status="approved").exists()
+
+    if not (is_teacher or is_enrolled):
+        messages.error(request, "You do not have access to this virtual classroom.")
+        return redirect("virtual_classroom_list")
+
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            student_id = data.get("student_id")
+            status = data.get("status")
+
+            if not student_id or not status:
+                return JsonResponse({"status": "error", "message": "Invalid data"}, status=400)
+
+            student = get_object_or_404(User, id=student_id)
+
+            # Check if student is enrolled in the classroom
+            if (
+                classroom.course
+                and not classroom.course.enrollments.filter(student=student, status="approved").exists()
+            ):
+                return JsonResponse(
+                    {"status": "error", "message": "Student is not enrolled in this classroom"}, status=400
+                )
+
+            # Get today's session
+            today = timezone.now().date()
+            today_start = timezone.make_aware(datetime.combine(today, datetime.min.time()))
+            today_end = timezone.make_aware(datetime.combine(today, datetime.max.time()))
+
+            if classroom.course:
+                session = Session.objects.filter(
+                    course=classroom.course, start_time__range=(today_start, today_end)
+                ).first()
+            else:
+                session = Session.objects.filter(
+                    title=f"Class on {today.strftime('%Y-%m-%d')}", start_time__range=(today_start, today_end)
+                ).first()
+
+            if not session:
+                return JsonResponse({"status": "error", "message": "No session found for today"}, status=400)
+
+            # Update or create attendance record
+            attendance, created = SessionAttendance.objects.get_or_create(
+                session=session, student=student, defaults={"status": status}
+            )
+
+            if not created:
+                attendance.status = status
+                attendance.save()
+
+            return JsonResponse({"status": "success"})
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON data"}, status=400)
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)
 
 
 @login_required
@@ -6087,93 +6253,83 @@ def run_create_test_data(request):
 
 @login_required
 @require_POST
-def update_student_attendance(request):
-    if not request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        return JsonResponse({"success": False, "message": "Invalid request"}, status=400)
-
+def teacher_update_student_attendance(request, classroom_id):
+    """Handle student attendance marking."""
     try:
-        session_id = request.POST.get("session_id")
-        student_id = request.POST.get("student_id")
-        status = request.POST.get("status")
-        notes = request.POST.get("notes", "")
+        classroom = VirtualClassroom.objects.get(id=classroom_id)
+        student = request.user  # Student marks their own attendance
 
-        if not all([session_id, student_id, status]):
-            return JsonResponse({"success": False, "message": "Missing required fields"}, status=400)
+        # Check if student is enrolled
+        is_enrolled = False
+        if classroom.course:
+            is_enrolled = classroom.course.enrollments.filter(student=student, status="approved").exists()
+        else:
+            # For classrooms without a course, everyone is "enrolled"
+            is_enrolled = True
 
-        session = Session.objects.get(id=session_id)
-        student = User.objects.get(id=student_id)
+        if not is_enrolled:
+            return JsonResponse({"success": False, "message": "You are not enrolled in this class"}, status=403)
 
-        # Check if the user is the course teacher
-        if request.user != session.course.teacher:
-            return JsonResponse(
-                {"success": False, "message": "Unauthorized: Only the course teacher can update attendance"}, status=403
+        # Get or create today's session
+        today = timezone.now().date()
+        today_start = timezone.make_aware(datetime.combine(today, datetime.min.time()))
+        today_end = timezone.make_aware(datetime.combine(today, datetime.max.time()))
+
+        if classroom.course:
+            session, created = Session.objects.get_or_create(
+                course=classroom.course,
+                start_time__range=(today_start, today_end),
+                defaults={
+                    "title": f"Class on {today.strftime('%Y-%m-%d')}",
+                    "start_time": today_start,
+                    "end_time": today_end,
+                    "course": classroom.course,  # Make sure to set the course
+                },
+            )
+        else:
+            # For classrooms without a course, create a standalone session
+            session, created = Session.objects.get_or_create(
+                title=f"Class on {today.strftime('%Y-%m-%d')}",
+                start_time__range=(today_start, today_end),
+                defaults={
+                    "start_time": today_start,
+                    "end_time": today_end,
+                    "course": None,  # Explicitly set course to None for standalone sessions
+                },
             )
 
-        # Update or create the attendance record
-        attendance, created = SessionAttendance.objects.update_or_create(
-            session=session, student=student, defaults={"status": status, "notes": notes}
+        # Mark attendance
+        attendance, created = SessionAttendance.objects.get_or_create(
+            session=session, student=student, defaults={"status": "present"}
         )
 
-        return JsonResponse(
-            {"success": True, "message": "Attendance updated successfully", "created": created, "status": status}
-        )
-    except Session.DoesNotExist:
-        return JsonResponse({"success": False, "message": "Session not found"}, status=404)
-    except User.DoesNotExist:
-        return JsonResponse({"success": False, "message": "Student not found"}, status=404)
+        if not created:
+            # If attendance record already exists, update its status to present
+            attendance.status = "present"
+            attendance.save()
+
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse({"success": True, "message": "Attendance marked successfully", "created": created})
+        else:
+            messages.success(request, "Your attendance has been marked.")
+            return redirect("classroom_attendance", classroom_id=classroom_id)
+
+    except VirtualClassroom.DoesNotExist:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse({"success": False, "message": "Classroom not found"}, status=404)
+        else:
+            messages.error(request, "Classroom not found.")
+            return redirect("virtual_classroom_list")
     except Exception:
         import logging
 
         logger = logging.getLogger(__name__)
         logger.error("Error updating student attendance", exc_info=True)
-        return JsonResponse({"success": False, "message": "An internal error has occurred."}, status=500)
-
-
-@login_required
-def get_student_attendance(request):
-    """Get a student's attendance data for a specific course."""
-    if not request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        return JsonResponse({"success": False, "message": "Invalid request"}, status=400)
-
-    student_id = request.GET.get("student_id")
-    course_id = request.GET.get("course_id")
-
-    if not all([student_id, course_id]):
-        return JsonResponse({"success": False, "message": "Missing required parameters"}, status=400)
-
-    try:
-        course = Course.objects.get(id=course_id)
-        student = User.objects.get(id=student_id)
-
-        # Check if user is authorized (must be the course teacher)
-        if request.user != course.teacher:
-            return JsonResponse(
-                {"success": False, "message": "Unauthorized: Only the course teacher can view this data"}, status=403
-            )
-
-        # Get all attendance records for this student in this course
-        attendance_records = SessionAttendance.objects.filter(student=student, session__course=course).select_related(
-            "session"
-        )
-
-        # Format the data for the frontend
-        attendance_data = {}
-        for record in attendance_records:
-            attendance_data[record.session.id] = {
-                "status": record.status,
-                "notes": record.notes,
-                "created_at": record.created_at.isoformat(),
-                "updated_at": record.updated_at.isoformat(),
-            }
-
-        return JsonResponse({"success": True, "attendance": attendance_data})
-
-    except Course.DoesNotExist:
-        return JsonResponse({"success": False, "message": "Course not found"}, status=404)
-    except User.DoesNotExist:
-        return JsonResponse({"success": False, "message": "Student not found"}, status=404)
-    except Exception:
-        return JsonResponse({"success": False, "message": "Error: get_student_attendance"}, status=500)
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse({"success": False, "message": "An error occurred while marking attendance"}, status=500)
+        else:
+            messages.error(request, "An error occurred while marking attendance.")
+            return redirect("classroom_attendance", classroom_id=classroom_id)
 
 
 @login_required

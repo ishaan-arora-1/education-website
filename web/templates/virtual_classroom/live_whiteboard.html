@@ -150,14 +150,8 @@
           connectWebSocket();
           loadWhiteboardData();
 
-          {
-              %
-              if is_teacher %
-          }
-          setupTeacherControls();
-          {
-              %
-              endif %
+          if (isTeacher) {
+              setupTeacherControls();
           }
       });
 
@@ -167,28 +161,17 @@
           ctx.fillRect(0, 0, canvas.width, canvas.height);
 
           // Setup drawing event listeners
-          {
-              %
-              if is_teacher %
-          }
-          canvas.addEventListener('mousedown', startDrawing);
-          canvas.addEventListener('mousemove', draw);
-          canvas.addEventListener('mouseup', stopDrawing);
-          canvas.addEventListener('mouseleave', stopDrawing);
+          if (isTeacher) {
+              canvas.addEventListener('mousedown', startDrawing);
+              canvas.addEventListener('mousemove', draw);
+              canvas.addEventListener('mouseup', stopDrawing);
+              canvas.addEventListener('mouseleave', stopDrawing);
 
-          // Touch events for mobile
-          canvas.addEventListener('touchstart', handleTouchStart);
-          canvas.addEventListener('touchmove', handleTouchMove);
-          canvas.addEventListener('touchend', handleTouchEnd);
-          {
-              %
-              endif %
+              // Touch events for mobile
+              canvas.addEventListener('touchstart', handleTouchStart);
+              canvas.addEventListener('touchmove', handleTouchMove);
+              canvas.addEventListener('touchend', handleTouchEnd);
           }
-      }
-
-      {
-          %
-          if is_teacher %
       }
 
       function setupTeacherControls() {
@@ -436,9 +419,6 @@
               // Broadcast the clear action to other users via WebSocket
               broadcastClearAction();
           }
-      } {
-          %
-          endif %
       }
 
       function clearCanvas() {

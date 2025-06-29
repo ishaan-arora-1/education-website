@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
         currentInteractive: null,
         interactiveElements: {
             blackboard: { x: 0, y: 0, width: 0, height: 0 },
-            bookshelf: { x: 0, y: 0, width: 0, height: 0 },
             teacherDesk: { x: 0, y: 0, width: 0, height: 0 },
             seats: []
         },
@@ -107,11 +106,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             case 'blackboard':
                                 redirectUrl = `/whiteboard/${classroomId}/`;
                                 break;
-                            case 'bookshelf':
-                                redirectUrl = `/virtual-classroom/${classroomId}/library/`;
-                                break;
                             case 'teacherDesk':
-                                redirectUrl = `/virtual-classroom/${classroomId}/teacher-resources/`;
+                                redirectUrl = `/virtual-classroom/${classroomId}/attendance/`;
                                 break;
                         }
                         if (redirectUrl) {
@@ -1057,15 +1053,7 @@ document.addEventListener('DOMContentLoaded', () => {
             z-index: 7;
         `;
 
-        // Store bookshelf position for interaction
-        interactionState.interactiveElements.bookshelf = {
-            x: classroomContainer.clientWidth * 0.95 - 100,
-            y: classroomContainer.clientHeight * 0.15,
-            width: 100,
-            height: 150
-        };
-
-        // Create bookshelf HTML structure
+        // Create bookshelf HTML structure (non-interactive)
         bookshelf.innerHTML = `
             <div class="relative w-full h-full bg-[#8B4513] rounded-sm shadow-lg">
                 <div class="absolute top-0 left-0 w-full h-1/3 border-b-2 border-[#6b4226] flex justify-around items-center px-2">
@@ -1409,16 +1397,6 @@ document.addEventListener('DOMContentLoaded', () => {
         )) {
             nearInteractive = true;
             currentInteractive = 'teacherDesk';
-        }
-
-        // Check bookshelf
-        if (state.settings.has_bookshelf && isNearInteractive(
-            state.character.position.x,
-            state.character.position.y,
-            interactionState.interactiveElements.bookshelf
-        )) {
-            nearInteractive = true;
-            currentInteractive = 'bookshelf';
         }
 
         // Check seats

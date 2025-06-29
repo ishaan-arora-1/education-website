@@ -26,6 +26,7 @@ from .views import (
     SurveyResultsView,
     add_goods_to_cart,
     apply_discount_via_referrer,
+    classroom_attendance,
     feature_vote,
     feature_vote_count,
     features_page,
@@ -35,6 +36,7 @@ from .views import (
     sales_data,
     streak_detail,
     submit_survey,
+    update_student_attendance,
 )
 
 # Non-prefixed URLs
@@ -433,11 +435,6 @@ urlpatterns += i18n_patterns(
         views.update_student_attendance,
         name="update_student_attendance",
     ),
-    path(
-        "get_student_attendance/",
-        views.get_student_attendance,
-        name="get_student_attendance",
-    ),
     # Student Management URLs
     path(
         "enrollment/<int:enrollment_id>/update-progress/",
@@ -488,17 +485,9 @@ urlpatterns += i18n_patterns(
         "virtual-classroom/<int:classroom_id>/delete/", views.virtual_classroom_delete, name="virtual_classroom_delete"
     ),
     path("virtual-classroom/<int:classroom_id>/blackboard/", views.classroom_blackboard, name="classroom_blackboard"),
-    path("virtual-classroom/<int:classroom_id>/library/", views.classroom_library, name="classroom_library"),
-    path(
-        "virtual-classroom/<int:classroom_id>/teacher-resources/",
-        views.classroom_teacher_resources,
-        name="classroom_teacher_resources",
-    ),
-    path(
-        "virtual-classroom/<int:classroom_id>/student-desk/<str:seat_id>/",
-        views.classroom_student_desk,
-        name="classroom_student_desk",
-    ),
+    path("virtual-classroom/<int:classroom_id>/attendance/", classroom_attendance, name="classroom_attendance"),
+    path("attendance/update/", update_student_attendance, name="update_student_attendance"),
+    path("virtual-classroom/<int:classroom_id>/reset-attendance/", views.reset_attendance, name="reset_attendance"),
     # Whiteboard URLs
     path("whiteboard/<int:classroom_id>/", views_whiteboard.classroom_whiteboard, name="classroom_whiteboard"),
     path("whiteboard/<int:classroom_id>/data/", views_whiteboard.get_whiteboard_data, name="get_whiteboard_data"),
