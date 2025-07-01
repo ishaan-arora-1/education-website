@@ -1528,7 +1528,7 @@ def create_payment_intent(request, slug):
         return JsonResponse({"error": "Payment processing error. Please try again."}, status=400)
     except Exception:
         logger.error("Unexpected error in payment intent creation", exc_info=True)
-        return JsonResponse({"error": "An unexpected error occurred. Please try again."}, status=500)
+        return JsonResponse({"error": "An internal error occurred. Please try again."}, status=500)
 
 
 @csrf_exempt
@@ -4781,7 +4781,9 @@ def virtual_classroom_detail(request, classroom_id):
         except json.JSONDecodeError:
             return JsonResponse({"status": "error", "message": "Invalid JSON data"}, status=400)
         except Exception as e:
-            return JsonResponse({"status": "error", "message": str(e)}, status=500)
+            # Log the detailed exception for debugging
+            logger.exception("Error in virtual_classroom_detail customization: %s", str(e))
+            return JsonResponse({"status": "error", "message": "An internal error occurred"}, status=500)
 
     return render(
         request,
@@ -5041,7 +5043,9 @@ def update_student_attendance(request, classroom_id):
         except json.JSONDecodeError:
             return JsonResponse({"status": "error", "message": "Invalid JSON data"}, status=400)
         except Exception as e:
-            return JsonResponse({"status": "error", "message": str(e)}, status=500)
+            # Log the detailed exception for debugging
+            logger.exception("Error in update_student_attendance: %s", str(e))
+            return JsonResponse({"status": "error", "message": "An internal error occurred"}, status=500)
 
     return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)
 
@@ -5225,7 +5229,9 @@ def create_donation_payment_intent(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"clientSecret": intent.client_secret, "donation_id": donation.id})
 
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=400)
+        # Log the detailed exception for debugging
+        logger.exception("Error in create_donation_payment_intent: %s", str(e))
+        return JsonResponse({"error": "An internal error occurred"}, status=400)
 
 
 @csrf_exempt
@@ -6320,15 +6326,12 @@ def teacher_update_student_attendance(request, classroom_id):
         else:
             messages.error(request, "Classroom not found.")
             return redirect("virtual_classroom_list")
-    except Exception:
-        import logging
-
-        logger = logging.getLogger(__name__)
-        logger.error("Error updating student attendance", exc_info=True)
+    except Exception as e:
+        logger.exception("Error updating student attendance: %s", str(e))
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return JsonResponse({"success": False, "message": "An error occurred while marking attendance"}, status=500)
+            return JsonResponse({"success": False, "message": "An internal error occurred"}, status=500)
         else:
-            messages.error(request, "An error occurred while marking attendance.")
+            messages.error(request, "An internal error occurred.")
             return redirect("classroom_attendance", classroom_id=classroom_id)
 
 
@@ -6523,8 +6526,9 @@ def award_badge(request):
         return JsonResponse({"success": False, "message": "Student not found"}, status=404)
     except Course.DoesNotExist:
         return JsonResponse({"success": False, "message": "Course not found"}, status=404)
-    except Exception:
-        return JsonResponse({"success": False, "message": "Error: award_badge"}, status=500)
+    except Exception as e:
+        logger.exception("Error awarding badge: %s", str(e))
+        return JsonResponse({"success": False, "message": "An internal error occurred"}, status=500)
 
 
 def notification_preferences(request):
@@ -6735,11 +6739,8 @@ def feature_vote(request):
         )
 
     except Exception as e:
-        import logging
-
-        logger = logging.getLogger(__name__)
-        logger.error(f"Error processing vote: {str(e)}", exc_info=True)
-        return JsonResponse({"status": "error", "message": f"Error processing vote: {str(e)}"}, status=500)
+        logger.exception("Error processing vote: %s", str(e))
+        return JsonResponse({"status": "error", "message": "An internal error occurred"}, status=500)
 
 
 @require_GET
@@ -7479,16 +7480,20 @@ def create_membership_subscription(request) -> JsonResponse:
         )
 
     except json.JSONDecodeError as e:
-        return JsonResponse({"error": f"Invalid JSON: {str(e)}"}, status=400)
+        logger.warning("Invalid JSON in create_membership_subscription: %s", str(e))
+        return JsonResponse({"error": "Invalid JSON format"}, status=400)
     except stripe.error.CardError as e:
-        return JsonResponse({"error": f"Card error: {str(e)}"}, status=400)
+        logger.warning("Card error in create_membership_subscription: %s", str(e))
+        return JsonResponse({"error": "Card payment failed"}, status=400)
     except stripe.error.StripeError as e:
-        return JsonResponse({"error": f"Payment processing error: {str(e)}"}, status=500)
+        logger.error("Stripe error in create_membership_subscription: %s", str(e))
+        return JsonResponse({"error": "Payment processing error"}, status=500)
     except KeyError as e:
-        return JsonResponse({"error": f"Missing key: {str(e)}"}, status=400)
-    except Exception:
-        logger.exception("Unexpected error in create_membership_subscription")
-        return JsonResponse({"error": "An unexpected error occurred"}, status=500)
+        logger.warning("Missing key in create_membership_subscription: %s", str(e))
+        return JsonResponse({"error": "Invalid request data"}, status=400)
+    except Exception as e:
+        logger.error("Unexpected error in create_membership_subscription: %s", str(e))
+        return JsonResponse({"error": "An internal error occurred"}, status=500)
 
 
 @login_required
@@ -7549,12 +7554,13 @@ def cancel_membership(request) -> HttpResponse:
             messages.error(request, result["error"])
 
     except stripe.error.StripeError as e:
-        messages.error(request, f"Stripe error: {str(e)}")
+        logger.error("Stripe error in cancel_membership: %s", str(e))
+        messages.error(request, "An internal error occurred")
     except ObjectDoesNotExist:
         messages.error(request, "No membership found for your account.")
     except Exception as e:
-        logger.error(f"Unexpected error in cancel_membership: {str(e)}")
-        messages.error(request, str(e))
+        logger.error("Unexpected error in cancel_membership: %s", str(e))
+        messages.error(request, "An internal error occurred")
 
     return redirect("membership_settings")
 
@@ -7574,12 +7580,13 @@ def reactivate_membership(request) -> HttpResponse:
             messages.error(request, result["error"])
 
     except stripe.error.StripeError as e:
-        messages.error(request, f"Stripe error: {str(e)}")
+        logger.error("Stripe error in reactivate_membership: %s", str(e))
+        messages.error(request, "An internal error occurred")
     except ObjectDoesNotExist:
         messages.error(request, "No membership found for your account.")
     except Exception as e:
-        logger.error(f"Unexpected error in reactivate_membership: {str(e)}")
-        messages.error(request, str(e))
+        logger.error("Unexpected error in reactivate_membership: %s", str(e))
+        messages.error(request, "An internal error occurred")
 
     return redirect("membership_settings")
 
@@ -7640,14 +7647,17 @@ def update_payment_method_api(request) -> JsonResponse:
         return JsonResponse({"success": True})
 
     except stripe.error.CardError as e:
-        return JsonResponse({"error": f"Card error: {str(e)}"}, status=400)
+        logger.warning("Card error in update_payment_method_api: %s", str(e))
+        return JsonResponse({"error": "Card payment failed"}, status=400)
     except stripe.error.InvalidRequestError as e:
-        return JsonResponse({"error": f"Invalid request: {str(e)}"}, status=400)
+        logger.warning("Invalid request in update_payment_method_api: %s", str(e))
+        return JsonResponse({"error": "Invalid payment method"}, status=400)
     except stripe.error.StripeError as e:
-        return JsonResponse({"error": f"Payment processing error: {str(e)}"}, status=500)
+        logger.error("Stripe error in update_payment_method_api: %s", str(e))
+        return JsonResponse({"error": "Payment processing error"}, status=500)
     except Exception as e:
-        logger.error(f"Unexpected error in update_payment_method_api: {str(e)}")
-        return JsonResponse({"error": str(e)}, status=400)
+        logger.error("Unexpected error in update_payment_method_api: %s", str(e))
+        return JsonResponse({"error": "An internal error occurred"}, status=500)
 
 
 def social_media_manager_required(user):

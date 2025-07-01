@@ -1,4 +1,5 @@
 import json
+import logging
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -8,6 +9,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from .models import Course, VirtualClassroom, VirtualClassroomWhiteboard
+
+# Add logger configuration
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -199,4 +203,6 @@ def clear_whiteboard(request, classroom_id):
             return JsonResponse({"success": True, "message": "Whiteboard was already empty"})
 
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        # Log the detailed exception for debugging
+        logger.exception("Error in clear_whiteboard: %s", str(e))
+        return JsonResponse({"error": "An internal error occurred"}, status=500)
