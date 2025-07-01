@@ -3905,6 +3905,26 @@ class GoodsDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return self.request.user == self.get_object().storefront.teacher
 
 
+def add_goods_to_cart(request, pk):
+    """Add a product (goods) to the cart."""
+    product = get_object_or_404(Goods, pk=pk)
+
+    # Prevent adding out-of-stock items
+    if product.stock is None or product.stock <= 0:
+        messages.error(request, f"{product.name} is out of stock and cannot be added to cart.")
+        return redirect("goods_detail", pk=pk)  # Redirect back to product page
+
+    cart = get_or_create_cart(request)
+    cart_item, created = CartItem.objects.get_or_create(cart=cart, goods=product, defaults={"session": None})
+
+    if created:
+        messages.success(request, f"{product.name} added to cart.")
+    else:
+        messages.info(request, f"{product.name} is already in your cart.")
+
+    return redirect("cart_view")
+
+
 def teacher_update_attendance(request, classroom_id):
     """Update student attendance for a given classroom."""
     classroom = get_object_or_404(VirtualClassroom, id=classroom_id)
@@ -3946,7 +3966,9 @@ def teacher_update_attendance(request, classroom_id):
     attendance.save()
 
     # Get the updated attendance list for the classroom
-    attendance_list = SessionAttendance.objects.filter(session=session, date=current_date).values_list("student__id", flat=True)
+    attendance_list = SessionAttendance.objects.filter(session=session, date=current_date).values_list(
+        "student__id", flat=True
+    )
 
     # Prepare the response data
     data = {

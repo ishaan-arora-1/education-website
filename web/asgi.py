@@ -9,18 +9,17 @@ https://docs.djangoproject.com/en/4.0/howto/deployment/asgi/
 
 import os
 
-# Initialize Django before importing anything that requires ORM
 import django
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "web.settings")
-
-django.setup()
-
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.core.asgi import get_asgi_application
 
 from web.routing import websocket_urlpatterns
+
+# Initialize Django before importing anything that requires ORM
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "web.settings")
+
+django.setup()
 
 application = ProtocolTypeRouter(
     {
