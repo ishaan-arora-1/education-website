@@ -5,7 +5,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from .models import Course, VirtualClassroom, VirtualClassroomWhiteboard
@@ -73,7 +72,6 @@ def classroom_whiteboard(request, classroom_id):
 
 
 @login_required
-@csrf_exempt
 @require_POST
 def save_whiteboard_data(request, classroom_id):
     """
@@ -177,7 +175,6 @@ def get_whiteboard_data(request, classroom_id):
 
 
 @login_required
-@csrf_exempt
 @require_POST
 def clear_whiteboard(request, classroom_id):
     """

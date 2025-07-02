@@ -65,9 +65,9 @@
       <!-- Mark Attendance Button -->
       {% if is_enrolled and request.user not in present_students %}
         <div class="text-center">
-          <form method="POST" action="{% url 'update_student_attendance' %}">
+          <form method="POST"
+                action="{% url 'update_student_attendance' classroom_id=classroom.id %}">
             {% csrf_token %}
-            <input type="hidden" name="classroom_id" value="{{ classroom.id }}" />
             <button type="submit"
                     class="bg-teal-300 hover:bg-teal-400 text-white px-6 py-2 rounded-lg transition duration-200">
               Mark Attendance

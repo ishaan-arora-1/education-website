@@ -36,6 +36,7 @@ from .views import (
     sales_data,
     streak_detail,
     submit_survey,
+    update_session_attendance,
     update_student_attendance,
 )
 
@@ -431,9 +432,14 @@ urlpatterns += i18n_patterns(
         name="mark_session_completed",
     ),
     path(
-        "update_student_attendance/",
+        "update_student_attendance/<int:classroom_id>/",
         views.update_student_attendance,
-        name="update_student_attendance",
+        name="update_student_attendance_legacy",
+    ),
+    path(
+        "update_session_attendance/",
+        update_session_attendance,
+        name="update_session_attendance",
     ),
     # Student Management URLs
     path(
@@ -486,7 +492,7 @@ urlpatterns += i18n_patterns(
     ),
     path("virtual-classroom/<int:classroom_id>/blackboard/", views.classroom_blackboard, name="classroom_blackboard"),
     path("virtual-classroom/<int:classroom_id>/attendance/", classroom_attendance, name="classroom_attendance"),
-    path("attendance/update/", update_student_attendance, name="update_student_attendance"),
+    path("attendance/<int:classroom_id>/update/", update_student_attendance, name="update_student_attendance"),
     path("virtual-classroom/<int:classroom_id>/reset-attendance/", views.reset_attendance, name="reset_attendance"),
     # Whiteboard URLs
     path("whiteboard/<int:classroom_id>/", views_whiteboard.classroom_whiteboard, name="classroom_whiteboard"),

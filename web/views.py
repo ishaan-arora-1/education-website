@@ -3925,61 +3925,6 @@ def add_goods_to_cart(request, pk):
     return redirect("cart_view")
 
 
-def teacher_update_attendance(request, classroom_id):
-    """Update student attendance for a given classroom."""
-    classroom = get_object_or_404(VirtualClassroom, id=classroom_id)
-
-    # Check if the user is a teacher of this classroom
-    if not classroom.teacher == request.user:
-        return JsonResponse({"error": "You are not authorized to update attendance for this classroom."}, status=403)
-
-    # Get the session for the classroom
-    session = classroom.session
-
-    # Check if the session is linked to a course
-    if session and session.course:
-        # Get all enrolled students for the course
-        enrolled_students = session.course.enrolled_students.all()
-    else:
-        # If no course is linked, consider all users in the classroom as enrolled
-        enrolled_students = classroom.users.exclude(id=classroom.teacher.id)
-
-    # Get the current date
-    current_date = timezone.now().date()
-
-    # Get the student ID from the request
-    student_id = request.POST.get("student_id")
-
-    # Check if the student is enrolled
-    if student_id not in [str(student.id) for student in enrolled_students]:
-        return JsonResponse({"error": "You are not enrolled in this classroom."}, status=400)
-
-    # Get the student object
-    student = get_object_or_404(User, id=student_id)
-
-    # Check if the student has already marked attendance today
-    if SessionAttendance.objects.filter(session=session, student=student, date=current_date).exists():
-        return JsonResponse({"error": "You have already marked attendance today."}, status=400)
-
-    # Create a new attendance record
-    attendance = SessionAttendance(session=session, student=student, date=current_date)
-    attendance.save()
-
-    # Get the updated attendance list for the classroom
-    attendance_list = SessionAttendance.objects.filter(session=session, date=current_date).values_list(
-        "student__id", flat=True
-    )
-
-    # Prepare the response data
-    data = {
-        "success": True,
-        "message": "Attendance marked successfully.",
-        "attendance_list": list(attendance_list),
-    }
-
-    return JsonResponse(data)
-
-
 class GoodsListingView(ListView):
     model = Goods
     template_name = "goods/goods_listing.html"
@@ -4781,7 +4726,7 @@ def virtual_classroom_detail(request, classroom_id):
             return JsonResponse({"status": "error", "message": "Only teachers can customize the classroom"}, status=403)
 
         try:
-            data = json.loads(request.body)
+            data = json.loads(request.body.decode("utf-8") or "{}")
             customization = classroom.customization_settings
 
             # Update customization settings
@@ -5017,12 +4962,26 @@ def update_student_attendance(request, classroom_id):
 
     if request.method == "POST":
         try:
-            data = json.loads(request.body)
-            student_id = data.get("student_id")
-            status = data.get("status")
+            # Attempt to parse JSON payload; if it fails assume regular form submission
+            try:
+                data = json.loads(request.body.decode("utf-8") or "{}")
+            except json.JSONDecodeError:
+                data = {}
 
-            if not student_id or not status:
-                return JsonResponse({"status": "error", "message": "Invalid data"}, status=400)
+            student_id = data.get("student_id") or request.POST.get("student_id")
+            status = data.get("status") or request.POST.get("status") or "present"
+
+            # If student_id is still missing, default to the current user (self-marking)
+            if not student_id:
+                student_id = request.user.id
+
+            if not status:
+                status = "present"
+
+            # Validate status value
+            allowed_status = {"present", "absent", "late"}
+            if status not in allowed_status:
+                return JsonResponse({"status": "error", "message": "Invalid status value"}, status=400)
 
             student = get_object_or_404(User, id=student_id)
 
@@ -5050,7 +5009,21 @@ def update_student_attendance(request, classroom_id):
                 ).first()
 
             if not session:
-                return JsonResponse({"status": "error", "message": "No session found for today"}, status=400)
+                # Automatically create today's session if it doesn't exist
+                if classroom.course:
+                    session = Session.objects.create(
+                        course=classroom.course,
+                        title=f"Class on {today.strftime('%Y-%m-%d')}",
+                        start_time=today_start,
+                        end_time=today_end,
+                    )
+                else:
+                    session = Session.objects.create(
+                        title=f"Class on {today.strftime('%Y-%m-%d')}",
+                        start_time=today_start,
+                        end_time=today_end,
+                        course=None,
+                    )
 
             # Update or create attendance record
             attendance, created = SessionAttendance.objects.get_or_create(
@@ -5061,7 +5034,12 @@ def update_student_attendance(request, classroom_id):
                 attendance.status = status
                 attendance.save()
 
-            return JsonResponse({"status": "success"})
+            is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+            if is_ajax:
+                return JsonResponse({"status": "success"})
+
+            messages.success(request, "Attendance marked successfully.")
+            return redirect("classroom_attendance", classroom_id=classroom_id)
         except json.JSONDecodeError:
             return JsonResponse({"status": "error", "message": "Invalid JSON data"}, status=400)
         except Exception as e:
@@ -6337,7 +6315,7 @@ def teacher_update_student_attendance(request, classroom_id):
             attendance.save()
 
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return JsonResponse({"success": True, "message": "Attendance marked successfully", "created": created})
+            return JsonResponse({"success": True, "message": "Attendance updated successfully", "created": created})
         else:
             messages.success(request, "Your attendance has been marked.")
             return redirect("classroom_attendance", classroom_id=classroom_id)
@@ -6483,6 +6461,49 @@ def update_teacher_notes(request, enrollment_id):
         messages.success(request, f"Notes for {enrollment.student.username} updated successfully!")
 
     return redirect("student_management", course_slug=course.slug, student_id=enrollment.student.id)
+
+
+@login_required
+@teacher_required
+@require_POST
+def update_session_attendance(request):
+    """Update student attendance for a specific session."""
+    try:
+        # Get form data
+        session_id = request.POST.get("session_id")
+        student_id = request.POST.get("student_id")
+        status = request.POST.get("status")
+        notes = request.POST.get("notes", "")
+
+        if not session_id or not student_id or not status:
+            return JsonResponse({"success": False, "message": "Missing required data"}, status=400)
+
+        # Get objects
+        session = get_object_or_404(Session, id=session_id)
+        student = get_object_or_404(User, id=student_id)
+
+        # Check if the current user is the teacher for this session's course
+        if session.course and session.course.teacher != request.user:
+            return JsonResponse(
+                {"success": False, "message": "Only the course teacher can update attendance"}, status=403
+            )
+
+        # Update or create attendance record
+        attendance, created = SessionAttendance.objects.get_or_create(
+            session=session, student=student, defaults={"status": status, "notes": notes}
+        )
+
+        if not created:
+            attendance.status = status
+            attendance.notes = notes
+            attendance.save()
+
+        return JsonResponse({"success": True, "message": "Attendance updated successfully", "created": created})
+
+    except Exception as e:
+        # Log the detailed exception for debugging
+        logger.exception("Error in update_session_attendance: %s", str(e))
+        return JsonResponse({"success": False, "message": "An internal error occurred"}, status=500)
 
 
 @login_required

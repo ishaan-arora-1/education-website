@@ -100,6 +100,12 @@
           <!-- Users will be populated via WebSocket -->
         </div>
       </div>
+      <!-- Config Data (hidden) -->
+      <div id="whiteboardConfig"
+           class="hidden"
+           data-room-name="{{ room_name }}"
+           data-classroom-id="{{ classroom_id }}"
+           data-is-teacher="{{ is_teacher|yesno:'true,false' }}"></div>
       <!-- Back Button -->
       <div class="mt-6">
         <a href="{% url 'virtual_classroom_detail' classroom.id %}"
@@ -111,17 +117,10 @@
   </div>
   <script>
       // WebSocket and Canvas Configuration
-      const roomName = '{{ room_name }}';
-      const classroomId = {
-          {
-              classroom_id
-          }
-      };
-      const isTeacher = {
-          {
-              is_teacher | yesno: "true,false"
-          }
-      };
+      const configEl = document.getElementById('whiteboardConfig');
+      const roomName = configEl.dataset.roomName;
+      const classroomId = parseInt(configEl.dataset.classroomId, 10);
+      const isTeacher = configEl.dataset.isTeacher === 'true';
       const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
       const wsPath = `${wsScheme}://${window.location.host}/ws/whiteboard/${roomName}/`;
       // Canvas setup
@@ -598,7 +597,13 @@
       }
 
       function loadWhiteboardData() {
-          fetch(`/whiteboard/${classroomId}/data/`)
+          fetch(`/whiteboard/${classroomId}/data/`, {
+                  method: 'GET',
+                  headers: {
+                      'X-CSRFToken': csrftoken
+                  },
+                  credentials: 'same-origin'
+              })
               .then(response => response.json())
               .then(data => {
                   if (data.canvas_data && data.canvas_data.length > 0) {
@@ -623,6 +628,45 @@
               }
           }
           return cookieValue;
+      }
+
+      // Get CSRF token for secure AJAX requests
+      const csrftoken = getCookie('csrftoken');
+
+      // Helper function for making secure AJAX requests with CSRF protection
+      function makeSecureRequest(url, method, data = null) {
+          const headers = {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': csrftoken
+          };
+
+          const options = {
+              method: method,
+              headers: headers,
+              credentials: 'same-origin' // Include cookies for CSRF token
+          };
+
+          if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+              options.body = JSON.stringify(data);
+          }
+
+          return fetch(url, options);
+      }
+
+      // Example functions for making secure requests to whiteboard endpoints (if needed)
+      function saveWhiteboardDataSecure(canvasData, backgroundImage) {
+          if (!isTeacher) return Promise.reject('Only teachers can save whiteboard data');
+
+          return makeSecureRequest(`/whiteboard/${classroomId}/save/`, 'POST', {
+              canvas_data: canvasData,
+              background_image: backgroundImage || ''
+          });
+      }
+
+      function clearWhiteboardSecure() {
+          if (!isTeacher) return Promise.reject('Only teachers can clear whiteboard');
+
+          return makeSecureRequest(`/whiteboard/${classroomId}/clear/`, 'POST');
       }
   </script>
 {% endblock content %}
