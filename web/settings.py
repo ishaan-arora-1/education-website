@@ -406,3 +406,7 @@ CHANNEL_LAYERS = {
         },
     }
 }
+
+# Allow per-environment override of secure cookie behavior (useful for staging without HTTPS).
+CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=not DEBUG)
+SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=not DEBUG)

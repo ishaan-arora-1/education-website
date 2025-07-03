@@ -116,6 +116,8 @@
         allowed_hosts: "{{ env_vars.ALLOWED_HOSTS | default('localhost,127.0.0.1') }}"
         csrf_trusted_origins: "{{ env_vars.CSRF_TRUSTED_ORIGINS | default('localhost,127.0.0.1') }}"
         redis_url: "{{ env_vars.REDIS_URL | default('redis://localhost:6379') }}"
+        csrf_cookie_secure: "{{ env_vars.CSRF_COOKIE_SECURE | default('False') }}"
+        session_cookie_secure: "{{ env_vars.SESSION_COOKIE_SECURE | default('False') }}"
 
     - name: Ensure application user exists
       user: { name: "{{ vps_user }}", system: true, create_home: true, shell: /bin/bash }
@@ -187,13 +189,13 @@
       notify: restart app
 
     - name: Allow ports
-      ufw:
+      community.general.ufw:
         rule: allow
         port: "{{ item }}"
       loop: [22, 80, 443]
 
     - name: Enable firewall (now that everything is ready)
-      ufw:
+      community.general.ufw:
         state: enabled
 
     - name: Ensure Redis service is enabled and running
