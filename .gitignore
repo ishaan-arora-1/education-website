@@ -7,4 +7,3 @@ venv/
 /media
 .env*
 backup.json
-node_modules/
