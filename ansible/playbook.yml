@@ -1,12 +1,19 @@
 ---
-- name: Bootstrap OS
+- name: Provision & Deploy (single block)
   hosts: all
   gather_facts: false
   become: true
   vars:
+    vps_user: django
+    project_name: education-website
+    project_root: /home/{{ vps_user }}/{{ project_name }}
+    git_repo: "https://github.com/AlphaOneLabs/education-website.git"
+    git_branch: "main"
+    domain_name: "www1.alphaonelabs.com"
+    app_port: 8000
     pkgs:
-      - python3.11
-      - python3.11-venv
+      - python3
+      - python3-venv
       - python3-pip
       - git
       - nginx
@@ -14,7 +21,7 @@
       - postgresql-contrib
       - libpq-dev
       - redis-server
-
+      - ufw
   tasks:
     - name: Install base packages (non-interactive, synchronous)
       apt:
@@ -24,105 +31,82 @@
         cache_valid_time: 3600
       environment: {DEBIAN_FRONTEND: noninteractive}
 
-    - name: Reboot and wait
-      reboot:
-        reboot_timeout: 900
-      register: rebooted
-
-    - name: Wait for SSH
-      wait_for_connection:
-        delay: 10
-        timeout: 300
-      when: rebooted is changed
-
-    - name: Create 2 GB swapfile if not present
-      shell: |
-        set -e
-        if ! swapon --show | grep -q '^/swapfile'; then
-          fallocate -l 2G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=2048
-          chmod 600 /swapfile
-          mkswap /swapfile
-          swapon /swapfile
-        fi
-      args:
-        creates: /swapfile
-
-    - name: Persist swapfile in /etc/fstab
-      lineinfile:
-        path: /etc/fstab
-        line: "/swapfile none swap sw 0 0"
-        state: present
-
-- name: 1️⃣  Deploy application
-  hosts: all
-  gather_facts: false
-  vars:
-    project_root: /home/{{ vps_user }}/{{ project_name }}
-    git_repo: "https://github.com/AlphaOneLabs/education-website.git"
-    git_branch: "main"
-
-  tasks:
-    - name: Read .env.production file into list
-      set_fact:
-        env_lines: "{{ lookup('ansible.builtin.file', '../.env.production').splitlines() }}"
-
-    - name: Init empty env_vars dict
-      set_fact:
-        env_vars: {}
-
-    - name: Build env_vars dict line-by-line
-      set_fact:
-        env_vars: "{{ env_vars | combine({ key: val }) }}"
-      vars:
-        clean: "{{ item.split('#',1)[0] | trim }}"
-        key: "{{ clean.split('=',1)[0] | trim }}"
-        val: "{{ (clean.split('=',1)[1] | trim) if ('=' in clean) else '' }}"
-      loop: "{{ env_lines }}"
-      when: clean != '' and not clean.startswith('#')
-      loop_control:
-        label: "{{ key }}"
-
-    - name: Promote env_vars to play vars
-      set_fact: "{{ env_vars }}"
-
-    - name: Map essential env vars to lowercase variables expected by templates
-      set_fact:
-        secret_key: "{{ env_vars.SECRET_KEY }}"
-        debug: "{{ env_vars.DEBUG }}"
-        stripe_secret_key: "{{ env_vars.STRIPE_SECRET_KEY | default('') }}"
-        stripe_publishable_key: "{{ env_vars.STRIPE_PUBLISHABLE_KEY | default('') }}"
-        stripe_webhook_secret: "{{ env_vars.STRIPE_WEBHOOK_SECRET | default('') }}"
-        stripe_connect_webhook_secret: "{{ env_vars.STRIPE_CONNECT_WEBHOOK_SECRET | default('') }}"
-        sendgrid_api_key: "{{ env_vars.SENDGRID_API_KEY | default('') }}"
-        sendgrid_password: "{{ env_vars.SENDGRID_PASSWORD | default('') }}"
-        email_from: "{{ env_vars.EMAIL_FROM | default('') }}"
-        slack_webhook_url: "{{ env_vars.SLACK_WEBHOOK_URL | default('') }}"
-        message_encryption_key: "{{ env_vars.MESSAGE_ENCRYPTION_KEY | default('') }}"
-        admin_url: "{{ env_vars.ADMIN_URL | default('') }}"
-        gs_bucket_name: "{{ env_vars.GS_BUCKET_NAME | default('') }}"
-        gs_project_id: "{{ env_vars.GS_PROJECT_ID | default('') }}"
-        service_account_file: "{{ env_vars.SERVICE_ACCOUNT_FILE | default('') }}"
-        django_debug: "{{ env_vars.DJANGO_DEBUG | default('') }}"
-        enable_https_redirect: "{{ env_vars.ENABLE_HTTPS_REDIRECT | default('True') }}"
-        domain_name: "{{ env_vars.DOMAIN_NAME | default('') }}"
-        app_port: "{{ env_vars.APP_PORT | default('8000') }}"
-        vps_user: "{{ env_vars.VPS_USER | default('django') }}"
-        db_name: "{{ env_vars.DB_NAME | default('education_website') }}"
-        db_user: "{{ env_vars.DB_USER | default('root') }}"
-        db_password: "{{ env_vars.DB_PASSWORD | default('change_me') }}"
-        project_name: "{{ env_vars.PROJECT_NAME | default('education-website') }}"
-        git_repo: "{{ env_vars.GIT_REPO | default(git_repo) }}"
-        git_branch: "{{ env_vars.GIT_BRANCH | default(git_branch) }}"
-        allowed_hosts: "{{ env_vars.ALLOWED_HOSTS | default('localhost,127.0.0.1') }}"
-        csrf_trusted_origins: "{{ env_vars.CSRF_TRUSTED_ORIGINS | default('localhost,127.0.0.1') }}"
-        redis_url: "{{ env_vars.REDIS_URL | default('redis://localhost:6379') }}"
-        csrf_cookie_secure: "{{ env_vars.CSRF_COOKIE_SECURE | default('False') }}"
-        session_cookie_secure: "{{ env_vars.SESSION_COOKIE_SECURE | default('False') }}"
-
     - name: Ensure application user exists
       user: { name: "{{ vps_user }}", system: true, create_home: true, shell: /bin/bash }
 
+    - name: Read local .env.production
+      set_fact:
+        env_prod_content: "{{ lookup('ansible.builtin.file', '../.env.production') }}"
+
+    - name: Extract DATABASE_URL
+      set_fact:
+        database_url_line: "{{ env_prod_content.split('\n') | select('match','^DATABASE_URL=postgres://') | list | first | default('') }}"
+      when: env_prod_content is defined
+
+    - name: Fail if DATABASE_URL is missing
+      fail:
+        msg: "DATABASE_URL not found in .env.production; cannot provision database."
+      when: database_url_line | length == 0
+
+    - name: Parse DATABASE_URL components
+      set_fact:
+        db_user: "{{ database_url_line | regex_replace('^DATABASE_URL=postgres://([^:]+):.*$','\\1') }}"
+        db_password: "{{ database_url_line | regex_replace('^DATABASE_URL=postgres://[^:]+:([^@]+)@.*$','\\1') }}"
+        db_name: "{{ database_url_line | regex_replace('^DATABASE_URL=postgres://[^/]+/([^\\n]+)$','\\1') }}"
+      when: database_url_line | length > 0
+
+    - name: Show parsed DB values
+      debug:
+        msg: "Using DATABASE_URL user={{ db_user }}, db={{ db_name }}"
+
+    - name: Ensure PostgreSQL service is started and enabled
+      service:
+        name: postgresql
+        state: started
+        enabled: yes
+
+    - name: Prepare escaped PostgreSQL password
+      set_fact:
+        db_password_escaped: >-
+          {{ db_password | replace("'", "''") }}
+
+    - name: Ensure PostgreSQL role exists
+      become: yes
+      become_user: postgres
+      shell: |
+        ROLE_EXISTS=$(psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='{{ db_user }}'")
+        if [ -z "$ROLE_EXISTS" ]; then
+          psql -c "CREATE ROLE \"{{ db_user }}\" LOGIN PASSWORD '{{ db_password_escaped }}';"
+        fi
+      args:
+        executable: /bin/bash
+      when: db_user is defined and db_user != ''
+
+    - name: Ensure PostgreSQL database exists
+      become: yes
+      become_user: postgres
+      shell: |
+        DB_EXISTS=$(psql -tAc "SELECT 1 FROM pg_database WHERE datname='{{ db_name }}'")
+        if [ -z "$DB_EXISTS" ]; then
+          createdb -O "{{ db_user }}" "{{ db_name }}"
+        fi
+      args:
+        executable: /bin/bash
+
+    - name: Ensure application role owns and can use public schema
+      become: yes
+      become_user: postgres
+      shell: |
+        psql -d "{{ db_name }}" -c "ALTER SCHEMA public OWNER TO \"{{ db_user }}\";" || true
+        psql -d "{{ db_name }}" -c "GRANT ALL ON SCHEMA public TO \"{{ db_user }}\";" || true
+        psql -d "{{ db_name }}" -c "GRANT CREATE ON SCHEMA public TO \"{{ db_user }}\";" || true
+      args:
+        executable: /bin/bash
+      when: db_user is defined and db_user != ''
+
     - name: Clone code
+      become: yes
+      become_user: "{{ vps_user }}"
       git:
         repo: "{{ git_repo }}"
         dest: "{{ project_root }}"
@@ -139,11 +123,39 @@
         group: "{{ vps_user }}"
       when: git_clone is changed
 
-    - name: Create venv + install deps
+    - name: Discover candidate JSON files at repo root (controller)
+      set_fact:
+        service_account_candidates: "{{ lookup('ansible.builtin.fileglob','../*.json', wantlist=True) }}"
+      no_log: true
+
+    - name: Identify Google service account JSON (first file containing 'service_account')
+      set_fact:
+        service_account_file: "{{ item }}"
+      loop: "{{ service_account_candidates | default([]) }}"
+      when: >-
+        ('service_account' in lookup('ansible.builtin.file', item)) and
+        (service_account_file is not defined)
+      no_log: true
+
+    - name: Fail if service account JSON not found
+      fail:
+        msg: "No service_account JSON file found in project root."
+      when: service_account_file is not defined
+
+    - name: Copy Google service account file dynamically
+      copy:
+        src: "{{ service_account_file }}"
+        dest: "{{ project_root }}/{{ service_account_file | basename }}"
+        mode: '0600'
+        owner: "{{ vps_user }}"
+        group: "{{ vps_user }}"
+      no_log: true
+
+    - name: Create venv + install deps (uses system default python3)
       become: yes
       become_user: "{{ vps_user }}"
       shell: |
-        python3.11 -m venv venv
+        python3 -m venv venv
         source venv/bin/activate
         pip install --upgrade pip wheel
         pip install -r requirements.txt uvicorn gunicorn psycopg2-binary
@@ -151,9 +163,9 @@
         chdir: "{{ project_root }}"
         executable: /bin/bash
 
-    - name: Generate .env for server
-      template:
-        src: env.j2          # unchanged template
+    - name: Copy .env.production to server as .env
+      copy:
+        src: ../.env.production
         dest: "{{ project_root }}/.env"
         mode: '0600'
         owner: "{{ vps_user }}"
@@ -172,10 +184,18 @@
         chdir: "{{ project_root }}"
         executable: /bin/bash
 
-- name: 2️⃣  Harden & run
-  hosts: all
-  gather_facts: false
-  tasks:
+    - name: Ensure user home is accessible to nginx (execute bit)
+      file:
+        path: "/home/{{ vps_user }}"
+        mode: '0755'
+        state: directory
+
+    - name: Ensure staticfiles directory readable
+      file:
+        path: "{{ project_root }}/staticfiles"
+        mode: '0755'
+        state: directory
+
     - name: Configure nginx
       template:
         src: nginx-http.conf.j2
@@ -187,6 +207,13 @@
         src: education-website.service.j2
         dest: /etc/systemd/system/education-website.service
       notify: restart app
+
+    - name: Ensure application service enabled and started
+      systemd:
+        name: education-website
+        enabled: true
+        state: started
+        daemon_reload: true
 
     - name: Allow ports
       community.general.ufw:
