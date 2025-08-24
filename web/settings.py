@@ -3,15 +3,16 @@ import sys
 from pathlib import Path
 
 import environ
+import sentry_sdk
 from cryptography.fernet import Fernet
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# # Initialize Sentry SDK for error reporting
-# sentry_sdk.init(
-#     dsn=os.environ.get("SENTRY_DSN", ""),
-#     send_default_pii=True,
-# )
+# Initialize Sentry SDK for error reporting
+sentry_sdk.init(
+    dsn=os.environ.get("SENTRY_DSN", ""),
+    send_default_pii=True,
+)
 
 env = environ.Env()
 

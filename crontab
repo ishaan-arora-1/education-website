@@ -1,8 +1,20 @@
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+PYTHONPATH=/home/django/education-website
+DJANGO_SETTINGS_MODULE=web.settings
+
+# Base project paths
+PROJECT_ROOT=/home/django/education-website
+VENVDIR=$PROJECT_ROOT/venv
+PYTHON=$VENVDIR/bin/python
+LOGDIR=$PROJECT_ROOT/logs
+mkdir -p $LOGDIR >/dev/null 2>&1 || true
+
 # Send session reminders every hour
-0 * * * * cd /home/a/projects/AlphaOneLabs/education-website && poetry run python manage.py send_session_reminders
+0 * * * * cd $PROJECT_ROOT && $PYTHON manage.py send_session_reminders >> $LOGDIR/cron.log 2>&1
 
 # Send weekly progress updates every Monday at 8 AM
-0 8 * * 1 cd /home/a/projects/AlphaOneLabs/education-website && poetry run python manage.py send_weekly_updates
+0 8 * * 1 cd $PROJECT_ROOT && $PYTHON manage.py send_weekly_updates >> $LOGDIR/cron.log 2>&1
 
 # Send assignment reminders daily at 8 AM
-0 8 * * * cd /home/a/projects/AlphaOneLabs/education-website && poetry run python manage.py send_assignment_reminders >> /home/a/projects/AlphaOneLabs/education-website/reminder_log.log 2>&1
+0 8 * * * cd $PROJECT_ROOT && $PYTHON manage.py send_assignment_reminders >> $LOGDIR/reminder_log.log 2>&1

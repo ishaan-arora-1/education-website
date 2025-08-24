@@ -231,6 +231,29 @@
         state: started
         enabled: yes
 
+    - name: Ensure logs directory exists
+      file:
+        path: "{{ project_root }}/logs"
+        state: directory
+        owner: "{{ vps_user }}"
+        group: "{{ vps_user }}"
+        mode: '0755'
+
+    - name: Deploy crontab file
+      copy:
+        src: ../crontab
+        dest: "{{ project_root }}/deploy.crontab"
+        owner: "{{ vps_user }}"
+        group: "{{ vps_user }}"
+        mode: '0644'
+
+    - name: Install crontab for application user
+      become: yes
+      become_user: "{{ vps_user }}"
+      shell: crontab {{ project_root }}/deploy.crontab
+      register: install_cron
+      changed_when: install_cron.stdout != '' or install_cron.stderr != ''
+
   handlers:
     - name: restart nginx
       service: {name: nginx, state: restarted, enabled: yes}
