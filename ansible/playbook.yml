@@ -1,5 +1,5 @@
 ---
-- name: 0️⃣  Bootstrap OS
+- name: Bootstrap OS
   hosts: all
   gather_facts: false
   become: true
@@ -62,9 +62,9 @@
     git_branch: "main"
 
   tasks:
-    - name: Read .env file into list
+    - name: Read .env.production file into list
       set_fact:
-        env_lines: "{{ lookup('ansible.builtin.file', '../.env').splitlines() }}"
+        env_lines: "{{ lookup('ansible.builtin.file', '../.env.production').splitlines() }}"
 
     - name: Init empty env_vars dict
       set_fact:
