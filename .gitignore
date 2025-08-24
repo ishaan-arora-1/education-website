@@ -10,3 +10,4 @@ backup.json
 .notes
 ansible/inventory.yml
 education-website-*.json
+*.sql

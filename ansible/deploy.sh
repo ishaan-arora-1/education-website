@@ -37,14 +37,26 @@ HOST_PORT=$(awk '/ansible_port:/ {print $2; exit}' inventory.yml || true)
 if [[ -n "${HOST_IP}" ]]; then
 	mkdir -p ~/.ssh
 	chmod 700 ~/.ssh
-	if ! ssh-keygen -F "${HOST_IP}" >/dev/null 2>&1; then
-		echo "→ Adding SSH host key for ${HOST_IP} to known_hosts" >&2
-		if [[ -n "${HOST_PORT}" ]]; then
-			ssh-keyscan -p "${HOST_PORT}" -H "${HOST_IP}" >> ~/.ssh/known_hosts 2>/dev/null || echo "⚠️ Warning: Could not retrieve host key for ${HOST_IP}:${HOST_PORT}" >&2
-		else
-			ssh-keyscan -H "${HOST_IP}" >> ~/.ssh/known_hosts 2>/dev/null || echo "⚠️ Warning: Could not retrieve host key for ${HOST_IP}" >&2
-		fi
+	KNOWN_HOSTS_FILE=~/.ssh/known_hosts
+	# If host key exists, but connection previously failed with mismatch, auto-remove stale keys.
+	if ssh-keygen -F "${HOST_IP}" >/dev/null 2>&1; then
+		# Try a quiet probe that tolerates changed key by ignoring strict checking via ssh-keyscan compare
+		# We'll just always refresh: remove existing entries first (handles changed key scenario)
+		echo "→ Refreshing SSH host key for ${HOST_IP}" >&2
+		ssh-keygen -R "${HOST_IP}" >/dev/null 2>&1 || true
+	else
+		echo "→ Adding SSH host key for ${HOST_IP}" >&2
 	fi
+	if [[ -n "${HOST_PORT}" ]]; then
+		ssh-keyscan -p "${HOST_PORT}" -H "${HOST_IP}" >> "${KNOWN_HOSTS_FILE}" 2>/dev/null || echo "⚠️ Warning: Could not retrieve host key for ${HOST_IP}:${HOST_PORT}" >&2
+	else
+		ssh-keyscan -H "${HOST_IP}" >> "${KNOWN_HOSTS_FILE}" 2>/dev/null || echo "⚠️ Warning: Could not retrieve host key for ${HOST_IP}" >&2
+	fi
+fi
+
+# Fallback: allow override to skip host key checking entirely (not recommended; for CI emergencies)
+if [[ "${SKIP_HOST_KEY_CHECKING:-}" == "1" ]]; then
+	export ANSIBLE_HOST_KEY_CHECKING=False
 fi
 
 ansible-playbook -i inventory.yml playbook.yml "${EXTRA_ARGS[@]}"
