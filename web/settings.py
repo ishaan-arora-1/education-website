@@ -411,6 +411,7 @@ USE_X_FORWARDED_HOST = True
 # GitHub API Token for fetching contributor data
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 
+
 # Channel Layers Configuration
 CHANNEL_LAYERS = {
     "default": {
@@ -424,3 +425,5 @@ CHANNEL_LAYERS = {
 # Allow per-environment override of secure cookie behavior (useful for staging without HTTPS).
 CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=not DEBUG)
 SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=not DEBUG)
+GITHUB_WEBHOOK_SECRET = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
+
