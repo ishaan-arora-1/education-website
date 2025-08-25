@@ -131,6 +131,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.sites",
     "django.contrib.humanize",
+    "channels",
     "allauth",
     "allauth.account",
     "captcha",
@@ -194,6 +195,15 @@ WSGI_APPLICATION = "web.wsgi.application"
 
 # Add ASGI application configuration
 ASGI_APPLICATION = "web.asgi.application"
+
+# Channels / Redis channel layer configuration (assumes a local Redis unless overridden)
+REDIS_URL = env.str("REDIS_URL", default="redis://127.0.0.1:6379/0")
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [REDIS_URL]},
+    }
+}
 
 DATABASES = {
     "default": {
