@@ -8214,7 +8214,8 @@ def video_request_list(request):
 
 
 @login_required
-def submit_video_request(request)
+@login_required
+def submit_video_request(request: HttpRequest) -> HttpResponse:
     """View for submitting a new video request."""
     if request.method == "POST":
         form = VideoRequestForm(request.POST)
