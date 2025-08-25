@@ -6,7 +6,7 @@ After=network.target
 User={{ vps_user }}
 Group={{ vps_user }}
 WorkingDirectory=/home/{{ vps_user }}/{{ project_name }}
-Environment="PATH=/home/{{ vps_user }}/{{ project_name }}/venv/bin"
+Environment="PATH=/home/{{ vps_user }}/{{ project_name }}/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/bin"
 ExecStart=/home/{{ vps_user }}/{{ project_name }}/venv/bin/gunicorn \
          web.asgi:application -w 4 -k uvicorn.workers.UvicornWorker \
          --timeout 120 \
