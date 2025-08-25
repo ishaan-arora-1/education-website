@@ -115,7 +115,7 @@ fernet = Fernet(settings.SECURE_MESSAGE_KEY)
 
 class TailwindWidgetMixin:
     """Mixin providing common Tailwind CSS classes for form widgets."""
-    
+
     @staticmethod
     def get_tailwind_attrs():
         return (

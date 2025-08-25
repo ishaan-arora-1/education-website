@@ -1046,11 +1046,14 @@ def github_update(request):
         log_lines.append(summary)
         return proc.returncode == 0
 
+    poetry_bin = os.path.join(repo_dir, "venv", "bin", "poetry")
     steps = [
         [git_bin, "fetch", "--all", "--prune"],
         [git_bin, "reset", "--hard", "origin/main"],
         [venv_pip, "install", "--upgrade", "pip", "wheel"],
-        [venv_pip, "install", "-r", "requirements.txt"],
+        [venv_pip, "install", "poetry==1.8.3"],
+        [poetry_bin, "config", "virtualenvs.create", "false", "--local"],
+        [poetry_bin, "install", "--only", "main", "--no-interaction", "--no-ansi"],
         [venv_python, "manage.py", "migrate", "--noinput"],
         [venv_python, "manage.py", "collectstatic", "--noinput"],
     ]
@@ -1069,7 +1072,7 @@ def github_update(request):
             ok = False
             break
 
-    # Always attempt a reload so code changes take effect (gunicorn systemd unit)
+    # Always attempt a reload so code changes take effect (application systemd unit)
     subprocess.run(["/bin/systemctl", "restart", "education-website"], capture_output=True)
 
     # Slack summary (truncate to avoid long messages)
