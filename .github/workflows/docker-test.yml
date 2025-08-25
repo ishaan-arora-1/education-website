@@ -72,7 +72,8 @@ jobs:
           RUN python -m pip install --upgrade pip wheel setuptools && \
               pip install poetry==1.8.3 && \
               poetry config virtualenvs.create false --local || true && \
-              poetry install --only main --no-interaction --no-ansi
+              # Install only dependencies (skip installing the project itself until after sources copied)
+              poetry install --only main --no-root --no-interaction --no-ansi
 
           # Copy project files
           COPY . .
