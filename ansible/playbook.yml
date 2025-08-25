@@ -299,6 +299,14 @@
         mode: '0755'
         state: directory
 
+    - name: Ensure media directory exists and readable
+      file:
+        path: "{{ project_root }}/media"
+        state: directory
+        mode: '0755'
+        owner: "{{ vps_user }}"
+        group: "{{ vps_user }}"
+
     - name: Configure nginx
       template:
         src: nginx-http.conf.j2
