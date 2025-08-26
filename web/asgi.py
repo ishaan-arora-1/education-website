@@ -1,11 +1,17 @@
-"""
-ASGI config for web project.
+"""ASGI entrypoint for the project.
 
-It exposes the ASGI callable as a module-level variable named ``application``.
+We wrap Django's default ASGI application so we can gracefully handle the
+"lifespan" scope that uvicorn / ASGI servers may send. Vanilla Django only
+implements HTTP (and optionally WebSocket) scopes and will raise:
 
-For more information on this file, see
-https://docs.djangoproject.com/en/4.0/howto/deployment/asgi/
+    ValueError: Django can only handle ASGI/HTTP connections, not lifespan.
+
+That shows up as noisy Sentry events. By intercepting the lifespan scope and
+acknowledging startup/shutdown, we prevent the ValueError while keeping the
+rest of Django's ASGI behaviour unchanged.
 """
+
+from __future__ import annotations
 
 import os
 
@@ -13,6 +19,7 @@ import django
 
 # Initialize Django before importing anything that requires ORM
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "web.settings")
+django.setup()
 
 django.setup()
 
