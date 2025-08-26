@@ -136,7 +136,6 @@ INSTALLED_APPS = [
     "allauth.account",
     "captcha",
     "markdownx",
-    "channels",
     "web",
     "web.virtual_lab.apps.VirtualLabConfig",
 ]
@@ -433,18 +432,7 @@ USE_X_FORWARDED_HOST = True
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 
 
-# Channel Layers Configuration
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [env.str("REDIS_URL", default="redis://localhost:6379")],
-        },
-    }
-}
-
 # Allow per-environment override of secure cookie behavior (useful for staging without HTTPS).
 CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=not DEBUG)
 SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=not DEBUG)
 GITHUB_WEBHOOK_SECRET = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
-

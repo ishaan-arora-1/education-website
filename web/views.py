@@ -1104,6 +1104,7 @@ def github_update(request):
         return HttpResponse("OK")
     return HttpResponse(status=500, content="Deploy failed; see logs")
 
+
 def send_slack_message(message):
     webhook_url = os.getenv("SLACK_WEBHOOK_URL")
     if not webhook_url:
