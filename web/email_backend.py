@@ -25,9 +25,15 @@ class SlackNotificationEmailBackend:
           semantics (no network send, just log) for the remainder of the
           process lifetime to avoid repeated errors.
         """
-        self.webhook_url = getattr(settings, "EMAIL_SLACK_WEBHOOK", None)
+        # Prefer the global SLACK_WEBHOOK_URL; fall back to legacy EMAIL_SLACK_WEBHOOK
+        self.webhook_url = getattr(settings, "SLACK_WEBHOOK_URL", None) or getattr(
+            settings, "EMAIL_SLACK_WEBHOOK", None
+        )
         self.mailgun_enabled = False
         self._fallback_reason: Optional[str] = None
+        # Allow overriding the Mailgun API base for EU region accounts
+        # Defaults to US region: https://api.mailgun.net
+        self.mailgun_api_base: str = getattr(settings, "MAILGUN_API_BASE", "https://api.mailgun.net").rstrip("/")
 
         if settings.DEBUG:
             self.backend = ConsoleBackend(**kwargs)
@@ -194,7 +200,7 @@ class SlackNotificationEmailBackend:
             except Exception:  # pragma: no cover
                 continue
 
-        url = f"https://api.mailgun.net/v3/{domain}/messages"
+        url = f"{self.mailgun_api_base}/v3/{domain}/messages"
         resp = requests.post(url, auth=("api", api_key), data=data, files=files if files else None, timeout=15)
         if resp.status_code >= 200 and resp.status_code < 300:
             return True
