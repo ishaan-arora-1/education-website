@@ -319,16 +319,13 @@ if DEBUG:
     EMAIL_BACKEND = "web.email_backend.SlackNotificationEmailBackend"
     print("Using console email backend with Slack notifications for development")
     DEFAULT_FROM_EMAIL = "noreply@example.com"  # Default for development
-    SENDGRID_API_KEY = None  # Not needed in development
+    MAILGUN_SENDING_KEY = None  # Not needed in development
 else:
     # Production email settings
     EMAIL_BACKEND = "web.email_backend.SlackNotificationEmailBackend"
-    SENDGRID_API_KEY = env.str("SENDGRID_API_KEY", default=env.str("SENDGRID_PASSWORD", default=""))
-    EMAIL_HOST = "smtp.sendgrid.net"
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = "apikey"
-    EMAIL_HOST_PASSWORD = env.str("SENDGRID_PASSWORD", default="")
+    MAILGUN_SENDING_KEY = env.str("MAILGUN_SENDING_KEY", default="")
+    # Optional: set MAILGUN_DOMAIN explicitly; otherwise inferred from DEFAULT_FROM_EMAIL
+    MAILGUN_DOMAIN = env.str("MAILGUN_DOMAIN", default="") or None
     DEFAULT_FROM_EMAIL = env.str("EMAIL_FROM", default="noreply@alphaonelabs.com")
     EMAIL_FROM = os.getenv("EMAIL_FROM")
 
