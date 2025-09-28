@@ -24,7 +24,7 @@ if os.path.exists(env_file):
 else:
     print("No .env file found.")
 
-# Re-initialize / initialize Sentry AFTER environment variables are loaded so DSN is present.
+# Re-initialize / initialize Sentry AFTER environment variables are loaded so DSN is present here.
 SENTRY_DSN = env.str("SENTRY_DSN", default="")
 if SENTRY_DSN:
     sentry_logging = LoggingIntegration(level=os.getenv("SENTRY_LOG_LEVEL", "INFO"), event_level=None)
