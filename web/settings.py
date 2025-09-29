@@ -5,6 +5,7 @@ from pathlib import Path
 import environ
 import sentry_sdk
 from cryptography.fernet import Fernet
+from django.core.exceptions import DisallowedHost
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 
@@ -34,6 +35,8 @@ if SENTRY_DSN:
         environment=env.str("ENVIRONMENT", default="development"),
         send_default_pii=True,
         traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", 0.0)),  # set >0 to enable performance
+        # Do not send Invalid Host (DisallowedHost) errors to Sentry
+        ignore_errors=(DisallowedHost,),
     )
 else:
     # Helpful notice for ops without breaking startup
@@ -313,6 +316,23 @@ MEDIA_URL = "/media/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# Drop noisy Invalid Host messages from logs entirely
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "null": {"class": "logging.NullHandler"},
+    },
+    "loggers": {
+        # Django emits DisallowedHost on invalid/missing Host header; silence it
+        "django.security.DisallowedHost": {
+            "handlers": ["null"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    },
+}
 
 # Email settings
 if DEBUG:
