@@ -328,10 +328,23 @@ LOGGING = {
     "disable_existing_loggers": False,
     "handlers": {
         "null": {"class": "logging.NullHandler"},
+        # Ensure any accidental use of 'mail_admins' will be a no-op
+        "mail_admins": {"class": "logging.NullHandler"},
     },
     "loggers": {
         # Django emits DisallowedHost on invalid/missing Host header; silence it
         "django.security.DisallowedHost": {
+            "handlers": ["null"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        # Do not email admins on request/server errors
+        "django.request": {
+            "handlers": ["null"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "django.server": {
             "handlers": ["null"],
             "level": "ERROR",
             "propagate": False,
