@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 from pathlib import Path
@@ -28,7 +29,11 @@ else:
 # Re-initialize / initialize Sentry AFTER environment variables are loaded so DSN is present here.
 SENTRY_DSN = env.str("SENTRY_DSN", default="")
 if SENTRY_DSN:
-    sentry_logging = LoggingIntegration(level=os.getenv("SENTRY_LOG_LEVEL", "INFO"), event_level=None)
+    # Capture WARNING+ as breadcrumbs and ERROR+ as events
+    sentry_logging = LoggingIntegration(
+        level=getattr(logging, os.getenv("SENTRY_LOG_LEVEL", "INFO").upper(), logging.INFO),
+        event_level=logging.ERROR,
+    )
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=[DjangoIntegration(), sentry_logging],
