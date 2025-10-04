@@ -8,3 +8,7 @@ venv/
 .env*
 backup.json
 ./node_modules/
+.notes
+ansible/inventory.yml
+education-website-*.json
+*.sql
